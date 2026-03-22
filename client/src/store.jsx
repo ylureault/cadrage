@@ -1,6 +1,13 @@
-import { createContext, useContext, useReducer, useCallback } from 'react';
+import { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
 
 const StoreContext = createContext();
+
+// Dark mode: read from localStorage or system preference
+function getInitialDarkMode() {
+  const stored = localStorage.getItem('insuffle-dark-mode');
+  if (stored !== null) return stored === 'true';
+  return window.matchMedia?.('(prefers-color-scheme: dark)').matches || false;
+}
 
 const initialState = {
   // Connection
@@ -36,7 +43,7 @@ const initialState = {
   showActivity: false,
   showStats: false,
   showExport: false,
-  darkMode: false,
+  darkMode: getInitialDarkMode(),
   isFacilitator: false,
   archived: false,
   welcomeMessage: '',
@@ -180,6 +187,13 @@ function reducer(state, action) {
 
 export function StoreProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+
+  // Apply dark mode class on <html> and persist to localStorage
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', state.darkMode);
+    localStorage.setItem('insuffle-dark-mode', String(state.darkMode));
+  }, [state.darkMode]);
+
   return (
     <StoreContext.Provider value={{ state, dispatch }}>
       {children}
