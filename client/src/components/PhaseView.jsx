@@ -21,12 +21,12 @@ export default function PhaseView({ phase }) {
           <div className="w-1.5 h-10 rounded-full" style={{ backgroundColor: phase.color }} />
           <div>
             <h2 className="font-display text-h2-mobile md:text-h2 flex items-center gap-2" style={{ color: phase.color }}>
-              {ps?.locked && <Lock size={16} style={{ color: 'var(--color-text-muted)' }} />}
+              {!!ps?.locked && <Lock size={16} style={{ color: 'var(--color-text-muted)' }} />}
               {phase.name}
             </h2>
             <p className="text-caption" style={{ color: 'var(--color-text-muted)' }}>{phase.description}</p>
           </div>
-          {ps?.locked && (
+          {!!ps?.locked && (
             <span className="text-label px-3 py-1 rounded-tag"
               style={{ backgroundColor: 'var(--color-surface-alt)', color: 'var(--color-text-muted)' }}>
               Phase verrouillée par le facilitateur

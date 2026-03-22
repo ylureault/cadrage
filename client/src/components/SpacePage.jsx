@@ -214,7 +214,7 @@ export default function SpacePage() {
       )}
 
       {/* Archived banner */}
-      {state.archived && (
+      {!!state.archived && (
         <div className="px-4 py-2 text-center text-body-sm font-medium" role="status"
           style={{ backgroundColor: 'var(--color-text-muted)', color: 'white' }}>
           Cadrage archivé — lecture seule

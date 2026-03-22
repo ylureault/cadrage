@@ -79,9 +79,9 @@ function AxisSlider({ axis, compact }) {
           {spread >= 2 && spread < 3 && (
             <span className="text-label font-medium" style={{ color: 'var(--color-warning)' }}>Écart modéré</span>
           )}
-          {spread < 2 && allPositions.length > 0 && (
+          {spread < 2 && allPositions.length > 0 ? (
             <span className="text-label font-medium" style={{ color: 'var(--color-success)' }}>Aligné</span>
-          )}
+          ) : null}
           {isLocked && <Lock size={14} style={{ color: 'var(--color-text-muted)' }} />}
           {state.isFacilitator && (
             <button onClick={lockAxis} className="p-0.5 rounded-btn transition-colors"
