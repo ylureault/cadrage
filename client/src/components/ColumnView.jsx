@@ -102,7 +102,7 @@ export default function ColumnView({ column, phase, locked }) {
 
       {/* Content */}
       {!collapsed && (
-        <div className="p-3 space-y-2 min-h-[100px] max-h-[600px] overflow-y-auto">
+        <div className="p-3 space-y-2 max-h-[600px] overflow-y-auto">
           {/* Questions-guides : TOUJOURS visibles, pliables (Priorité 2 — Tim Brown + Jony Ive)
              Les questions sont du design, pas du contenu. Elles restent comme les labels d'un formulaire. */}
           {column.questions && column.questions.length > 0 && (
