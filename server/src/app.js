@@ -225,25 +225,47 @@ export function createApp(db) {
     });
 
     socket.on('create-card', ({ phase, columnKey, content }) => {
-      if (!currentSpace || !content?.trim()) return;
+      if (!currentSpace || !currentPseudo) {
+        socket.emit('error', { message: 'Session expirée. Rechargez la page.' });
+        return;
+      }
+      if (!content?.trim()) {
+        socket.emit('error', { message: 'Le contenu de la carte ne peut pas être vide.' });
+        return;
+      }
       const space = db.prepare(`SELECT archived FROM spaces WHERE id = ?`).get(currentSpace);
-      if (space?.archived) return;
+      if (space?.archived) {
+        socket.emit('error', { message: 'Ce cadrage est archivé (lecture seule).' });
+        return;
+      }
 
       const phaseState = db.prepare(`SELECT locked FROM phase_state WHERE space_id = ? AND phase = ?`).get(currentSpace, phase);
-      if (phaseState?.locked) { socket.emit('error', { message: 'Phase verrouillée par le facilitateur' }); return; }
+      if (phaseState?.locked) {
+        socket.emit('error', { message: 'Phase verrouillée par le facilitateur.' });
+        return;
+      }
 
-      if (content.length > 500) content = content.substring(0, 500);
-      const id = generateId();
-      const maxPos = db.prepare(`SELECT MAX(position) as mp FROM cards WHERE space_id = ? AND column_key = ?`).get(currentSpace, columnKey);
-      const position = (maxPos?.mp ?? -1) + 1;
+      try {
+        if (content.length > 500) content = content.substring(0, 500);
+        const id = generateId();
+        const maxPos = db.prepare(`SELECT MAX(position) as mp FROM cards WHERE space_id = ? AND column_key = ?`).get(currentSpace, columnKey);
+        const position = (maxPos?.mp ?? -1) + 1;
 
-      db.prepare(`INSERT INTO cards (id, space_id, phase, column_key, content, author, author_color, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
-        id, currentSpace, phase, columnKey, content.trim(), currentPseudo, currentColor, position
-      );
-      logActivity(currentSpace, currentPseudo, 'create-card', columnKey, content.trim().substring(0, 50));
+        db.prepare(`INSERT INTO cards (id, space_id, phase, column_key, content, author, author_color, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(
+          id, currentSpace, phase, columnKey, content.trim(), currentPseudo, currentColor, position
+        );
+        logActivity(currentSpace, currentPseudo, 'create-card', columnKey, content.trim().substring(0, 50));
 
-      const card = db.prepare(`SELECT * FROM cards WHERE id = ?`).get(id);
-      io.to(currentSpace).emit('card-created', { ...card, tags: JSON.parse(card.tags), reactions: JSON.parse(card.reactions) });
+        const card = db.prepare(`SELECT * FROM cards WHERE id = ?`).get(id);
+        if (!card) {
+          socket.emit('error', { message: 'La carte n\'a pas pu être créée.' });
+          return;
+        }
+        io.to(currentSpace).emit('card-created', { ...card, tags: JSON.parse(card.tags || '[]'), reactions: JSON.parse(card.reactions || '{}') });
+      } catch (e) {
+        console.error('create-card error:', e);
+        socket.emit('error', { message: 'Erreur lors de la création de la carte.' });
+      }
     });
 
     socket.on('update-card', ({ cardId, content }) => {

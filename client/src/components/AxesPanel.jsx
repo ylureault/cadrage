@@ -95,7 +95,7 @@ function AxisSlider({ axis, compact }) {
 
       {/* Slider track */}
       <div className="flex items-center gap-1 mb-1">
-        <span className="text-caption w-24 text-right shrink-0" style={{ color: 'var(--color-text-muted)' }}>{axis.left}</span>
+        <span className="text-caption w-28 sm:w-32 text-right shrink-0" style={{ color: 'var(--color-text-muted)' }}>{axis.left}</span>
         <div className="flex-1 flex items-center justify-between px-2 relative">
           {/* Track line */}
           <div className="absolute inset-x-2 top-1/2 h-0.5 -translate-y-1/2" style={{ backgroundColor: 'var(--color-border)' }} />
@@ -106,8 +106,9 @@ function AxisSlider({ axis, compact }) {
             const isFinalPos = finalAxis?.position === pos;
             return (
               <button key={pos} onClick={() => setPosition(pos)}
+                title={isLocked ? 'Axe verrouillé par le facilitateur' : isMyPos ? 'Votre position actuelle' : `Positionner sur ${pos}`}
                 className={`relative z-10 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-200
-                  ${isLocked ? 'cursor-not-allowed' : 'cursor-pointer hover:scale-110'}`}
+                  ${isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:scale-110'}`}
                 style={{
                   borderColor: isMyPos ? 'var(--color-accent)' : isFinalPos ? 'var(--color-accent)' : 'var(--color-border)',
                   backgroundColor: isMyPos ? 'var(--color-accent)' : isFinalPos ? 'rgba(255,222,89,0.3)' : 'var(--color-surface)',
@@ -139,7 +140,7 @@ function AxisSlider({ axis, compact }) {
             </div>
           )}
         </div>
-        <span className="text-caption w-24 shrink-0" style={{ color: 'var(--color-text-muted)' }}>{axis.right}</span>
+        <span className="text-caption w-28 sm:w-32 shrink-0" style={{ color: 'var(--color-text-muted)' }}>{axis.right}</span>
       </div>
 
       {/* Respondents count */}

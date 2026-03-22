@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useStore } from '../store.jsx';
 import socket from '../socket.js';
 import Card from './Card.jsx';
@@ -8,8 +8,10 @@ export default function ColumnView({ column, phase, locked }) {
   const { state, dispatch } = useStore();
   const [collapsed, setCollapsed] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [questionsOpen, setQuestionsOpen] = useState(true);
   const [newContent, setNewContent] = useState('');
+  const prevCardCount = useRef(0);
 
   const cards = useMemo(() => {
     let filtered = state.cards.filter(c => c.column_key === column.key && c.phase === phase.key);
@@ -32,11 +34,24 @@ export default function ColumnView({ column, phase, locked }) {
     .filter(([, col]) => col === column.key)
     .map(([pseudo]) => pseudo);
 
+  // Close form when a new card appears in this column (server confirmed)
+  useEffect(() => {
+    if (submitting && cards.length > prevCardCount.current) {
+      setNewContent('');
+      setAdding(false);
+      setSubmitting(false);
+    }
+    prevCardCount.current = cards.length;
+  }, [cards.length, submitting]);
+
   function handleAdd() {
-    if (!newContent.trim() || state.archived) return;
+    if (!newContent.trim() || state.archived || submitting) return;
+    setSubmitting(true);
     socket.emit('create-card', { phase: phase.key, columnKey: column.key, content: newContent.trim() });
-    setNewContent('');
-    setAdding(false);
+    // Form stays open until server confirms via card-created event
+    // If error, the Notifications component will show it (socket 'error' → store notification)
+    // Timeout fallback: if no response in 5s, re-enable the button
+    setTimeout(() => setSubmitting(false), 5000);
   }
 
   function handleFocus() {
@@ -149,8 +164,10 @@ export default function ColumnView({ column, phase, locked }) {
               <div className="flex items-center justify-between mt-1">
                 <span className="text-xs text-gray-400">{newContent.length}/500 · Ctrl+Entrée pour valider</span>
                 <div className="flex gap-1">
-                  <button onClick={() => { setAdding(false); setNewContent(''); }} className="btn-ghost text-xs">Annuler</button>
-                  <button onClick={handleAdd} disabled={!newContent.trim()} className="btn-primary text-xs px-3 py-1">Ajouter</button>
+                  <button onClick={() => { setAdding(false); setNewContent(''); setSubmitting(false); }} className="btn-ghost text-xs" disabled={submitting}>Annuler</button>
+                  <button onClick={handleAdd} disabled={!newContent.trim() || submitting} className="btn-primary text-xs px-3 py-1">
+                    {submitting ? 'Envoi...' : 'Ajouter'}
+                  </button>
                 </div>
               </div>
             </div>

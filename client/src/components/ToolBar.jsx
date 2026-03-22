@@ -5,7 +5,7 @@ import socket from '../socket.js';
 import {
   Search, Sliders, Activity, BarChart3, Download, Sun, Moon,
   Lock, Unlock, Eye, EyeOff, Timer, Star, MessageSquare, Copy,
-  QrCode, Link2, Archive, ArchiveRestore, Settings
+  QrCode, Link2, Archive, ArchiveRestore, Settings, X
 } from 'lucide-react';
 
 export default function ToolBar() {
@@ -15,9 +15,14 @@ export default function ToolBar() {
   const [timerInput, setTimerInput] = useState('');
   const [showFacilitatorTools, setShowFacilitatorTools] = useState(false);
 
-  function copyLink() {
-    navigator.clipboard.writeText(window.location.href);
-    dispatch({ type: 'ADD_NOTIFICATION', notification: { message: 'Lien copié', type: 'success' } });
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      dispatch({ type: 'ADD_NOTIFICATION', notification: { message: 'Lien copié dans le presse-papier', type: 'success' } });
+    } catch {
+      // Fallback for contexts where clipboard API is not available
+      dispatch({ type: 'ADD_NOTIFICATION', notification: { message: window.location.href, type: 'info' } });
+    }
   }
 
   function startTimer() {
@@ -56,13 +61,23 @@ export default function ToolBar() {
             <div className="flex items-center gap-1">
               <input value={state.searchQuery}
                 onChange={e => dispatch({ type: 'SET_SEARCH', query: e.target.value })}
-                placeholder="Rechercher..."
-                className="bg-white/10 text-white px-2 py-1 rounded text-sm w-32 focus:outline-none focus:ring-1 focus:ring-insuffle-gold"
-                autoFocus onBlur={() => { if (!state.searchQuery) setShowSearch(false); }}
+                placeholder="Rechercher dans les cartes..."
+                className="text-white px-2 py-1 rounded-btn text-body-sm w-40 focus:outline-none focus:ring-1"
+                style={{ backgroundColor: 'rgba(255,255,255,0.1)', ringColor: 'var(--color-accent)' }}
+                autoFocus
               />
+              {state.searchQuery && (
+                <span className="text-label" style={{ color: 'var(--color-accent)' }}>
+                  {state.cards.filter(c => c.content.toLowerCase().includes(state.searchQuery.toLowerCase())).length} résultat(s)
+                </span>
+              )}
+              <button onClick={() => { dispatch({ type: 'SET_SEARCH', query: '' }); setShowSearch(false); }}
+                className="p-1 hover:bg-white/10 rounded" title="Fermer la recherche" aria-label="Fermer la recherche">
+                <X size={14} />
+              </button>
             </div>
           ) : (
-            <button onClick={() => setShowSearch(true)} className="p-1.5 hover:bg-white/10 rounded" title="Rechercher">
+            <button onClick={() => setShowSearch(true)} className="p-1.5 hover:bg-white/10 rounded" title="Rechercher (Cmd+F)">
               <Search size={18} />
             </button>
           )}

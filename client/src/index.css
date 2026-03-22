@@ -46,6 +46,7 @@
   --color-text-muted: #8b95a8;
   /* Accent stays the same in dark mode */
   --color-accent: #ffde59;
+  --color-accent-bg: rgba(255,222,89,0.12);
 
   --shadow-1: 0 1px 3px rgba(0,0,0,0.2);
   --shadow-2: 0 4px 12px rgba(0,0,0,0.3);
@@ -232,4 +233,11 @@
   background-color: var(--color-surface);
   border-color: var(--color-border);
   color: var(--color-text);
+}
+
+/* Dark mode: questions-guides contrast fix */
+.dark .highlight-accent {
+  background-color: rgba(255,222,89,0.08);
+  border-left-color: var(--color-accent);
+  color: var(--color-text-muted);
 }
