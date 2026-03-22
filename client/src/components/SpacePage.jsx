@@ -17,6 +17,7 @@ import Notifications from './Notifications.jsx';
 import ParticipantsBar from './ParticipantsBar.jsx';
 import CommandPalette from './CommandPalette.jsx';
 import OnboardingTour from './OnboardingTour.jsx';
+import DarkboardPromo from './DarkboardPromo.jsx';
 
 export default function SpacePage() {
   const { spaceId } = useParams();
@@ -275,6 +276,9 @@ export default function SpacePage() {
         {state.phases.map(phase => (
           state.activePhase === phase.key && <PhaseView key={phase.key} phase={phase} />
         ))}
+
+        {/* DarkBoard promo — outil complémentaire */}
+        <DarkboardPromo spaceId={spaceId} />
 
         {/* 8 axes — section permanente en bas du canvas (Seth Godin : la pépite au centre, pas dans un tiroir) */}
         <div className="border-t" style={{ borderColor: 'var(--color-border)' }}>
