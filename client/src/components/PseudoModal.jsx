@@ -49,7 +49,7 @@ export default function PseudoModal({ onJoin, spaceName, welcomeMessage, facilit
           <p className="text-body mb-1" style={{ color: 'var(--color-text-muted)' }}>
             {facilitatorName
               ? `${facilitatorName} vous invite à préparer votre temps collectif ensemble.`
-              : 'Préparez votre intervention collaborative en direct.'}
+              : 'Préparez votre temps collectif en direct.'}
           </p>
 
           {/* Ce qu'on va faire — 3 points clairs */}

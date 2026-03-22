@@ -5,7 +5,7 @@ export const PHASES = [
     name: 'AVANT',
     color: '#1e3a5f',
     bgColor: '#eef3f9',
-    description: 'Préparer et comprendre le contexte avant l\'intervention',
+    description: 'Préparer et comprendre le contexte avant le temps collectif',
     columns: [
       {
         key: 'clarifier_cadre',
@@ -60,7 +60,7 @@ export const PHASES = [
     name: 'PENDANT - Facilitation',
     color: '#2a5a3a',
     bgColor: '#eef7f0',
-    description: 'Piloter la dynamique et le contenu pendant l\'intervention',
+    description: 'Piloter la dynamique et le contenu pendant le temps collectif',
     columns: [
       {
         key: 'contenu_sujet',
@@ -130,8 +130,8 @@ export const PHASES = [
         name: 'Suite et impact',
         questions: [
           'Que se passe-t-il concrètement le lendemain de la session ?',
-          'Comment mesurer que le séminaire a réellement servi à quelque chose ?',
-          'Qui va porter les décisions après le séminaire ?',
+          'Comment mesurer que ce temps collectif a réellement servi à quelque chose ?',
+          'Qui va porter les décisions après le temps collectif ?',
           'Combien de temps est-il réaliste de voir un changement ?',
           'Est-ce une action isolée ou le début d\'un parcours plus long ?'
         ]

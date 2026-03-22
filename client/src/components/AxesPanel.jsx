@@ -216,7 +216,7 @@ function CadrageAlerts({ axes, axesDef, cards }) {
       if (spread >= 3) {
         alerts.push({
           type: 'error',
-          message: `Divergence forte sur "${axisDef.left} / ${axisDef.right}". Une conversation est nécessaire avant l'intervention.`,
+          message: `Divergence forte sur "${axisDef.left} / ${axisDef.right}". Une conversation est nécessaire avant le temps collectif.`,
         });
       }
     }
@@ -239,7 +239,7 @@ function CadrageAlerts({ axes, axesDef, cards }) {
   if (otherCards.length >= 3 && riskCards.length === 0) {
     alerts.push({
       type: 'warning',
-      message: `La phase "Risques" est vide. Identifier les risques avant l'intervention est essentiel.`,
+      message: `La phase "Risques" est vide. Identifier les risques avant le temps collectif est essentiel.`,
     });
   }
 

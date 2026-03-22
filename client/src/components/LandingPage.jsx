@@ -14,7 +14,7 @@ const FEATURES = [
   { icon: Shield, title: 'Sans compte, accès par URL', desc: 'Un lien, un pseudo, c\'est parti. Zéro friction.' },
   { icon: Layout, title: 'Canvas structuré en 4 phases', desc: 'AVANT, PENDANT Facilitation, PENDANT Risques, CONCLUSION.' },
   { icon: Zap, title: '100+ questions-guides Insuffle', desc: 'Des questions puissantes pour aller au fond du cadrage.' },
-  { icon: Sliders, title: '8 curseurs de positionnement', desc: 'Calibrez votre intervention avec le sponsor.' },
+  { icon: Sliders, title: '8 curseurs de positionnement', desc: 'Calibrez votre temps collectif avec le sponsor.' },
   { icon: Clock, title: 'Mode facilitateur', desc: 'Timer, spotlight, verrouillage de phases, brainstorming silencieux.' },
   { icon: FileText, title: 'Export PDF brandé', desc: 'Exportez votre cadrage avec la marque Insuffle.' },
   { icon: Smartphone, title: 'Mobile et tablette', desc: 'Contribuez depuis n\'importe quel appareil.' },
@@ -116,7 +116,7 @@ export default function LandingPage() {
           <p className="text-caption uppercase tracking-wider opacity-50 mb-4">Insuffle Cadrage Live</p>
           <h1 className="font-display text-h1-mobile md:text-[36px] md:leading-tight mb-6">
             Rendez visibles les <span style={{ color: 'var(--color-accent)' }}>non-dits</span><br className="hidden sm:block" />
-            avant l'intervention.
+            avant le temps collectif.
           </h1>
           <p className="text-body md:text-lg opacity-70 mb-4 max-w-2xl mx-auto">
             Un DG met 5 sur l'axe "Porter le cap". Le facilitateur met 1 — "Agir ensemble".
@@ -124,7 +124,7 @@ export default function LandingPage() {
           </p>
           <p className="text-body md:text-lg opacity-60 mb-10 max-w-2xl mx-auto">
             C'est à ce moment-là que le vrai cadrage commence.
-            Insuffle Cadrage Live rend cet écart visible — avant le séminaire, pas après.
+            Insuffle Cadrage Live rend cet écart visible — avant l'atelier, pas après.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button onClick={handleCreate} disabled={creating}
@@ -144,7 +144,7 @@ export default function LandingPage() {
               Les <span style={{ color: 'var(--color-accent)' }}>8 axes</span> qu'aucun autre outil ne propose
             </h2>
             <p className="text-body" style={{ color: 'var(--color-text-muted)' }}>
-              Insuffle a formalisé les 8 tensions fondamentales de toute intervention collective. Cet outil vous permet de les calibrer avec votre client en temps réel.
+              Insuffle a formalisé les 8 tensions fondamentales de tout temps collectif. Cet outil vous permet de les calibrer avec votre client en temps réel.
             </p>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
@@ -181,7 +181,7 @@ export default function LandingPage() {
       <Section className="py-16 md:py-20 text-center">
         <div className="max-w-3xl mx-auto px-4 md:px-8">
           <p className="text-h2-mobile md:text-h2 font-display" style={{ color: 'var(--color-text-muted)' }}>
-            Préparer une intervention prend trop de temps.
+            Préparer un temps collectif prend trop de temps.
             Les allers-retours avec le sponsor s'accumulent.
             Le cadrage se perd dans les emails.
           </p>
@@ -297,7 +297,7 @@ export default function LandingPage() {
           </h2>
           <p className="font-display font-semibold mb-2">Insuffle Académie</p>
           <p className="text-body mb-8 max-w-xl mx-auto" style={{ color: 'var(--color-text-muted)' }}>
-            Formez-vous à la facilitation d'ateliers, à l'intelligence collective et au cadrage d'intervention.
+            Formez-vous à la facilitation, à l'intelligence collective et au cadrage de temps collectifs.
             <strong> Plan Pro inclus pour les certifiés.</strong>
           </p>
           <a href="https://insuffle.com" target="_blank" rel="noopener"
@@ -388,7 +388,7 @@ export default function LandingPage() {
       {/* ===== CTA final ===== */}
       <Section className="py-20 text-center">
         <div className="max-w-2xl mx-auto px-4 md:px-8">
-          <h2 className="font-display text-h2-mobile md:text-h2 mb-4">Prêt à cadrer votre prochaine intervention ?</h2>
+          <h2 className="font-display text-h2-mobile md:text-h2 mb-4">Prêt à cadrer votre prochain temps collectif ?</h2>
           <p className="text-body mb-8" style={{ color: 'var(--color-text-muted)' }}>Gratuit, sans inscription, prêt en 5 secondes.</p>
           <button onClick={handleCreate} disabled={creating} className="btn-primary text-lg px-8 py-3 h-auto">
             {creating ? 'Création...' : 'Créer votre premier cadrage'} <ArrowRight size={20} />
