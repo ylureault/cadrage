@@ -15,6 +15,7 @@ import TimerDisplay from './TimerDisplay.jsx';
 import SpotlightOverlay from './SpotlightOverlay.jsx';
 import Notifications from './Notifications.jsx';
 import ParticipantsBar from './ParticipantsBar.jsx';
+import CommandPalette from './CommandPalette.jsx';
 
 export default function SpacePage() {
   const { spaceId } = useParams();
@@ -23,6 +24,30 @@ export default function SpacePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showPseudo, setShowPseudo] = useState(true);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+
+  /* US-408, US-411: Keyboard shortcuts */
+  useEffect(() => {
+    function handleKeyDown(e) {
+      // Don't trigger when typing in inputs
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); setShowCommandPalette(true); }
+      if (e.key === '?' && !e.metaKey && !e.ctrlKey) { e.preventDefault(); setShowCommandPalette(true); }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  function handleCommandAction(actionId) {
+    switch (actionId) {
+      case 'export': dispatch({ type: 'TOGGLE_EXPORT' }); break;
+      case 'axes': dispatch({ type: 'TOGGLE_AXES' }); break;
+      case 'activity': dispatch({ type: 'TOGGLE_ACTIVITY' }); break;
+      case 'facilitator': socket.emit('set-facilitator', { pseudo: state.pseudo, add: true }); break;
+      case 'help': setShowCommandPalette(true); break;
+    }
+  }
 
   // Load canvas structure + space data
   useEffect(() => {
@@ -115,27 +140,31 @@ export default function SpacePage() {
     setShowPseudo(false);
   }
 
+  /* US-393: Loading screen avec animation Insuffle */
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 bg-insuffle-gold rounded-lg animate-pulse-slow mx-auto mb-4 flex items-center justify-center font-bold text-insuffle-dark text-xl">I</div>
-          <p className="text-gray-500">Chargement du cadrage...</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-primary)' }}>
+        <div className="text-center animate-fade-in">
+          <div className="w-14 h-14 rounded-card mx-auto mb-4 flex items-center justify-center font-display font-bold text-2xl animate-pulse-glow"
+            style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>I</div>
+          <p className="text-body-sm" style={{ color: 'var(--color-text-muted)' }}>Chargement...</p>
         </div>
       </div>
     );
   }
 
+  /* US-372: Error empty state */
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-insuffle-gold rounded-xl mx-auto mb-4 flex items-center justify-center font-bold text-insuffle-dark text-2xl">I</div>
-          <h1 className="text-2xl font-bold mb-2">Espace introuvable</h1>
-          <p className="text-gray-600 mb-6">{error}</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-surface-alt)' }}>
+        <div className="text-center animate-scale-in">
+          <div className="w-16 h-16 rounded-card mx-auto mb-4 flex items-center justify-center font-display font-bold text-2xl"
+            style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>I</div>
+          <h1 className="font-display text-h2-mobile mb-2">Espace introuvable</h1>
+          <p className="text-body-sm mb-6" style={{ color: 'var(--color-text-muted)' }}>{error}</p>
           <button onClick={() => navigate('/')} className="btn-primary">Créer un nouveau cadrage</button>
-          <p className="mt-4 text-sm text-gray-500">
-            <a href="https://insuffle.com" target="_blank" rel="noopener" className="hover:underline">En savoir plus sur Insuffle</a>
+          <p className="mt-4 text-caption">
+            <a href="https://insuffle.com" target="_blank" rel="noopener" className="hover:underline" style={{ color: 'var(--color-text-muted)' }}>En savoir plus sur Insuffle</a>
           </p>
         </div>
       </div>
@@ -147,17 +176,20 @@ export default function SpacePage() {
   }
 
   return (
-    <div className={`min-h-screen flex flex-col ${state.darkMode ? 'dark bg-gray-900' : 'bg-insuffle-light'}`}>
-      {/* Offline banner */}
+    <div className={`min-h-screen flex flex-col ${state.darkMode ? 'dark' : ''}`}
+      style={{ backgroundColor: 'var(--color-surface-alt)', color: 'var(--color-text)' }}>
+      {/* US-441: Offline banner */}
       {state.offline && (
-        <div className="bg-insuffle-gold text-insuffle-dark px-4 py-2 text-center text-sm font-medium">
+        <div className="px-4 py-2 text-center text-body-sm font-medium" role="alert"
+          style={{ backgroundColor: 'var(--color-warning)', color: 'var(--color-primary)' }}>
           Connexion perdue — vos modifications seront synchronisées au retour
         </div>
       )}
 
       {/* Archived banner */}
       {state.archived && (
-        <div className="bg-gray-500 text-white px-4 py-2 text-center text-sm font-medium">
+        <div className="px-4 py-2 text-center text-body-sm font-medium" role="status"
+          style={{ backgroundColor: 'var(--color-text-muted)', color: 'white' }}>
           Cadrage archivé — lecture seule
         </div>
       )}
@@ -174,8 +206,9 @@ export default function SpacePage() {
       {/* Participants */}
       <ParticipantsBar />
 
-      {/* Phase tabs */}
-      <div className="border-b border-gray-200 bg-white sticky top-0 z-20">
+      {/* US-422: Phase tabs */}
+      <div className="border-b sticky top-0 z-20" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
+        role="tablist" aria-label="Phases du cadrage">
         <div className="max-w-[1600px] mx-auto flex overflow-x-auto">
           {state.phases.map(phase => {
             const ps = state.phaseStates.find(p => p.phase === phase.key);
@@ -184,14 +217,23 @@ export default function SpacePage() {
             const cardCount = state.cards.filter(c => c.phase === phase.key).length;
             return (
               <button key={phase.key}
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`phase-${phase.key}`}
                 onClick={() => dispatch({ type: 'SET_ACTIVE_PHASE', phase: phase.key })}
-                className={`flex items-center gap-2 px-5 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors
-                  ${isActive ? 'border-insuffle-gold text-insuffle-dark' : 'border-transparent text-gray-500 hover:text-gray-700'}
+                className={`flex items-center gap-2 px-5 py-3 text-body-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200
+                  ${isActive ? '' : 'border-transparent hover:border-[var(--color-border)]'}
                   ${ps?.hidden ? 'opacity-40' : ''}`}
-                style={isActive ? { borderColor: phase.color } : {}}>
+                style={{
+                  borderBottomColor: isActive ? 'var(--color-accent)' : undefined,
+                  color: isActive ? 'var(--color-text)' : 'var(--color-text-muted)',
+                }}>
                 {ps?.locked ? '🔒 ' : ''}{phase.name}
                 {cardCount > 0 && (
-                  <span className="bg-gray-100 text-gray-600 text-xs px-1.5 py-0.5 rounded-full">{cardCount}</span>
+                  <span className="text-label px-1.5 py-0.5 rounded-full"
+                    style={{ backgroundColor: isActive ? 'rgba(255,222,89,0.2)' : 'var(--color-surface-alt)', color: isActive ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
+                    {cardCount}
+                  </span>
                 )}
               </button>
             );
@@ -199,8 +241,13 @@ export default function SpacePage() {
         </div>
       </div>
 
+      {/* US-417: Progress bar */}
+      <div className="progress-bar">
+        <div className="progress-bar-fill" style={{ width: `${Math.round((state.phases.reduce((acc, p) => acc + (state.cards.some(c => c.phase === p.key) ? 1 : 0), 0) / Math.max(state.phases.length, 1)) * 100)}%` }} />
+      </div>
+
       {/* Canvas */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto" role="main" aria-label="Canvas de cadrage">
         {state.phases.map(phase => (
           state.activePhase === phase.key && <PhaseView key={phase.key} phase={phase} />
         ))}
@@ -215,17 +262,24 @@ export default function SpacePage() {
       {/* Spotlight overlay */}
       {state.spotlight && <SpotlightOverlay />}
 
+      {/* US-411: Command Palette */}
+      {showCommandPalette && (
+        <CommandPalette onClose={() => setShowCommandPalette(false)} onAction={handleCommandAction} />
+      )}
+
       {/* Notifications */}
       <Notifications />
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 py-2 px-4 text-center text-xs text-gray-400 flex items-center justify-center gap-2">
-        <span>Propulsé par</span>
-        <span className="font-semibold text-insuffle-dark">Insuffle</span>
-        <span>|</span>
-        <a href="https://insuffle.com" target="_blank" rel="noopener" className="hover:underline">insuffle.com</a>
-        <span>|</span>
-        <a href="https://insuffle.com" target="_blank" rel="noopener" className="hover:underline">Insuffle Académie</a>
+      {/* US-381, US-459: Footer */}
+      <footer className="border-t py-2 px-4 text-center no-print" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+        <div className="flex items-center justify-center gap-2 text-label" style={{ color: 'var(--color-text-muted)' }}>
+          <span>Propulsé par</span>
+          <span className="font-semibold" style={{ color: 'var(--color-text)' }}>Insuffle</span>
+          <span>·</span>
+          <a href="https://insuffle.com" target="_blank" rel="noopener" className="hover:underline">insuffle.com</a>
+          <span>·</span>
+          <a href="https://insuffle.com" target="_blank" rel="noopener" className="hover:underline" style={{ color: 'var(--color-academie)' }}>Insuffle Académie</a>
+        </div>
       </footer>
     </div>
   );

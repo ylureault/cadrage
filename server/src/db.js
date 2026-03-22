@@ -4,14 +4,22 @@ import { fileURLToPath } from 'url';
 import { mkdirSync } from 'fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const dataDir = join(__dirname, '..', 'data');
-mkdirSync(dataDir, { recursive: true });
 
-const db = new Database(join(dataDir, 'cadrage.db'));
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+export function createDatabase(dbPath) {
+  if (!dbPath) {
+    const dataDir = join(__dirname, '..', 'data');
+    mkdirSync(dataDir, { recursive: true });
+    dbPath = join(dataDir, 'cadrage.db');
+  }
+  const d = new Database(dbPath);
+  d.pragma('journal_mode = WAL');
+  d.pragma('foreign_keys = ON');
+  initSchema(d);
+  return d;
+}
 
-db.exec(`
+function initSchema(d) {
+  d.exec(`
   CREATE TABLE IF NOT EXISTS spaces (
     id TEXT PRIMARY KEY,
     client_name TEXT DEFAULT '',
@@ -127,5 +135,7 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_activity_space ON activity_log(space_id);
   CREATE INDEX IF NOT EXISTS idx_votes_card ON votes(card_id);
 `);
+}
 
+const db = createDatabase();
 export default db;

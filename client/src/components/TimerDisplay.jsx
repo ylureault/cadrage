@@ -1,15 +1,20 @@
 import socket from '../socket.js';
 
+/* US-379: Timer display */
 export default function TimerDisplay({ timer, isFacilitator }) {
   const mins = Math.floor(timer.remaining / 60);
   const secs = timer.remaining % 60;
   const isUrgent = timer.remaining <= 60;
-  const pct = (timer.remaining / timer.duration) * 100;
 
   return (
-    <div className={`text-center py-2 px-4 font-bold text-lg transition-colors ${
-      isUrgent ? 'bg-red-500 text-white animate-pulse-slow' : 'bg-insuffle-gold text-insuffle-dark'
-    }`}>
+    <div className="text-center py-2 px-4 font-display font-bold text-lg transition-colors no-print"
+      role="timer"
+      aria-label={`${mins} minutes ${secs} secondes restantes`}
+      style={{
+        backgroundColor: isUrgent ? 'var(--color-error)' : 'var(--color-accent)',
+        color: isUrgent ? 'white' : 'var(--color-primary)',
+        ...(isUrgent ? { animation: 'pulse 1s ease-in-out infinite' } : {}),
+      }}>
       <span className="tabular-nums">
         {String(mins).padStart(2, '0')}:{String(secs).padStart(2, '0')}
       </span>

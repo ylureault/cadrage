@@ -39,12 +39,14 @@ export default function ToolBar() {
   }
 
   return (
-    <div className="bg-insuffle-dark text-white">
+    <div className="text-white no-print" style={{ backgroundColor: 'var(--color-primary)' }}>
       <div className="max-w-[1600px] mx-auto px-4 py-2 flex items-center justify-between gap-2">
-        {/* Logo */}
-        <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0">
-          <div className="w-7 h-7 bg-insuffle-gold rounded flex items-center justify-center font-bold text-insuffle-dark text-sm">I</div>
-          <span className="font-bold text-sm hidden sm:block">Insuffle <span className="text-insuffle-gold">Cadrage Live</span></span>
+        {/* US-381: Logo Insuffle */}
+        <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0"
+          aria-label="Retour à l'accueil Insuffle">
+          <div className="w-7 h-7 rounded-btn flex items-center justify-center font-display font-bold text-sm"
+            style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>I</div>
+          <span className="font-display font-bold text-sm hidden sm:block">Insuffle <span style={{ color: 'var(--color-accent)' }}>Cadrage Live</span></span>
         </button>
 
         {/* Tools */}
@@ -111,10 +113,11 @@ export default function ToolBar() {
         </div>
       </div>
 
-      {/* Facilitator toolbar */}
+      {/* US-406: Facilitator toolbar */}
       {state.isFacilitator && showFacilitatorTools && (
-        <div className="bg-insuffle-blue px-4 py-2 flex flex-wrap items-center gap-3 text-sm">
-          <span className="text-insuffle-gold font-semibold text-xs uppercase">Facilitateur</span>
+        <div className="px-4 py-2 flex flex-wrap items-center gap-3 text-sm animate-slide-in"
+          style={{ backgroundColor: 'rgba(255,222,89,0.1)' }}>
+          <span className="font-semibold text-label uppercase" style={{ color: 'var(--color-accent)' }}>Facilitateur</span>
 
           {/* Phase controls */}
           {state.phases.map(phase => {

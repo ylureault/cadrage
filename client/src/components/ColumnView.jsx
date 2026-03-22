@@ -45,15 +45,21 @@ export default function ColumnView({ column, phase, locked }) {
   const isSilent = state.silentColumns[column.key] && !state.revealedColumns[column.key];
 
   return (
-    <div className="bg-white rounded-xl card-shadow overflow-hidden" onClick={handleFocus}>
+    <div className="rounded-card elevation-1 overflow-hidden transition-shadow hover:elevation-2"
+      style={{ backgroundColor: 'var(--color-surface)' }}
+      onClick={handleFocus}
+      role="region" aria-label={column.name}>
       {/* Column header */}
-      <div className="p-3 border-b border-gray-100 flex items-center justify-between">
+      <div className="p-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--color-border)' }}>
         <div className="flex items-center gap-2 min-w-0">
-          <button onClick={() => setCollapsed(!collapsed)} className="p-0.5 hover:bg-gray-100 rounded">
+          <button onClick={() => setCollapsed(!collapsed)} className="p-0.5 rounded-btn transition-colors"
+            style={{ color: 'var(--color-text-muted)' }}
+            aria-label={collapsed ? 'Déplier' : 'Replier'}>
             {collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
           </button>
-          <h3 className="text-sm font-semibold truncate">{column.name}</h3>
-          <span className="bg-gray-100 text-gray-500 text-xs px-1.5 py-0.5 rounded-full shrink-0">{cards.length}</span>
+          <h3 className="text-body-sm font-semibold truncate">{column.name}</h3>
+          <span className="text-label px-1.5 py-0.5 rounded-full shrink-0"
+            style={{ backgroundColor: 'var(--color-surface-alt)', color: 'var(--color-text-muted)' }}>{cards.length}</span>
         </div>
         <div className="flex items-center gap-1">
           {/* Focus indicators */}
@@ -79,12 +85,18 @@ export default function ColumnView({ column, phase, locked }) {
       {/* Content */}
       {!collapsed && (
         <div className="p-3 space-y-2 min-h-[100px] max-h-[600px] overflow-y-auto">
-          {/* Questions-guides (shown when no cards) */}
+          {/* US-400: Questions-guides with Insuffle attribution */}
           {cards.length === 0 && !adding && column.questions && (
             <div className="space-y-1.5">
               {column.questions.map((q, i) => (
-                <p key={i} className="text-[13px] italic text-gray-400 leading-snug">• {q}</p>
+                <p key={i} className="text-body-sm italic leading-snug highlight-accent py-1"
+                  style={{ color: 'var(--color-text-muted)', borderLeftColor: 'var(--color-accent)' }}>
+                  {q}
+                </p>
               ))}
+              <p className="text-label mt-3" style={{ color: 'var(--color-text-muted)' }}>
+                Questions issues de la méthode de cadrage Insuffle
+              </p>
             </div>
           )}
 
@@ -93,11 +105,14 @@ export default function ColumnView({ column, phase, locked }) {
             <Card key={card.id} card={card} />
           ))}
 
-          {/* Empty state */}
+          {/* US-372: Empty state */}
           {cards.length === 0 && column.questions?.length === 0 && !adding && (
-            <p className="text-sm text-gray-300 text-center py-4">
-              Pas encore de contribution ici. Cliquez sur + pour ajouter.
-            </p>
+            <div className="text-center py-6">
+              <Plus size={24} className="mx-auto mb-2" style={{ color: 'var(--color-border)' }} />
+              <p className="text-body-sm" style={{ color: 'var(--color-text-muted)' }}>
+                Aucune carte pour l'instant.
+              </p>
+            </div>
           )}
 
           {/* Add card form */}

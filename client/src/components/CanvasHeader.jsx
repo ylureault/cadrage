@@ -50,7 +50,7 @@ export default function CanvasHeader() {
   const locked = state.archived;
 
   return (
-    <div className="bg-white border-b border-gray-200 px-4 py-3">
+    <div className="border-b px-4 py-3" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
       <div className="max-w-[1600px] mx-auto flex flex-wrap gap-4">
         <HeaderField label="Client" field="client_name" value={state.space?.client_name} locked={locked} />
         <HeaderField label="Sponsor" field="sponsor" value={state.space?.sponsor} locked={locked} />

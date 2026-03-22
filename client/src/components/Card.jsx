@@ -71,12 +71,20 @@ export default function Card({ card }) {
 
   function spotlight() { socket.emit('spotlight', { cardId: isSpotlight ? null : card.id }); }
 
+  /* US-379: Card micro-animations, US-365: radius, US-366: elevations */
   return (
-    <div className={`rounded-lg border-l-[3px] bg-white card-shadow hover:card-shadow-hover transition-all animate-slide-in
-      ${isSpotlight ? 'ring-2 ring-insuffle-gold scale-[1.02] z-10' : ''}
-      ${isHighlighted ? 'ring-2 ring-yellow-400' : ''}
-      ${card.marked_discuss ? 'ring-1 ring-orange-300' : ''}`}
-      style={{ borderLeftColor: card.author_color }}
+    <div className={`rounded-card border-l-[3px] elevation-1 hover:elevation-2 transition-all duration-200 animate-scale-in
+      ${isSpotlight ? 'ring-2 scale-[1.02] z-10' : ''}
+      ${isHighlighted ? 'ring-2' : ''}
+      ${card.marked_discuss ? 'ring-1' : ''}`}
+      style={{
+        borderLeftColor: card.author_color,
+        backgroundColor: 'var(--color-surface)',
+        ...(isSpotlight ? { ringColor: 'var(--color-accent)' } : {}),
+        ...(isHighlighted ? { ringColor: 'var(--color-accent)', backgroundColor: 'rgba(255,222,89,0.05)' } : {}),
+        ...(card.marked_discuss ? { ringColor: 'var(--color-warning)' } : {}),
+      }}
+      role="listitem"
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}>
 
