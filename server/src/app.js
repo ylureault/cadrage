@@ -11,6 +11,11 @@ import { createLinkedBoard, getEmbedUrl, checkBoardExists } from './darkboard-se
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+// SQLite stores booleans as 0/1 integers. These helpers convert to real booleans for JSON responses.
+const serializePhaseState = (p) => ({ ...p, locked: !!p.locked, hidden: !!p.hidden });
+const serializeCard = (c) => ({ ...c, tags: JSON.parse(c.tags || '[]'), reactions: JSON.parse(c.reactions || '{}'), marked_discuss: !!c.marked_discuss });
+const serializeSpace = (s) => ({ ...s, facilitator_ids: JSON.parse(s.facilitator_ids || '[]'), archived: !!s.archived });
+
 export function createApp(db) {
   const app = express();
   const server = createServer(app);
@@ -80,10 +85,10 @@ export function createApp(db) {
     const votes = db.prepare(`SELECT * FROM votes WHERE space_id = ?`).all(req.params.id);
 
     res.json({
-      space: { ...space, facilitator_ids: JSON.parse(space.facilitator_ids || '[]') },
-      cards: cards.map(c => ({ ...c, tags: JSON.parse(c.tags || '[]'), reactions: JSON.parse(c.reactions || '{}'), marked_discuss: !!c.marked_discuss })),
+      space: serializeSpace(space),
+      cards: cards.map(serializeCard),
       comments, axes, axesFinal,
-      phaseStates: phaseStates.map(p => ({ ...p, locked: !!p.locked, hidden: !!p.hidden })),
+      phaseStates: phaseStates.map(serializePhaseState),
       votes
     });
   });
@@ -228,7 +233,7 @@ export function createApp(db) {
 
     const spaces = db.prepare(`SELECT * FROM spaces WHERE ${where} ORDER BY updated_at DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
     res.json({
-      spaces: spaces.map(s => ({ ...s, facilitator_ids: JSON.parse(s.facilitator_ids || '[]') })),
+      spaces: spaces.map(serializeSpace),
       total,
       limit,
       offset,
@@ -251,14 +256,14 @@ export function createApp(db) {
     if (author) { where += ' AND author = ?'; params.push(author); }
 
     const cards = db.prepare(`SELECT * FROM cards WHERE ${where} ORDER BY position, created_at`).all(...params);
-    res.json(cards.map(c => ({ ...c, tags: JSON.parse(c.tags || '[]'), reactions: JSON.parse(c.reactions || '{}') })));
+    res.json(cards.map(serializeCard));
   });
 
   // Get a single card
   app.get('/api/cards/:cardId', (req, res) => {
     const card = db.prepare(`SELECT * FROM cards WHERE id = ?`).get(req.params.cardId);
     if (!card) return res.status(404).json({ error: 'Carte introuvable' });
-    res.json({ ...card, tags: JSON.parse(card.tags || '[]'), reactions: JSON.parse(card.reactions || '{}') });
+    res.json(serializeCard(card));
   });
 
   // Create a card
@@ -313,7 +318,7 @@ export function createApp(db) {
     db.prepare(`UPDATE cards SET ${fields.join(', ')} WHERE id = ?`).run(...values);
 
     const updated = db.prepare(`SELECT * FROM cards WHERE id = ?`).get(req.params.cardId);
-    res.json({ ...updated, tags: JSON.parse(updated.tags || '[]'), reactions: JSON.parse(updated.reactions || '{}') });
+    res.json(serializeCard(updated));
   });
 
   // --- COMMENTS ---
@@ -433,7 +438,7 @@ export function createApp(db) {
   // Get phase states for a space
   app.get('/api/spaces/:id/phase-states', (req, res) => {
     const states = db.prepare(`SELECT * FROM phase_state WHERE space_id = ?`).all(req.params.id);
-    res.json(states.map(p => ({ ...p, locked: !!p.locked, hidden: !!p.hidden })));
+    res.json(states.map(serializePhaseState));
   });
 
   // Update a phase state (lock/hide)
@@ -450,7 +455,7 @@ export function createApp(db) {
     db.prepare(`UPDATE phase_state SET ${fields.join(', ')} WHERE space_id = ? AND phase = ?`).run(...values);
 
     const state = db.prepare(`SELECT * FROM phase_state WHERE space_id = ? AND phase = ?`).get(req.params.id, req.params.phase);
-    res.json(state);
+    res.json(serializePhaseState(state));
   });
 
   // Catch-all for SPA
@@ -550,7 +555,7 @@ export function createApp(db) {
           socket.emit('error', { message: 'La carte n\'a pas pu être créée.' });
           return;
         }
-        io.to(currentSpace).emit('card-created', { ...card, tags: JSON.parse(card.tags || '[]'), reactions: JSON.parse(card.reactions || '{}') });
+        io.to(currentSpace).emit('card-created', serializeCard(card));
       } catch (e) {
         console.error('create-card error:', e);
         socket.emit('error', { message: 'Erreur lors de la création de la carte.' });
