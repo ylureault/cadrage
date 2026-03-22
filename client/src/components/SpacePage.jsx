@@ -16,6 +16,7 @@ import SpotlightOverlay from './SpotlightOverlay.jsx';
 import Notifications from './Notifications.jsx';
 import ParticipantsBar from './ParticipantsBar.jsx';
 import CommandPalette from './CommandPalette.jsx';
+import OnboardingTour from './OnboardingTour.jsx';
 
 export default function SpacePage() {
   const { spaceId } = useParams();
@@ -25,6 +26,7 @@ export default function SpacePage() {
   const [error, setError] = useState(null);
   const [showPseudo, setShowPseudo] = useState(true);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   /* US-408, US-411: Keyboard shortcuts */
   useEffect(() => {
@@ -138,6 +140,16 @@ export default function SpacePage() {
   function handleJoin(pseudo) {
     dispatch({ type: 'SET_PSEUDO', pseudo, color: null });
     setShowPseudo(false);
+    // Show onboarding tour on first visit
+    const onboardingKey = `insuffle-onboarding-done-${spaceId}`;
+    if (!localStorage.getItem(onboardingKey)) {
+      setTimeout(() => setShowOnboarding(true), 800); // Let canvas load first
+    }
+  }
+
+  function handleOnboardingComplete() {
+    setShowOnboarding(false);
+    localStorage.setItem(`insuffle-onboarding-done-${spaceId}`, 'true');
   }
 
   /* US-393: Loading screen avec animation Insuffle */
@@ -270,6 +282,9 @@ export default function SpacePage() {
       {showCommandPalette && (
         <CommandPalette onClose={() => setShowCommandPalette(false)} onAction={handleCommandAction} />
       )}
+
+      {/* Onboarding tour */}
+      {showOnboarding && <OnboardingTour onComplete={handleOnboardingComplete} />}
 
       {/* Notifications */}
       <Notifications />

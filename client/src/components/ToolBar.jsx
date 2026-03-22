@@ -106,6 +106,12 @@ export default function ToolBar() {
             {state.darkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
 
+          {/* Darkboard link */}
+          <a href={`https://darkboard.insuffle.com/${state.spaceId}`} target="_blank" rel="noopener"
+            className="p-1.5 hover:bg-white/10 rounded" title="Ouvrir le Darkboard Insuffle">
+            <QrCode size={18} />
+          </a>
+
           {/* Facilitator */}
           {!state.isFacilitator ? (
             <button onClick={becomeFacilitator} className="p-1.5 hover:bg-white/10 rounded text-xs flex items-center gap-1" title="Devenir facilitateur">
