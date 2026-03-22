@@ -1,0 +1,136 @@
+import { useState, useMemo } from 'react';
+import { useStore } from '../store.jsx';
+import socket from '../socket.js';
+import Card from './Card.jsx';
+import { Plus, ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
+
+export default function ColumnView({ column, phase, locked }) {
+  const { state, dispatch } = useStore();
+  const [collapsed, setCollapsed] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [newContent, setNewContent] = useState('');
+
+  const cards = useMemo(() => {
+    let filtered = state.cards.filter(c => c.column_key === column.key && c.phase === phase.key);
+
+    // Silent mode: only show own cards
+    if (state.silentColumns[column.key] && !state.revealedColumns[column.key] && !state.isFacilitator) {
+      filtered = filtered.filter(c => c.author === state.pseudo);
+    }
+
+    // Search filter
+    if (state.searchQuery) {
+      const q = state.searchQuery.toLowerCase();
+      filtered = filtered.filter(c => c.content.toLowerCase().includes(q));
+    }
+
+    return filtered.sort((a, b) => a.position - b.position);
+  }, [state.cards, column.key, phase.key, state.silentColumns, state.revealedColumns, state.isFacilitator, state.pseudo, state.searchQuery]);
+
+  const focusers = Object.entries(state.focusZones)
+    .filter(([, col]) => col === column.key)
+    .map(([pseudo]) => pseudo);
+
+  function handleAdd() {
+    if (!newContent.trim() || state.archived) return;
+    socket.emit('create-card', { phase: phase.key, columnKey: column.key, content: newContent.trim() });
+    setNewContent('');
+    setAdding(false);
+  }
+
+  function handleFocus() {
+    socket.emit('focus-zone', { columnKey: column.key });
+  }
+
+  const isSilent = state.silentColumns[column.key] && !state.revealedColumns[column.key];
+
+  return (
+    <div className="bg-white rounded-xl card-shadow overflow-hidden" onClick={handleFocus}>
+      {/* Column header */}
+      <div className="p-3 border-b border-gray-100 flex items-center justify-between">
+        <div className="flex items-center gap-2 min-w-0">
+          <button onClick={() => setCollapsed(!collapsed)} className="p-0.5 hover:bg-gray-100 rounded">
+            {collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+          </button>
+          <h3 className="text-sm font-semibold truncate">{column.name}</h3>
+          <span className="bg-gray-100 text-gray-500 text-xs px-1.5 py-0.5 rounded-full shrink-0">{cards.length}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          {/* Focus indicators */}
+          {focusers.map(p => (
+            <div key={p} className="w-5 h-5 rounded-full bg-insuffle-blue text-white text-[10px] flex items-center justify-center font-medium" title={p}>
+              {p[0]}
+            </div>
+          ))}
+          {/* Silent mode indicator */}
+          {isSilent && <span className="text-xs text-orange-500" title="Brainstorming silencieux">🤫</span>}
+          {/* Facilitator: toggle silent mode */}
+          {state.isFacilitator && (
+            <button onClick={() => {
+              if (isSilent) socket.emit('reveal-cards', { columnKey: column.key });
+              else socket.emit('toggle-silent-mode', { columnKey: column.key, active: !state.silentColumns[column.key] });
+            }} className="p-0.5 hover:bg-gray-100 rounded text-gray-400" title="Brainstorming silencieux">
+              {isSilent ? <Eye size={14} /> : <EyeOff size={14} />}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Content */}
+      {!collapsed && (
+        <div className="p-3 space-y-2 min-h-[100px] max-h-[600px] overflow-y-auto">
+          {/* Questions-guides (shown when no cards) */}
+          {cards.length === 0 && !adding && column.questions && (
+            <div className="space-y-1.5">
+              {column.questions.map((q, i) => (
+                <p key={i} className="text-[13px] italic text-gray-400 leading-snug">• {q}</p>
+              ))}
+            </div>
+          )}
+
+          {/* Cards */}
+          {cards.map(card => (
+            <Card key={card.id} card={card} />
+          ))}
+
+          {/* Empty state */}
+          {cards.length === 0 && column.questions?.length === 0 && !adding && (
+            <p className="text-sm text-gray-300 text-center py-4">
+              Pas encore de contribution ici. Cliquez sur + pour ajouter.
+            </p>
+          )}
+
+          {/* Add card form */}
+          {adding && (
+            <div className="animate-slide-in">
+              <textarea value={newContent} onChange={e => setNewContent(e.target.value)}
+                placeholder="Votre contribution..."
+                className="input-field w-full text-sm resize-none"
+                rows={3} maxLength={500} autoFocus
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleAdd();
+                  if (e.key === 'Escape') { setAdding(false); setNewContent(''); }
+                }}
+              />
+              <div className="flex items-center justify-between mt-1">
+                <span className="text-xs text-gray-400">{newContent.length}/500 · Ctrl+Entrée pour valider</span>
+                <div className="flex gap-1">
+                  <button onClick={() => { setAdding(false); setNewContent(''); }} className="btn-ghost text-xs">Annuler</button>
+                  <button onClick={handleAdd} disabled={!newContent.trim()} className="btn-primary text-xs px-3 py-1">Ajouter</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Add button */}
+      {!collapsed && !adding && !locked && !state.archived && (
+        <button onClick={() => setAdding(true)}
+          className="w-full py-2 flex items-center justify-center gap-1 text-sm text-gray-400 hover:text-insuffle-blue hover:bg-gray-50 transition-colors border-t border-gray-100">
+          <Plus size={16} /> Ajouter
+        </button>
+      )}
+    </div>
+  );
+}
