@@ -7,6 +7,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
 import { PHASES, AXES, PARTICIPANT_COLORS } from './canvas-data.js';
+import { createLinkedBoard, getEmbedUrl, checkBoardExists } from './darkboard-service.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -162,6 +163,47 @@ export function createApp(db) {
   app.get('/api/spaces/:id/activity', (req, res) => {
     const logs = db.prepare(`SELECT * FROM activity_log WHERE space_id = ? ORDER BY created_at DESC LIMIT 50`).all(req.params.id);
     res.json(logs);
+  });
+
+  // ===================== DARKBOARD INTEGRATION =====================
+
+  // Launch a linked DarkBoard for this cadrage
+  app.post('/api/spaces/:id/launch-board', async (req, res) => {
+    try {
+      const space = db.prepare(`SELECT * FROM spaces WHERE id = ? AND deleted = 0`).get(req.params.id);
+      if (!space) return res.status(404).json({ error: 'Espace introuvable' });
+
+      const cards = db.prepare(`SELECT * FROM cards WHERE space_id = ?`).all(req.params.id);
+      const spaceData = { ...space, cards };
+
+      const { template, prefill } = req.body || {};
+      const result = await createLinkedBoard(req.params.id, spaceData, { template, prefill });
+
+      res.status(201).json({
+        session_id: req.params.id,
+        ...result,
+      });
+    } catch (err) {
+      console.error('Launch board error:', err.message);
+      res.status(502).json({ error: 'Impossible de créer le DarkBoard', details: err.message });
+    }
+  });
+
+  // Get embed URL for this cadrage's DarkBoard
+  app.get('/api/spaces/:id/board-embed', (req, res) => {
+    const { toolbar, theme } = req.query;
+    const embedUrl = getEmbedUrl(req.params.id, { toolbar, theme });
+    res.json({ embedUrl, boardId: `cadrage-${req.params.id}` });
+  });
+
+  // Check if a DarkBoard exists for this cadrage
+  app.get('/api/spaces/:id/board-status', async (req, res) => {
+    try {
+      const exists = await checkBoardExists(req.params.id);
+      res.json({ exists, boardId: `cadrage-${req.params.id}` });
+    } catch {
+      res.json({ exists: false, boardId: `cadrage-${req.params.id}` });
+    }
   });
 
   // Catch-all for SPA

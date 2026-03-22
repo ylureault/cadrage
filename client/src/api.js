@@ -25,4 +25,12 @@ export const api = {
   getSnapshots: (id) => request(`/api/spaces/${id}/snapshots`),
   getSnapshot: (id) => request(`/api/snapshots/${id}`),
   getActivity: (id) => request(`/api/spaces/${id}/activity`),
+
+  // DarkBoard integration
+  launchBoard: (id, options = {}) => request(`/api/spaces/${id}/launch-board`, { method: 'POST', body: options }),
+  getBoardEmbed: (id, options = {}) => {
+    const params = new URLSearchParams(options).toString();
+    return request(`/api/spaces/${id}/board-embed${params ? `?${params}` : ''}`);
+  },
+  getBoardStatus: (id) => request(`/api/spaces/${id}/board-status`),
 };

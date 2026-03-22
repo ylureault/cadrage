@@ -18,6 +18,7 @@ import ParticipantsBar from './ParticipantsBar.jsx';
 import CommandPalette from './CommandPalette.jsx';
 import OnboardingTour from './OnboardingTour.jsx';
 import DarkboardPromo from './DarkboardPromo.jsx';
+import DarkboardTab from './DarkboardTab.jsx';
 
 export default function SpacePage() {
   const { spaceId } = useParams();
@@ -27,6 +28,7 @@ export default function SpacePage() {
   const [error, setError] = useState(null);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showDarkboard, setShowDarkboard] = useState(false);
 
   // Session persistence: restore pseudo from sessionStorage on mount
   const sessionKey = `insuffle-session-${spaceId}`;
@@ -238,14 +240,14 @@ export default function SpacePage() {
           {state.phases.map(phase => {
             const ps = state.phaseStates.find(p => p.phase === phase.key);
             if (ps?.hidden && !state.isFacilitator) return null;
-            const isActive = state.activePhase === phase.key;
+            const isActive = state.activePhase === phase.key && !showDarkboard;
             const cardCount = state.cards.filter(c => c.phase === phase.key).length;
             return (
               <button key={phase.key}
                 role="tab"
                 aria-selected={isActive}
                 aria-controls={`phase-${phase.key}`}
-                onClick={() => dispatch({ type: 'SET_ACTIVE_PHASE', phase: phase.key })}
+                onClick={() => { setShowDarkboard(false); dispatch({ type: 'SET_ACTIVE_PHASE', phase: phase.key }); }}
                 className={`flex items-center gap-2 px-5 py-3 text-body-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200
                   ${isActive ? '' : 'border-transparent hover:border-[var(--color-border)]'}
                   ${ps?.hidden ? 'opacity-40' : ''}`}
@@ -263,6 +265,24 @@ export default function SpacePage() {
               </button>
             );
           })}
+
+          {/* Onglet DarkBoard — atelier collaboratif */}
+          <button
+            role="tab"
+            aria-selected={showDarkboard}
+            onClick={() => setShowDarkboard(true)}
+            className={`flex items-center gap-2 px-5 py-3 text-body-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200 ml-auto
+              ${showDarkboard ? '' : 'border-transparent hover:border-[var(--color-border)]'}`}
+            style={{
+              borderBottomColor: showDarkboard ? '#38bdf8' : undefined,
+              color: showDarkboard ? 'var(--color-text)' : 'var(--color-text-muted)',
+            }}>
+            <span className="w-4 h-4 rounded flex items-center justify-center text-[10px] font-bold"
+              style={{ background: showDarkboard ? 'linear-gradient(135deg, #38bdf8, #6366f1)' : 'var(--color-surface-alt)', color: showDarkboard ? 'white' : 'var(--color-text-muted)' }}>
+              D
+            </span>
+            Atelier
+          </button>
         </div>
       </div>
 
@@ -273,17 +293,24 @@ export default function SpacePage() {
 
       {/* Canvas */}
       <main className="flex-1 overflow-auto" role="main" aria-label="Canvas de cadrage">
-        {state.phases.map(phase => (
-          state.activePhase === phase.key && <PhaseView key={phase.key} phase={phase} />
-        ))}
+        {showDarkboard ? (
+          /* Onglet Atelier — DarkBoard encapsulé */
+          <DarkboardTab spaceId={spaceId} />
+        ) : (
+          <>
+            {state.phases.map(phase => (
+              state.activePhase === phase.key && <PhaseView key={phase.key} phase={phase} />
+            ))}
 
-        {/* DarkBoard promo — outil complémentaire */}
-        <DarkboardPromo spaceId={spaceId} />
+            {/* DarkBoard promo — outil complémentaire */}
+            <DarkboardPromo spaceId={spaceId} onOpenTab={() => setShowDarkboard(true)} />
 
-        {/* 8 axes — section permanente en bas du canvas (Seth Godin : la pépite au centre, pas dans un tiroir) */}
-        <div className="border-t" style={{ borderColor: 'var(--color-border)' }}>
-          <AxesPanel />
-        </div>
+            {/* 8 axes — section permanente en bas du canvas */}
+            <div className="border-t" style={{ borderColor: 'var(--color-border)' }}>
+              <AxesPanel />
+            </div>
+          </>
+        )}
       </main>
 
       {/* Side panels (axes removed from here — now inline) */}

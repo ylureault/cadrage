@@ -5,7 +5,7 @@ import { X, ExternalLink, Layout, Users, ThumbsUp, Timer, EyeOff } from 'lucide-
  * Bannière promotionnelle pour DarkBoard — outil complémentaire au cadrage.
  * S'affiche une fois par session, peut être fermée. Réapparaît à la prochaine session.
  */
-export default function DarkboardPromo({ spaceId }) {
+export default function DarkboardPromo({ spaceId, onOpenTab }) {
   const storageKey = `insuffle-darkboard-promo-dismissed-${spaceId}`;
   const [dismissed, setDismissed] = useState(() => sessionStorage.getItem(storageKey) === 'true');
 
@@ -95,15 +95,27 @@ export default function DarkboardPromo({ spaceId }) {
               style={{ color: 'rgba(255,255,255,0.5)' }}>
               En savoir plus
             </a>
-            <a href={darkboardUrl} target="_blank" rel="noopener"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all hover:scale-105"
-              style={{
-                background: 'linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)',
-                color: 'white',
-                boxShadow: '0 4px 15px rgba(56,189,248,0.3)',
-              }}>
-              Ouvrir DarkBoard <ExternalLink size={14} />
-            </a>
+            {onOpenTab ? (
+              <button onClick={() => { onOpenTab(); handleDismiss(); }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all hover:scale-105"
+                style={{
+                  background: 'linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)',
+                  color: 'white',
+                  boxShadow: '0 4px 15px rgba(56,189,248,0.3)',
+                }}>
+                Ouvrir l'Atelier <ExternalLink size={14} />
+              </button>
+            ) : (
+              <a href={darkboardUrl} target="_blank" rel="noopener"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all hover:scale-105"
+                style={{
+                  background: 'linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)',
+                  color: 'white',
+                  boxShadow: '0 4px 15px rgba(56,189,248,0.3)',
+                }}>
+                Ouvrir DarkBoard <ExternalLink size={14} />
+              </a>
+            )}
           </div>
         </div>
       </div>
