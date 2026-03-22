@@ -24,9 +24,20 @@ export default function SpacePage() {
   const { state, dispatch } = useStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showPseudo, setShowPseudo] = useState(true);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Session persistence: restore pseudo from sessionStorage on mount
+  const sessionKey = `insuffle-session-${spaceId}`;
+  const savedPseudo = sessionStorage.getItem(sessionKey);
+  const [showPseudo, setShowPseudo] = useState(!savedPseudo);
+
+  // Restore pseudo into store on mount if we have a saved session
+  useEffect(() => {
+    if (savedPseudo && !state.pseudo) {
+      dispatch({ type: 'SET_PSEUDO', pseudo: savedPseudo, color: null });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* US-408, US-411: Keyboard shortcuts */
   useEffect(() => {
@@ -139,6 +150,7 @@ export default function SpacePage() {
 
   function handleJoin(pseudo) {
     dispatch({ type: 'SET_PSEUDO', pseudo, color: null });
+    sessionStorage.setItem(sessionKey, pseudo);
     setShowPseudo(false);
     // Show onboarding tour on first visit
     const onboardingKey = `insuffle-onboarding-done-${spaceId}`;
