@@ -143,8 +143,8 @@ function reducer(state, action) {
         if (p.phase !== action.phase) return p;
         return {
           ...p,
-          ...(action.locked !== null ? { locked: action.locked ? 1 : 0 } : {}),
-          ...(action.hidden !== null ? { hidden: action.hidden ? 1 : 0 } : {}),
+          ...(action.locked !== null ? { locked: !!action.locked } : {}),
+          ...(action.hidden !== null ? { hidden: !!action.hidden } : {}),
         };
       })
     };

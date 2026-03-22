@@ -81,8 +81,10 @@ export function createApp(db) {
 
     res.json({
       space: { ...space, facilitator_ids: JSON.parse(space.facilitator_ids || '[]') },
-      cards: cards.map(c => ({ ...c, tags: JSON.parse(c.tags || '[]'), reactions: JSON.parse(c.reactions || '{}') })),
-      comments, axes, axesFinal, phaseStates, votes
+      cards: cards.map(c => ({ ...c, tags: JSON.parse(c.tags || '[]'), reactions: JSON.parse(c.reactions || '{}'), marked_discuss: !!c.marked_discuss })),
+      comments, axes, axesFinal,
+      phaseStates: phaseStates.map(p => ({ ...p, locked: !!p.locked, hidden: !!p.hidden })),
+      votes
     });
   });
 
@@ -431,7 +433,7 @@ export function createApp(db) {
   // Get phase states for a space
   app.get('/api/spaces/:id/phase-states', (req, res) => {
     const states = db.prepare(`SELECT * FROM phase_state WHERE space_id = ?`).all(req.params.id);
-    res.json(states);
+    res.json(states.map(p => ({ ...p, locked: !!p.locked, hidden: !!p.hidden })));
   });
 
   // Update a phase state (lock/hide)

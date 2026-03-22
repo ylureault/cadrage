@@ -97,7 +97,7 @@ export default function ExportPanel() {
         doc.rect(0, 0, 4, 16, 'F');
         doc.setTextColor(...white);
         doc.setFontSize(13);
-        doc.setFont(undefined, 'bold');
+        doc.setFont('helvetica', 'bold');
         doc.text(title, 12, 11);
         // Logo right
         doc.setTextColor(...gold);
@@ -117,10 +117,10 @@ export default function ExportPanel() {
       doc.text('INSUFFLE CADRAGE LIVE', W / 2, 42, { align: 'center' });
       doc.setTextColor(...white);
       doc.setFontSize(28);
-      doc.setFont(undefined, 'bold');
+      doc.setFont('helvetica', 'bold');
       const clientName = state.space?.client_name || 'Cadrage de temps collectif';
       doc.text(clientName, W / 2, 72, { align: 'center', maxWidth: 240 });
-      doc.setFont(undefined, 'normal');
+      doc.setFont('helvetica', 'normal');
       // Info
       doc.setFontSize(12);
       doc.setTextColor(200, 200, 210);
@@ -173,12 +173,12 @@ export default function ExportPanel() {
           doc.setFillColor(...surface);
           doc.roundedRect(x, y, colWidth - 4, 8, 2, 2, 'F');
           doc.setFontSize(9);
-          doc.setFont(undefined, 'bold');
+          doc.setFont('helvetica', 'bold');
           doc.setTextColor(...navy);
           doc.text(col.name, x + 3, y + 5.5, { maxWidth: colWidth - 10 });
 
           let cardY = y + 12;
-          doc.setFont(undefined, 'normal');
+          doc.setFont('helvetica', 'normal');
           doc.setFontSize(8);
 
           if (cards.length === 0) {
@@ -241,19 +241,19 @@ export default function ExportPanel() {
         doc.setFillColor(...gold);
         doc.circle(ax + 5, axY + 5, 3.5, 'F');
         doc.setFontSize(7);
-        doc.setFont(undefined, 'bold');
+        doc.setFont('helvetica', 'bold');
         doc.setTextColor(...navy);
         doc.text(String(i + 1), ax + 5, axY + 6.2, { align: 'center' });
 
         // Axis label
         doc.setFontSize(9);
-        doc.setFont(undefined, 'bold');
+        doc.setFont('helvetica', 'bold');
         doc.setTextColor(...navy);
         doc.text(`${axis.left}  ↔  ${axis.right}`, ax + 12, axY + 6);
 
         // Status
         doc.setFontSize(7);
-        doc.setFont(undefined, 'normal');
+        doc.setFont('helvetica', 'normal');
         if (spread >= 3) {
           doc.setTextColor(...error);
           doc.text('DIVERGENCE FORTE', ax + axW - 5, axY + 6, { align: 'right' });
@@ -305,9 +305,9 @@ export default function ExportPanel() {
         if (finalPos?.position) {
           doc.setFontSize(6);
           doc.setTextColor(...gold);
-          doc.setFont(undefined, 'bold');
+          doc.setFont('helvetica', 'bold');
           doc.text(`Position finale : ${finalPos.position}`, ax + 12, axY + 16.5);
-          doc.setFont(undefined, 'normal');
+          doc.setFont('helvetica', 'normal');
         }
 
         // Respondents count
@@ -324,11 +324,11 @@ export default function ExportPanel() {
 
       let sy = 26;
       doc.setFontSize(10);
-      doc.setFont(undefined, 'bold');
+      doc.setFont('helvetica', 'bold');
       doc.setTextColor(...navy);
       doc.text('Avancement par phase', 10, sy);
       sy += 8;
-      doc.setFont(undefined, 'normal');
+      doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
 
       for (const phase of state.phases) {
@@ -357,11 +357,11 @@ export default function ExportPanel() {
       // Axes summary
       sy += 6;
       doc.setFontSize(10);
-      doc.setFont(undefined, 'bold');
+      doc.setFont('helvetica', 'bold');
       doc.setTextColor(...navy);
       doc.text('Points d\'attention sur les 8 axes', 10, sy);
       sy += 8;
-      doc.setFont(undefined, 'normal');
+      doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
 
       let hasAlerts = false;
