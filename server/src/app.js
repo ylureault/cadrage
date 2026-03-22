@@ -206,6 +206,251 @@ export function createApp(db) {
     }
   });
 
+  // ===================== CRUD API COMPLÈTE =====================
+
+  // --- SPACES ---
+
+  // List all spaces (non-deleted), with optional filters
+  app.get('/api/spaces', (req, res) => {
+    const { archived, plan, search, limit: lim, offset: off } = req.query;
+    let where = 'deleted = 0';
+    const params = [];
+
+    if (archived !== undefined) { where += ' AND archived = ?'; params.push(archived === 'true' ? 1 : 0); }
+    if (plan) { where += ' AND plan = ?'; params.push(plan); }
+    if (search) { where += ' AND (client_name LIKE ? OR sponsor LIKE ? OR facilitator LIKE ?)'; const s = `%${search}%`; params.push(s, s, s); }
+
+    const total = db.prepare(`SELECT COUNT(*) as count FROM spaces WHERE ${where}`).get(...params).count;
+    const limit = Math.min(parseInt(lim) || 50, 100);
+    const offset = parseInt(off) || 0;
+
+    const spaces = db.prepare(`SELECT * FROM spaces WHERE ${where} ORDER BY updated_at DESC LIMIT ? OFFSET ?`).all(...params, limit, offset);
+    res.json({
+      spaces: spaces.map(s => ({ ...s, facilitator_ids: JSON.parse(s.facilitator_ids || '[]') })),
+      total,
+      limit,
+      offset,
+    });
+  });
+
+  // --- CARDS ---
+
+  // List cards for a space (with optional phase/column filters)
+  app.get('/api/spaces/:id/cards', (req, res) => {
+    const space = db.prepare(`SELECT id FROM spaces WHERE id = ? AND deleted = 0`).get(req.params.id);
+    if (!space) return res.status(404).json({ error: 'Espace introuvable' });
+
+    const { phase, column_key, author } = req.query;
+    let where = 'space_id = ?';
+    const params = [req.params.id];
+
+    if (phase) { where += ' AND phase = ?'; params.push(phase); }
+    if (column_key) { where += ' AND column_key = ?'; params.push(column_key); }
+    if (author) { where += ' AND author = ?'; params.push(author); }
+
+    const cards = db.prepare(`SELECT * FROM cards WHERE ${where} ORDER BY position, created_at`).all(...params);
+    res.json(cards.map(c => ({ ...c, tags: JSON.parse(c.tags || '[]'), reactions: JSON.parse(c.reactions || '{}') })));
+  });
+
+  // Get a single card
+  app.get('/api/cards/:cardId', (req, res) => {
+    const card = db.prepare(`SELECT * FROM cards WHERE id = ?`).get(req.params.cardId);
+    if (!card) return res.status(404).json({ error: 'Carte introuvable' });
+    res.json({ ...card, tags: JSON.parse(card.tags || '[]'), reactions: JSON.parse(card.reactions || '{}') });
+  });
+
+  // Create a card
+  app.post('/api/spaces/:id/cards', (req, res) => {
+    const space = db.prepare(`SELECT id, archived FROM spaces WHERE id = ? AND deleted = 0`).get(req.params.id);
+    if (!space) return res.status(404).json({ error: 'Espace introuvable' });
+    if (space.archived) return res.status(403).json({ error: 'Espace archivé — lecture seule' });
+
+    const { phase, column_key, content, author, author_color } = req.body;
+    if (!phase || !column_key || !content) return res.status(400).json({ error: 'phase, column_key et content sont requis' });
+    if (content.length > 500) return res.status(400).json({ error: 'Contenu limité à 500 caractères' });
+
+    const id = generateId();
+    const maxPos = db.prepare(`SELECT MAX(position) as maxPos FROM cards WHERE space_id = ? AND phase = ? AND column_key = ?`).get(req.params.id, phase, column_key);
+    const position = (maxPos?.maxPos ?? -1) + 1;
+
+    db.prepare(`INSERT INTO cards (id, space_id, phase, column_key, content, author, author_color, position, tags, reactions) VALUES (?, ?, ?, ?, ?, ?, ?, ?, '[]', '{}')`).run(
+      id, req.params.id, phase, column_key, content, author || 'API', author_color || '#888', position
+    );
+
+    const card = db.prepare(`SELECT * FROM cards WHERE id = ?`).get(id);
+    logActivity(req.params.id, author || 'API', 'create-card', column_key, content.slice(0, 100));
+    res.status(201).json({ ...card, tags: [], reactions: {} });
+  });
+
+  // Update a card (content, tags, position, phase, column_key)
+  app.put('/api/cards/:cardId', (req, res) => {
+    const card = db.prepare(`SELECT * FROM cards WHERE id = ?`).get(req.params.cardId);
+    if (!card) return res.status(404).json({ error: 'Carte introuvable' });
+
+    const space = db.prepare(`SELECT archived FROM spaces WHERE id = ?`).get(card.space_id);
+    if (space?.archived) return res.status(403).json({ error: 'Espace archivé — lecture seule' });
+
+    const { content, phase, column_key, position, tags, marked_discuss } = req.body;
+    const fields = [];
+    const values = [];
+
+    if (content !== undefined) {
+      if (content.length > 500) return res.status(400).json({ error: 'Contenu limité à 500 caractères' });
+      fields.push('content = ?'); values.push(content);
+    }
+    if (phase !== undefined) { fields.push('phase = ?'); values.push(phase); }
+    if (column_key !== undefined) { fields.push('column_key = ?'); values.push(column_key); }
+    if (position !== undefined) { fields.push('position = ?'); values.push(position); }
+    if (tags !== undefined) { fields.push('tags = ?'); values.push(JSON.stringify(tags)); }
+    if (marked_discuss !== undefined) { fields.push('marked_discuss = ?'); values.push(marked_discuss ? 1 : 0); }
+
+    if (fields.length === 0) return res.json({ ok: true });
+
+    fields.push("updated_at = datetime('now')");
+    values.push(req.params.cardId);
+    db.prepare(`UPDATE cards SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+
+    const updated = db.prepare(`SELECT * FROM cards WHERE id = ?`).get(req.params.cardId);
+    res.json({ ...updated, tags: JSON.parse(updated.tags || '[]'), reactions: JSON.parse(updated.reactions || '{}') });
+  });
+
+  // --- COMMENTS ---
+
+  // List comments for a card
+  app.get('/api/cards/:cardId/comments', (req, res) => {
+    const comments = db.prepare(`SELECT * FROM comments WHERE card_id = ? ORDER BY created_at`).all(req.params.cardId);
+    res.json(comments);
+  });
+
+  // Create a comment
+  app.post('/api/cards/:cardId/comments', (req, res) => {
+    const card = db.prepare(`SELECT * FROM cards WHERE id = ?`).get(req.params.cardId);
+    if (!card) return res.status(404).json({ error: 'Carte introuvable' });
+
+    const space = db.prepare(`SELECT archived FROM spaces WHERE id = ?`).get(card.space_id);
+    if (space?.archived) return res.status(403).json({ error: 'Espace archivé — lecture seule' });
+
+    const { content, author, author_color } = req.body;
+    if (!content) return res.status(400).json({ error: 'content est requis' });
+
+    const id = generateId();
+    db.prepare(`INSERT INTO comments (id, card_id, space_id, author, author_color, content) VALUES (?, ?, ?, ?, ?, ?)`).run(
+      id, req.params.cardId, card.space_id, author || 'API', author_color || '#888', content
+    );
+
+    const comment = db.prepare(`SELECT * FROM comments WHERE id = ?`).get(id);
+    logActivity(card.space_id, author || 'API', 'add-comment', req.params.cardId, content.slice(0, 100));
+    res.status(201).json(comment);
+  });
+
+  // --- AXES ---
+
+  // List axis positions for a space
+  app.get('/api/spaces/:id/axes', (req, res) => {
+    const axes = db.prepare(`SELECT * FROM axes WHERE space_id = ?`).all(req.params.id);
+    const axesFinal = db.prepare(`SELECT * FROM axes_final WHERE space_id = ?`).all(req.params.id);
+    res.json({ axes, axesFinal });
+  });
+
+  // Set/update a user's axis position
+  app.put('/api/spaces/:id/axes/:axisKey', (req, res) => {
+    const space = db.prepare(`SELECT id, archived FROM spaces WHERE id = ? AND deleted = 0`).get(req.params.id);
+    if (!space) return res.status(404).json({ error: 'Espace introuvable' });
+    if (space.archived) return res.status(403).json({ error: 'Espace archivé — lecture seule' });
+
+    const { pseudo, color, position, explanation } = req.body;
+    if (!pseudo || position === undefined) return res.status(400).json({ error: 'pseudo et position sont requis' });
+    if (position < 1 || position > 5) return res.status(400).json({ error: 'position doit être entre 1 et 5' });
+
+    // Check if axis is locked
+    const final = db.prepare(`SELECT locked FROM axes_final WHERE space_id = ? AND axis_key = ?`).get(req.params.id, req.params.axisKey);
+    if (final?.locked) return res.status(403).json({ error: 'Axe verrouillé' });
+
+    db.prepare(`INSERT INTO axes (space_id, axis_key, pseudo, color, position, explanation, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+      ON CONFLICT(space_id, axis_key, pseudo) DO UPDATE SET position = ?, explanation = ?, updated_at = datetime('now')`).run(
+      req.params.id, req.params.axisKey, pseudo, color || '#888', position, explanation || '',
+      position, explanation || ''
+    );
+
+    const allPositions = db.prepare(`SELECT * FROM axes WHERE space_id = ? AND axis_key = ?`).all(req.params.id, req.params.axisKey);
+    res.json({ axisKey: req.params.axisKey, positions: allPositions });
+  });
+
+  // Set final axis position (facilitator)
+  app.put('/api/spaces/:id/axes-final/:axisKey', (req, res) => {
+    const space = db.prepare(`SELECT id, archived FROM spaces WHERE id = ? AND deleted = 0`).get(req.params.id);
+    if (!space) return res.status(404).json({ error: 'Espace introuvable' });
+
+    const { position, locked } = req.body;
+
+    db.prepare(`INSERT INTO axes_final (space_id, axis_key, position, locked, updated_at)
+      VALUES (?, ?, ?, ?, datetime('now'))
+      ON CONFLICT(space_id, axis_key) DO UPDATE SET position = COALESCE(?, position), locked = COALESCE(?, locked), updated_at = datetime('now')`).run(
+      req.params.id, req.params.axisKey, position || 3, locked ? 1 : 0,
+      position, locked !== undefined ? (locked ? 1 : 0) : null
+    );
+
+    const final = db.prepare(`SELECT * FROM axes_final WHERE space_id = ? AND axis_key = ?`).get(req.params.id, req.params.axisKey);
+    res.json(final);
+  });
+
+  // --- VOTES ---
+
+  // List votes for a space
+  app.get('/api/spaces/:id/votes', (req, res) => {
+    const votes = db.prepare(`SELECT card_id, COUNT(*) as count FROM votes WHERE space_id = ? GROUP BY card_id`).all(req.params.id);
+    res.json(votes);
+  });
+
+  // Cast a vote
+  app.post('/api/spaces/:id/votes', (req, res) => {
+    const space = db.prepare(`SELECT id, archived FROM spaces WHERE id = ? AND deleted = 0`).get(req.params.id);
+    if (!space) return res.status(404).json({ error: 'Espace introuvable' });
+    if (space.archived) return res.status(403).json({ error: 'Espace archivé — lecture seule' });
+
+    const { card_id, pseudo } = req.body;
+    if (!card_id || !pseudo) return res.status(400).json({ error: 'card_id et pseudo sont requis' });
+
+    // Check vote limit (3 per participant)
+    const existing = db.prepare(`SELECT COUNT(*) as count FROM votes WHERE space_id = ? AND pseudo = ?`).get(req.params.id, pseudo);
+    if (existing.count >= 3) return res.status(400).json({ error: 'Maximum 3 votes par participant' });
+
+    // Check duplicate
+    const dup = db.prepare(`SELECT id FROM votes WHERE space_id = ? AND card_id = ? AND pseudo = ?`).get(req.params.id, card_id, pseudo);
+    if (dup) return res.status(409).json({ error: 'Vote déjà enregistré' });
+
+    db.prepare(`INSERT INTO votes (space_id, card_id, pseudo) VALUES (?, ?, ?)`).run(req.params.id, card_id, pseudo);
+
+    const allVotes = db.prepare(`SELECT card_id, COUNT(*) as count FROM votes WHERE space_id = ? GROUP BY card_id`).all(req.params.id);
+    res.status(201).json(allVotes);
+  });
+
+  // --- PHASE STATES ---
+
+  // Get phase states for a space
+  app.get('/api/spaces/:id/phase-states', (req, res) => {
+    const states = db.prepare(`SELECT * FROM phase_state WHERE space_id = ?`).all(req.params.id);
+    res.json(states);
+  });
+
+  // Update a phase state (lock/hide)
+  app.put('/api/spaces/:id/phase-states/:phase', (req, res) => {
+    const { locked, hidden } = req.body;
+
+    const fields = [];
+    const values = [];
+    if (locked !== undefined) { fields.push('locked = ?'); values.push(locked ? 1 : 0); }
+    if (hidden !== undefined) { fields.push('hidden = ?'); values.push(hidden ? 1 : 0); }
+    if (fields.length === 0) return res.json({ ok: true });
+
+    values.push(req.params.id, req.params.phase);
+    db.prepare(`UPDATE phase_state SET ${fields.join(', ')} WHERE space_id = ? AND phase = ?`).run(...values);
+
+    const state = db.prepare(`SELECT * FROM phase_state WHERE space_id = ? AND phase = ?`).get(req.params.id, req.params.phase);
+    res.json(state);
+  });
+
   // Catch-all for SPA
   app.get('*', (req, res) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) return res.status(404).end();
