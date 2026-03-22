@@ -2,12 +2,13 @@ import { useState, useMemo } from 'react';
 import { useStore } from '../store.jsx';
 import socket from '../socket.js';
 import Card from './Card.jsx';
-import { Plus, ChevronDown, ChevronUp, Eye, EyeOff } from 'lucide-react';
+import { Plus, ChevronDown, ChevronUp, Eye, EyeOff, HelpCircle } from 'lucide-react';
 
 export default function ColumnView({ column, phase, locked }) {
   const { state, dispatch } = useStore();
   const [collapsed, setCollapsed] = useState(false);
   const [adding, setAdding] = useState(false);
+  const [questionsOpen, setQuestionsOpen] = useState(true);
   const [newContent, setNewContent] = useState('');
 
   const cards = useMemo(() => {
@@ -85,18 +86,36 @@ export default function ColumnView({ column, phase, locked }) {
       {/* Content */}
       {!collapsed && (
         <div className="p-3 space-y-2 min-h-[100px] max-h-[600px] overflow-y-auto">
-          {/* US-400: Questions-guides with Insuffle attribution */}
-          {cards.length === 0 && !adding && column.questions && (
-            <div className="space-y-1.5">
-              {column.questions.map((q, i) => (
-                <p key={i} className="text-body-sm italic leading-snug highlight-accent py-1"
-                  style={{ color: 'var(--color-text-muted)', borderLeftColor: 'var(--color-accent)' }}>
-                  {q}
-                </p>
-              ))}
-              <p className="text-label mt-3" style={{ color: 'var(--color-text-muted)' }}>
-                Questions issues de la méthode de cadrage Insuffle
-              </p>
+          {/* Questions-guides : TOUJOURS visibles, pliables (Priorité 2 — Tim Brown + Jony Ive)
+             Les questions sont du design, pas du contenu. Elles restent comme les labels d'un formulaire. */}
+          {column.questions && column.questions.length > 0 && (
+            <div className="rounded-btn overflow-hidden" style={{ backgroundColor: 'rgba(255,222,89,0.06)' }}>
+              <button
+                onClick={() => setQuestionsOpen(!questionsOpen)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-[rgba(255,222,89,0.1)]"
+                aria-expanded={questionsOpen}
+                aria-label="Questions-guides Insuffle">
+                <HelpCircle size={14} style={{ color: 'var(--color-accent)' }} />
+                <span className="text-label font-semibold flex-1" style={{ color: 'var(--color-text-muted)' }}>
+                  Questions-guides
+                </span>
+                <span className="text-label" style={{ color: 'var(--color-text-muted)' }}>
+                  {questionsOpen ? '▾' : '▸'}
+                </span>
+              </button>
+              {questionsOpen && (
+                <div className="px-3 pb-3 space-y-1.5 animate-fade-in">
+                  {column.questions.map((q, i) => (
+                    <p key={i} className="text-body-sm italic leading-snug highlight-accent py-1"
+                      style={{ color: 'var(--color-text-muted)', borderLeftColor: 'var(--color-accent)' }}>
+                      {q}
+                    </p>
+                  ))}
+                  <p className="text-label mt-2" style={{ color: 'var(--color-text-muted)' }}>
+                    Questions issues de la méthode de cadrage Insuffle
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -105,8 +124,8 @@ export default function ColumnView({ column, phase, locked }) {
             <Card key={card.id} card={card} />
           ))}
 
-          {/* US-372: Empty state */}
-          {cards.length === 0 && column.questions?.length === 0 && !adding && (
+          {/* Empty state (quand pas de questions ET pas de cartes) */}
+          {cards.length === 0 && (!column.questions || column.questions.length === 0) && !adding && (
             <div className="text-center py-6">
               <Plus size={24} className="mx-auto mb-2" style={{ color: 'var(--color-border)' }} />
               <p className="text-body-sm" style={{ color: 'var(--color-text-muted)' }}>

@@ -110,15 +110,21 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* ===== Hero (US-455, US-457) ===== */}
-      <section style={{ backgroundColor: 'var(--color-primary)' }} className="text-white py-20 md:py-32">
+      {/* ===== Hero — Seth Godin + Malcolm Gladwell : les 8 axes au centre du récit ===== */}
+      <section style={{ backgroundColor: 'var(--color-primary)' }} className="text-white py-20 md:py-28">
         <div className="max-w-4xl mx-auto px-4 md:px-8 text-center">
-          <h1 className="font-display text-h1-mobile md:text-h1 mb-6 leading-tight">
-            Préparez vos interventions<br className="hidden sm:block" />à plusieurs. <span style={{ color: 'var(--color-accent)' }}>En live.</span>
+          <p className="text-caption uppercase tracking-wider opacity-50 mb-4">Insuffle Cadrage Live</p>
+          <h1 className="font-display text-h1-mobile md:text-[36px] md:leading-tight mb-6">
+            Rendez visibles les <span style={{ color: 'var(--color-accent)' }}>non-dits</span><br className="hidden sm:block" />
+            avant l'intervention.
           </h1>
-          <p className="text-body md:text-lg opacity-80 mb-10 max-w-2xl mx-auto">
-            L'outil de cadrage collaboratif basé sur la méthode Insuffle.
-            Sans compte. En temps réel. Pensé pour les facilitateurs.
+          <p className="text-body md:text-lg opacity-70 mb-4 max-w-2xl mx-auto">
+            Un DG met 5 sur l'axe "Porter le cap". Le facilitateur met 1 — "Agir ensemble".
+            <strong style={{ color: 'var(--color-accent)', opacity: 1 }}> Divergence forte.</strong> Silence.
+          </p>
+          <p className="text-body md:text-lg opacity-60 mb-10 max-w-2xl mx-auto">
+            C'est à ce moment-là que le vrai cadrage commence.
+            Insuffle Cadrage Live rend cet écart visible — avant le séminaire, pas après.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button onClick={handleCreate} disabled={creating}
@@ -126,9 +132,50 @@ export default function LandingPage() {
               {creating ? 'Création...' : 'Créer un cadrage gratuit'} <ArrowRight size={20} />
             </button>
           </div>
-          <p className="mt-6 text-sm opacity-50">Gratuit, sans inscription, prêt en 5 secondes</p>
+          <p className="mt-6 text-sm opacity-40">Gratuit, sans inscription, prêt en 5 secondes</p>
         </div>
       </section>
+
+      {/* ===== Les 8 axes — Seth Godin : le différenciateur au centre ===== */}
+      <Section className="py-16 md:py-20" style={{ backgroundColor: 'var(--color-surface)' }}>
+        <div className="max-w-4xl mx-auto px-4 md:px-8">
+          <div className="text-center mb-10">
+            <h2 className="font-display text-h2-mobile md:text-h2 mb-3">
+              Les <span style={{ color: 'var(--color-accent)' }}>8 axes</span> qu'aucun autre outil ne propose
+            </h2>
+            <p className="text-body" style={{ color: 'var(--color-text-muted)' }}>
+              Insuffle a formalisé les 8 tensions fondamentales de toute intervention collective. Cet outil vous permet de les calibrer avec votre client en temps réel.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {[
+              { left: 'Décider', right: 'Faire mûrir', desc: 'Le groupe tranche-t-il ou explore-t-il ?' },
+              { left: 'Agir ensemble', right: 'Porter le cap', desc: 'Co-construction ou alignement derrière une vision ?' },
+              { left: 'Tenir le cadre', right: 'Autonomie du groupe', desc: 'Jusqu\'où le groupe s\'auto-organise-t-il ?' },
+              { left: 'Produire', right: 'Explorer', desc: 'Plan d\'action chiffré ou pistes ouvertes ?' },
+              { left: 'Contenu', right: 'Processus', desc: 'Problème de fond ou de fonctionnement ?' },
+              { left: 'Prise de recul', right: 'Passage à l\'action', desc: 'Urgence d\'agir ou urgence de comprendre ?' },
+              { left: 'Ouvert', right: 'Ciblé', desc: 'Agenda fixé ou accueil de l\'émergence ?' },
+              { left: 'Sérieux', right: 'Ludique', desc: 'La culture tolère-t-elle le décalage ?' },
+            ].map((ax, i) => (
+              <div key={i} className="flex items-center gap-3 p-4 rounded-card border"
+                style={{ borderColor: 'var(--color-border)' }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-caption font-bold shrink-0"
+                  style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>
+                  {i + 1}
+                </div>
+                <div className="min-w-0">
+                  <div className="font-semibold text-body-sm">{ax.left} <span style={{ color: 'var(--color-text-muted)' }}>↔</span> {ax.right}</div>
+                  <div className="text-caption" style={{ color: 'var(--color-text-muted)' }}>{ax.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-label text-center mt-6" style={{ color: 'var(--color-text-muted)' }}>
+            15 ans de terrain encodés dans 8 axes · Propriété intellectuelle Insuffle
+          </p>
+        </div>
+      </Section>
 
       {/* ===== Problem (US-455) ===== */}
       <Section className="py-16 md:py-20 text-center">

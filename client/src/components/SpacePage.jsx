@@ -172,7 +172,7 @@ export default function SpacePage() {
   }
 
   if (showPseudo || !state.pseudo) {
-    return <PseudoModal onJoin={handleJoin} spaceName={state.space?.client_name} welcomeMessage={state.welcomeMessage} />;
+    return <PseudoModal onJoin={handleJoin} spaceName={state.space?.client_name} welcomeMessage={state.welcomeMessage} facilitatorName={state.space?.facilitator} />;
   }
 
   return (
@@ -251,10 +251,14 @@ export default function SpacePage() {
         {state.phases.map(phase => (
           state.activePhase === phase.key && <PhaseView key={phase.key} phase={phase} />
         ))}
+
+        {/* 8 axes — section permanente en bas du canvas (Seth Godin : la pépite au centre, pas dans un tiroir) */}
+        <div className="border-t" style={{ borderColor: 'var(--color-border)' }}>
+          <AxesPanel />
+        </div>
       </main>
 
-      {/* Side panels */}
-      {state.showAxes && <AxesPanel />}
+      {/* Side panels (axes removed from here — now inline) */}
       {state.showActivity && <ActivityPanel />}
       {state.showStats && <StatsPanel />}
       {state.showExport && <ExportPanel />}

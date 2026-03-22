@@ -3,7 +3,8 @@ export const PHASES = [
   {
     key: 'avant',
     name: 'AVANT',
-    color: '#1a2a4a',
+    color: '#1e3a5f',
+    bgColor: '#eef3f9',
     description: 'Préparer et comprendre le contexte avant l\'intervention',
     columns: [
       {
@@ -58,6 +59,7 @@ export const PHASES = [
     key: 'pendant_facilitation',
     name: 'PENDANT - Facilitation',
     color: '#2a5a3a',
+    bgColor: '#eef7f0',
     description: 'Piloter la dynamique et le contenu pendant l\'intervention',
     columns: [
       {
@@ -88,6 +90,7 @@ export const PHASES = [
     key: 'pendant_risques',
     name: 'PENDANT - Risques',
     color: '#7a2a2a',
+    bgColor: '#fdf2f2',
     description: 'Anticiper les risques et résistances',
     columns: [
       {
@@ -108,6 +111,7 @@ export const PHASES = [
     key: 'conclusion',
     name: 'CONCLUSION',
     color: '#4a3a6a',
+    bgColor: '#f3f0f7',
     description: 'Conclure, produire et projeter la suite',
     columns: [
       {
