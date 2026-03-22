@@ -74,8 +74,10 @@ export default function ColumnView({ column, phase, locked }) {
             {collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
           </button>
           <h3 className="text-body-sm font-semibold truncate">{column.name}</h3>
-          <span className="text-label px-1.5 py-0.5 rounded-full shrink-0"
-            style={{ backgroundColor: 'var(--color-surface-alt)', color: 'var(--color-text-muted)' }}>{cards.length}</span>
+          {cards.length > 0 && (
+            <span className="text-label px-1.5 py-0.5 rounded-full shrink-0"
+              style={{ backgroundColor: 'var(--color-surface-alt)', color: 'var(--color-text-muted)' }}>{cards.length}</span>
+          )}
         </div>
         <div className="flex items-center gap-1">
           {/* Focus indicators */}
