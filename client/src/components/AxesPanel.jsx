@@ -100,7 +100,7 @@ function AxisSlider({ axis, compact }) {
           {/* Track line */}
           <div className="absolute inset-x-2 top-1/2 h-0.5 -translate-y-1/2" style={{ backgroundColor: 'var(--color-border)' }} />
           {/* Position circles */}
-          {[1, 2, 3, 4, 5].map(pos => {
+          {[1, 2, 4, 5].map(pos => {
             const posParticipants = positions.filter(p => p.position === pos);
             const isMyPos = myPos?.position === pos;
             const isFinalPos = finalAxis?.position === pos;

@@ -565,6 +565,17 @@ export function createApp(db) {
           return;
         }
         io.to(currentSpace).emit('card-created', serializeCard(card));
+        // Activity notification to other users
+        const preview = content.trim().substring(0, 60);
+        const isQuestion = content.startsWith('[Q] ');
+        socket.to(currentSpace).emit('activity-notification', {
+          type: isQuestion ? 'answer' : 'card',
+          author: currentPseudo,
+          color: currentColor,
+          message: isQuestion ? `a répondu à une question` : `a ajouté une carte`,
+          preview,
+          cardId: id,
+        });
       } catch (e) {
         console.error('create-card error:', e);
         socket.emit('error', { message: 'Erreur lors de la création de la carte.' });
@@ -666,6 +677,15 @@ export function createApp(db) {
       );
       const comment = db.prepare(`SELECT * FROM comments WHERE id = ?`).get(id);
       io.to(currentSpace).emit('comment-added', comment);
+      // Activity notification
+      socket.to(currentSpace).emit('activity-notification', {
+        type: 'comment',
+        author: currentPseudo,
+        color: currentColor,
+        message: `a commenté une carte`,
+        preview: content.trim().substring(0, 60),
+        cardId,
+      });
     });
 
     socket.on('set-axis-position', ({ axisKey, position, explanation }) => {

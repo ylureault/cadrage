@@ -143,6 +143,7 @@ export default function SpacePage() {
     socket.on('setting-updated', ({ key, value }) => dispatch({ type: 'UPDATE_SETTING', key, value }));
 
     socket.on('notification', ({ message }) => dispatch({ type: 'ADD_NOTIFICATION', notification: { message, type: 'info' } }));
+    socket.on('activity-notification', (data) => dispatch({ type: 'ADD_NOTIFICATION', notification: { ...data, type: 'activity' } }));
     socket.on('error', ({ message }) => dispatch({ type: 'ADD_NOTIFICATION', notification: { message, type: 'error' } }));
 
     socket.on('disconnect', () => dispatch({ type: 'SET_OFFLINE', offline: true }));
@@ -359,6 +360,8 @@ export default function SpacePage() {
           <a href="https://insuffle.com" target="_blank" rel="noopener" className="hover:underline">insuffle.com</a>
           <span>·</span>
           <a href="https://insuffle.com" target="_blank" rel="noopener" className="hover:underline" style={{ color: 'var(--color-academie)' }}>Insuffle Académie</a>
+          <span>·</span>
+          <span>v1.2.0</span>
         </div>
       </footer>
     </div>

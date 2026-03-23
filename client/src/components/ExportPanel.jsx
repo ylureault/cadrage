@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../store.jsx';
 import { api } from '../api.js';
-import { X, FileText, Copy, Download, Printer, ExternalLink, Layers } from 'lucide-react';
+import { X, FileText, Copy, Download, Printer, ExternalLink, Layers, Table } from 'lucide-react';
 
 export default function ExportPanel() {
   const { state, dispatch } = useStore();
@@ -307,7 +307,7 @@ export default function ExportPanel() {
         doc.text(axis.right, scaleX + scaleW + 1, scaleY + 4, { maxWidth: 30, align: 'right' });
 
         // Position dots
-        for (let p = 1; p <= 5; p++) {
+        for (const p of [1, 2, 4, 5]) {
           const dotX = scaleX + ((p - 1) / 4) * scaleW;
           const pCount = positions.filter(pos => pos.position === p).length;
           // Circle
@@ -425,6 +425,66 @@ export default function ExportPanel() {
     }
   }
 
+  function exportExcel() {
+    // CSV with BOM for Excel compatibility (handles accented characters)
+    const BOM = '\uFEFF';
+    const sep = ';'; // European Excel default
+    const rows = [];
+
+    // Header row
+    rows.push(['Phase', 'Colonne', 'Auteur', 'Contenu', 'Tags', 'Votes', 'À discuter', 'Question liée'].join(sep));
+
+    for (const phase of state.phases) {
+      for (const col of phase.columns) {
+        const cards = state.cards.filter(c => c.phase === phase.key && c.column_key === col.key);
+        for (const card of cards) {
+          const isQ = card.content.startsWith('[Q] ');
+          const question = isQ ? card.content.slice(4).split('\n\n')[0] : '';
+          const content = isQ ? card.content.slice(4).split('\n\n').slice(1).join(' ') : card.content;
+          const voteCount = state.votes.filter(v => v.card_id === card.id).length;
+          const csvRow = [
+            phase.name,
+            col.name,
+            card.author,
+            `"${content.replace(/"/g, '""')}"`,
+            (card.tags || []).join(', '),
+            voteCount,
+            card.marked_discuss ? 'Oui' : '',
+            question ? `"${question.replace(/"/g, '""')}"` : '',
+          ];
+          rows.push(csvRow.join(sep));
+        }
+      }
+    }
+
+    // Axes sheet (added as separate rows after a blank line)
+    rows.push('');
+    rows.push(['Axe', 'Gauche', 'Droite', 'Participant', 'Position', 'Explication'].join(sep));
+    for (const axis of state.axesDef) {
+      const positions = state.axes.filter(a => a.axis_key === axis.key && a.position != null);
+      for (const p of positions) {
+        rows.push([
+          `${axis.left} / ${axis.right}`,
+          axis.left,
+          axis.right,
+          p.pseudo,
+          p.position,
+          p.explanation ? `"${p.explanation.replace(/"/g, '""')}"` : '',
+        ].join(sep));
+      }
+    }
+
+    const csv = BOM + rows.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cadrage-${state.space?.client_name || 'insuffle'}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    dispatch({ type: 'ADD_NOTIFICATION', notification: { message: 'Export Excel (CSV) téléchargé', type: 'success' } });
+  }
+
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -480,6 +540,12 @@ export default function ExportPanel() {
         {/* Text Export */}
         <button onClick={exportText} className="w-full btn-secondary flex items-center justify-center gap-2">
           <FileText size={18} /> Exporter en texte
+        </button>
+
+        {/* Excel Export */}
+        <button onClick={exportExcel} className="w-full btn-ghost border flex items-center justify-center gap-2"
+          style={{ borderColor: 'var(--color-border)' }}>
+          <Table size={18} /> Exporter en Excel (CSV)
         </button>
 
         {/* Copy link */}
