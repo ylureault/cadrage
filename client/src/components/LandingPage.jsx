@@ -99,6 +99,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-btn flex items-center justify-center font-display font-bold text-lg" style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>I</div>
             <span className="font-display text-lg font-bold">Insuffle <span style={{ color: 'var(--color-accent)' }}>Cadrage Live</span></span>
+            <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>Beta</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <a href="#features" className="hover:text-[var(--color-accent)] transition-colors">Fonctionnalités</a>
@@ -112,7 +113,9 @@ export default function LandingPage() {
       {/* ===== Hero — Seth Godin + Malcolm Gladwell : les 8 axes au centre du récit ===== */}
       <section style={{ backgroundColor: 'var(--color-primary)' }} className="text-white py-20 md:py-28">
         <div className="max-w-4xl mx-auto px-4 md:px-8 text-center">
-          <p className="text-caption uppercase tracking-wider opacity-50 mb-4">Insuffle Cadrage Live</p>
+          <p className="text-caption uppercase tracking-wider opacity-50 mb-4">
+            Insuffle Cadrage Live <span className="inline-block ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full opacity-100" style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>BETA</span>
+          </p>
           <h1 className="font-display text-h1-mobile md:text-[36px] md:leading-tight mb-6">
             Rendez visibles les <span style={{ color: 'var(--color-accent)' }}>non-dits</span><br className="hidden sm:block" />
             avant le temps collectif.
@@ -355,7 +358,7 @@ export default function LandingPage() {
                   style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>I</div>
                 <span className="font-display font-bold">Insuffle</span>
               </div>
-              <p className="text-body-sm opacity-60 mb-3">Cabinet de facilitation stratégique</p>
+              <p className="text-body-sm opacity-60 mb-3">Cabinet de facilitation stratégique · <span className="inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>BETA</span></p>
               <div className="flex items-center gap-2 mt-2">
                 <div className="w-5 h-5 rounded flex items-center justify-center font-bold text-[8px]"
                   style={{ backgroundColor: 'var(--color-academie)', color: 'white' }}>IA</div>
