@@ -155,6 +155,17 @@ export default function SpacePage() {
     };
   }, [state.pseudo, spaceId, dispatch]);
 
+  // Sync space name to localStorage whenever it changes (fix "Sans nom" on landing)
+  useEffect(() => {
+    if (!state.space?.client_name || !spaceId) return;
+    const recent = JSON.parse(localStorage.getItem('recentSpaces') || '[]');
+    const idx = recent.findIndex(r => r.id === spaceId);
+    if (idx >= 0) {
+      recent[idx].client = state.space.client_name;
+      localStorage.setItem('recentSpaces', JSON.stringify(recent));
+    }
+  }, [state.space?.client_name, spaceId]);
+
   function handleJoin(pseudo) {
     dispatch({ type: 'SET_PSEUDO', pseudo, color: null });
     sessionStorage.setItem(sessionKey, pseudo);

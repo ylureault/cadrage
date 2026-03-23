@@ -21,6 +21,7 @@
   --color-warning: #f59e0b;
   --color-error: #ef4444;
   --color-academie: #8E2183;
+  --color-academie-bg: #f3e8f1;
 
   /* US-366: Elevations */
   --shadow-1: 0 1px 3px rgba(12,22,41,0.08);
@@ -47,6 +48,7 @@
   /* Accent stays the same in dark mode */
   --color-accent: #ffde59;
   --color-accent-bg: rgba(255,222,89,0.12);
+  --color-academie-bg: #1a0e1e;
 
   --shadow-1: 0 1px 3px rgba(0,0,0,0.2);
   --shadow-2: 0 4px 12px rgba(0,0,0,0.3);

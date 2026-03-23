@@ -20,14 +20,14 @@ function HeaderField({ label, field, value, locked, type = 'text' }) {
 
   if (locked) return (
     <div className="flex-1 min-w-[150px]">
-      <label className="text-xs text-gray-400 uppercase tracking-wide">{label}</label>
-      <p className="text-sm font-medium truncate">{value || '—'}</p>
+      <label className="text-label uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>{label}</label>
+      <p className="text-body-sm font-medium truncate">{value || '—'}</p>
     </div>
   );
 
   if (editing) return (
     <div className="flex-1 min-w-[150px]">
-      <label className="text-xs text-gray-400 uppercase tracking-wide">{label}</label>
+      <label className="text-label uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>{label}</label>
       <input ref={inputRef} value={localValue}
         onChange={e => setLocalValue(e.target.value)}
         onBlur={save} onKeyDown={e => e.key === 'Enter' && save()}
@@ -38,9 +38,11 @@ function HeaderField({ label, field, value, locked, type = 'text' }) {
 
   return (
     <div className="flex-1 min-w-[150px] cursor-pointer group" onClick={() => setEditing(true)}>
-      <label className="text-xs text-gray-400 uppercase tracking-wide">{label}</label>
-      <p className="text-sm font-medium truncate group-hover:text-insuffle-blue transition-colors">
-        {value || <span className="text-gray-300 italic">Cliquez pour saisir</span>}
+      <label className="text-label uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>{label}</label>
+      <p className="text-body-sm font-medium truncate transition-colors" style={{ color: 'var(--color-text)' }}
+        onMouseEnter={e => e.currentTarget.style.color = 'var(--color-accent-dark)'}
+        onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text)'}>
+        {value || <span className="italic" style={{ color: 'var(--color-border)' }}>Cliquez pour saisir</span>}
       </p>
     </div>
   );

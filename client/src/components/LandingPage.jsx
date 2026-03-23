@@ -189,19 +189,25 @@ export default function LandingPage() {
 
       {/* ===== Recent spaces ===== */}
       {recentSpaces.length > 0 && (
-        <div className="max-w-4xl mx-auto px-4 md:px-8 pb-8">
-          <h2 className="text-caption uppercase tracking-wide mb-3" style={{ color: 'var(--color-text-muted)' }}>Vos cadrages récents</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {recentSpaces.slice(0, 6).map(s => (
-              <button key={s.id} onClick={() => navigate(`/${s.id}`)}
-                className="text-left p-4 rounded-card elevation-1 hover:elevation-2 transition-shadow"
-                style={{ backgroundColor: 'var(--color-surface)' }}>
-                <div className="font-medium text-body-sm">{s.client || 'Sans nom'}</div>
-                <div className="text-caption" style={{ color: 'var(--color-text-muted)' }}>{new Date(s.date).toLocaleDateString('fr-FR')}</div>
-              </button>
-            ))}
+        <Section className="pb-8 pt-0">
+          <div className="max-w-4xl mx-auto px-4 md:px-8">
+            <h2 className="text-label uppercase tracking-wide mb-4" style={{ color: 'var(--color-text-muted)' }}>Vos cadrages récents</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {recentSpaces.slice(0, 6).map(s => (
+                <button key={s.id} onClick={() => navigate(`/${s.id}`)}
+                  className="text-left p-4 rounded-card elevation-1 hover:elevation-2 transition-all duration-200 group"
+                  style={{ backgroundColor: 'var(--color-surface)' }}>
+                  <div className="font-semibold text-body-sm group-hover:text-[var(--color-accent-dark)] transition-colors">
+                    {s.client || 'Cadrage sans titre'}
+                  </div>
+                  <div className="text-caption" style={{ color: 'var(--color-text-muted)' }}>
+                    {new Date(s.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        </Section>
       )}
 
       {/* ===== Steps ===== */}
@@ -234,7 +240,7 @@ export default function LandingPage() {
             Questions issues de la méthode de cadrage Insuffle
           </p>
           <a href="https://insuffle.com" target="_blank" rel="noopener"
-            className="inline-flex items-center gap-1 font-medium hover:underline" style={{ color: 'var(--color-primary)' }}>
+            className="inline-flex items-center gap-1.5 font-semibold hover:underline transition-colors" style={{ color: 'var(--color-primary)' }}>
             En savoir plus sur la méthode <ExternalLink size={14} />
           </a>
         </div>
@@ -246,8 +252,8 @@ export default function LandingPage() {
           <h2 className="font-display text-h2-mobile md:text-h2 text-center mb-12">Ce que vous pouvez faire</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {FEATURES.map(f => (
-              <div key={f.title} className="p-5 rounded-card border hover:elevation-2 transition-all duration-200"
-                style={{ borderColor: 'var(--color-border)' }}>
+              <div key={f.title} className="p-6 rounded-card elevation-1 hover:elevation-2 transition-all duration-200"
+                style={{ backgroundColor: 'var(--color-surface)' }}>
                 <f.icon className="mb-3" size={28} style={{ color: 'var(--color-accent)' }} strokeWidth={1.5} />
                 <h3 className="font-semibold mb-1 text-body">{f.title}</h3>
                 <p className="text-body-sm" style={{ color: 'var(--color-text-muted)' }}>{f.desc}</p>
@@ -263,7 +269,7 @@ export default function LandingPage() {
           <h2 className="font-display text-h2-mobile md:text-h2 mb-8">Pour qui ?</h2>
           <div className="flex flex-wrap justify-center gap-3">
             {TARGETS.map(t => (
-              <span key={t} className="px-5 py-2.5 rounded-full elevation-1 text-body-sm font-medium"
+              <span key={t} className="px-6 py-3 rounded-full elevation-1 text-body-sm font-medium"
                 style={{ backgroundColor: 'var(--color-surface)' }}>{t}</span>
             ))}
           </div>
@@ -286,7 +292,7 @@ export default function LandingPage() {
       </Section>
 
       {/* ===== Académie (US-384, US-396, US-397) ===== */}
-      <Section className="py-16 md:py-20" style={{ backgroundColor: '#f3e8f1' }}>
+      <Section className="py-16 md:py-20" style={{ backgroundColor: 'var(--color-academie-bg, #f3e8f1)' }}>
         <div className="max-w-4xl mx-auto px-4 md:px-8 text-center">
           <div className="inline-flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full text-caption font-semibold text-white" style={{ backgroundColor: 'var(--color-academie)' }}>
             Certifié Qualiopi
@@ -333,7 +339,7 @@ export default function LandingPage() {
         <div className="max-w-2xl mx-auto px-4 md:px-8">
           <h2 className="font-display text-h2-mobile md:text-h2 mb-4">Prêt à cadrer votre prochain temps collectif ?</h2>
           <p className="text-body mb-8" style={{ color: 'var(--color-text-muted)' }}>Sans inscription, prêt en 5 secondes.</p>
-          <button onClick={handleCreate} disabled={creating} className="btn-primary text-lg px-8 py-3 h-auto">
+          <button onClick={handleCreate} disabled={creating} className="btn-primary text-lg px-8 py-3 h-auto animate-pulse-glow">
             {creating ? 'Création...' : 'Créer votre premier cadrage'} <ArrowRight size={20} />
           </button>
         </div>
@@ -367,11 +373,9 @@ export default function LandingPage() {
             <div>
               <h4 className="font-semibold text-body-sm mb-3">Ressources</h4>
               <div className="space-y-1.5 text-body-sm opacity-60">
-                <a href="https://insuffle.com" target="_blank" rel="noopener" className="block hover:opacity-100 transition-opacity">Insuffle.com</a>
+                <a href="https://insuffle.com" target="_blank" rel="noopener" className="inline-flex items-center gap-1 hover:opacity-100 transition-opacity">Insuffle.com <ExternalLink size={10} /></a>
                 <a href="https://insuffle.com" target="_blank" rel="noopener" className="block hover:opacity-100 transition-opacity">Formations</a>
                 <a href="https://insuffle.com" target="_blank" rel="noopener" className="block hover:opacity-100 transition-opacity">Blog</a>
-                <a href="#" className="block hover:opacity-100 transition-opacity">Mentions légales</a>
-                <a href="#" className="block hover:opacity-100 transition-opacity">Confidentialité</a>
               </div>
             </div>
           </div>
