@@ -18,11 +18,11 @@ export default function PseudoModal({ onJoin, spaceName, welcomeMessage, facilit
   function handleSubmit(e) {
     e.preventDefault();
     if (!pseudo.trim()) {
-      setError('Le pseudo est requis');
+      setError('Entrez votre prénom pour continuer');
       return;
     }
     if (pseudo.trim().length > 30) {
-      setError('30 caractères maximum');
+      setError('Votre nom est trop long (30 caractères max)');
       return;
     }
     onJoin(pseudo.trim());

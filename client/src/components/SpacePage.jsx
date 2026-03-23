@@ -238,7 +238,7 @@ export default function SpacePage() {
       <ParticipantsBar />
 
       {/* US-422: Phase tabs */}
-      <div className="border-b sticky top-0 z-20" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
+      <div className="border-b sticky top-0 z-20 no-print" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
         role="tablist" aria-label="Phases du cadrage">
         <div className="max-w-[1600px] mx-auto flex overflow-x-auto">
           {state.phases.map(phase => {
@@ -305,7 +305,7 @@ export default function SpacePage() {
       </div>
 
       {/* US-417: Progress bar */}
-      <div className="progress-bar">
+      <div className="progress-bar no-print">
         <div className="progress-bar-fill" style={{ width: `${Math.round((state.phases.reduce((acc, p) => acc + (state.cards.some(c => c.phase === p.key) ? 1 : 0), 0) / Math.max(state.phases.length, 1)) * 100)}%` }} />
       </div>
 

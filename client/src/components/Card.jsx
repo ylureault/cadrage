@@ -85,8 +85,11 @@ export default function Card({ card }) {
         ...(card.marked_discuss ? { ringColor: 'var(--color-warning)' } : {}),
       }}
       role="listitem"
+      tabIndex={0}
       onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}>
+      onMouseLeave={() => setShowActions(false)}
+      onFocus={() => setShowActions(true)}
+      onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setShowActions(false); }}>
 
       {/* Author + Tags */}
       <div className="px-3 pt-2 flex items-center justify-between">
@@ -95,8 +98,10 @@ export default function Card({ card }) {
             style={{ backgroundColor: card.author_color }}>
             {card.author[0]?.toUpperCase()}
           </div>
-          <span className="text-xs font-medium text-gray-500">{card.author}</span>
-          {card.marked_discuss ? <Flag size={12} className="text-orange-400" /> : null}
+          <span className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>{card.author}</span>
+          {card.marked_discuss ? (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-orange-100 text-orange-600">À discuter</span>
+          ) : null}
         </div>
         <div className="flex gap-1 flex-wrap justify-end">
           {(card.tags || []).map(tag => (
@@ -164,29 +169,32 @@ export default function Card({ card }) {
         <div className="px-3 pb-2 flex items-center gap-1 flex-wrap">
           {/* Comment */}
           <button onClick={() => setShowComments(!showComments)}
-            className="btn-ghost text-xs flex items-center gap-0.5 p-1">
-            <MessageSquare size={13} /> {comments.length || ''}
+            className="btn-ghost text-xs flex items-center gap-0.5 p-1" title="Commenter">
+            <MessageSquare size={13} /> {comments.length > 0 ? comments.length : ''}
           </button>
 
           {/* React */}
           <div className="relative">
-            <button onClick={() => setShowEmojis(!showEmojis)} className="btn-ghost text-xs p-1">😊</button>
+            <button onClick={() => setShowEmojis(!showEmojis)} className="btn-ghost text-xs p-1" title="Réagir">😊</button>
             {showEmojis && (
-              <div className="absolute bottom-full left-0 bg-white card-shadow rounded-lg p-1 flex gap-1 z-30">
+              <div className="absolute bottom-full left-0 rounded-card elevation-2 p-1 flex gap-1 z-30"
+                style={{ backgroundColor: 'var(--color-surface)' }}>
                 {EMOJIS.map(e => (
-                  <button key={e} onClick={() => handleReact(e)} className="hover:bg-gray-100 rounded p-1 text-lg">{e}</button>
+                  <button key={e} onClick={() => handleReact(e)} className="rounded p-1 text-lg transition-colors hover:bg-[rgba(255,222,89,0.15)]">{e}</button>
                 ))}
               </div>
             )}
           </div>
 
           {/* Vote */}
-          <button onClick={myVote ? unvote : vote} className={`btn-ghost text-xs p-1 ${myVote ? 'text-insuffle-blue' : ''}`}>
-            ⬆
+          <button onClick={myVote ? unvote : vote} className={`btn-ghost text-xs p-1 ${myVote ? 'text-insuffle-blue' : ''}`}
+            title={myVote ? 'Retirer mon vote' : 'Voter pour cette carte'}>
+            <ThumbsUp size={13} />
           </button>
 
           {/* Discuss */}
-          <button onClick={toggleDiscuss} className={`btn-ghost text-xs p-1 ${card.marked_discuss ? 'text-orange-500' : ''}`}>
+          <button onClick={toggleDiscuss} className={`btn-ghost text-xs p-1 ${card.marked_discuss ? 'text-orange-500' : ''}`}
+            title={card.marked_discuss ? 'Retirer du fil de discussion' : 'Marquer à discuter'}>
             <Flag size={13} />
           </button>
 
@@ -195,9 +203,10 @@ export default function Card({ card }) {
             <div className="relative">
               <button onClick={() => setShowTags(!showTags)} className="btn-ghost text-xs p-1"><Tag size={13} /></button>
               {showTags && (
-                <div className="absolute bottom-full left-0 bg-white card-shadow rounded-lg p-2 z-30 min-w-[120px]">
+                <div className="absolute bottom-full left-0 rounded-card elevation-2 p-2 z-30 min-w-[120px]"
+                  style={{ backgroundColor: 'var(--color-surface)' }}>
                   {Object.keys(TAG_COLORS).map(t => (
-                    <button key={t} onClick={() => addTag(t)} className="block w-full text-left text-xs py-1 px-2 hover:bg-gray-50 rounded">{t}</button>
+                    <button key={t} onClick={() => addTag(t)} className="block w-full text-left text-xs py-1 px-2 rounded transition-colors hover:bg-[rgba(255,222,89,0.1)]">{t}</button>
                   ))}
                 </div>
               )}
@@ -205,39 +214,39 @@ export default function Card({ card }) {
           )}
 
           {/* Edit (author only) */}
-          {isAuthor && <button onClick={() => { setEditing(true); setEditContent(card.content); }} className="btn-ghost text-xs p-1"><Edit3 size={13} /></button>}
+          {isAuthor && <button onClick={() => { setEditing(true); setEditContent(card.content); }} className="btn-ghost text-xs p-1" title="Modifier"><Edit3 size={13} /></button>}
 
           {/* Delete (author or facilitator) */}
           {(isAuthor || state.isFacilitator) && (
-            <button onClick={deleteCard} className="btn-ghost text-xs p-1 text-red-400 hover:text-red-600"><Trash2 size={13} /></button>
+            <button onClick={deleteCard} className="btn-ghost text-xs p-1 text-red-400 hover:text-red-600" title="Supprimer"><Trash2 size={13} /></button>
           )}
 
           {/* Spotlight (facilitator) */}
           {state.isFacilitator && (
-            <button onClick={spotlight} className={`btn-ghost text-xs p-1 ${isSpotlight ? 'text-insuffle-gold' : ''}`}><Star size={13} /></button>
+            <button onClick={spotlight} className={`btn-ghost text-xs p-1 ${isSpotlight ? 'text-insuffle-gold' : ''}`} title={isSpotlight ? 'Retirer le projecteur' : 'Mettre en avant'}><Star size={13} /></button>
           )}
         </div>
       )}
 
       {/* Comments panel */}
       {showComments && (
-        <div className="px-3 pb-3 border-t border-gray-100 pt-2 space-y-2">
+        <div className="px-3 pb-3 border-t pt-2 space-y-2 animate-fade-in" style={{ borderColor: 'var(--color-border)' }}>
           {comments.map(c => (
             <div key={c.id} className="flex gap-2">
               <div className="w-4 h-4 rounded-full shrink-0 mt-0.5 flex items-center justify-center text-white text-[8px]"
                 style={{ backgroundColor: c.author_color }}>{c.author[0]}</div>
               <div>
                 <span className="text-xs font-medium">{c.author}</span>
-                <p className="text-xs text-gray-600">{c.content}</p>
+                <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{c.content}</p>
               </div>
             </div>
           ))}
           {!state.archived && (
             <div className="flex gap-1">
               <input value={commentText} onChange={e => setCommentText(e.target.value)}
-                placeholder="Commenter..." className="input-field flex-1 text-xs py-1"
+                placeholder="Votre commentaire..." className="input-field flex-1 text-xs py-1"
                 onKeyDown={e => e.key === 'Enter' && addComment()} />
-              <button onClick={addComment} className="btn-primary text-xs px-2 py-1">↑</button>
+              <button onClick={addComment} disabled={!commentText.trim()} className="btn-primary text-xs px-2 py-1">Envoyer</button>
             </div>
           )}
         </div>

@@ -97,13 +97,19 @@ export default function ColumnView({ column, phase, locked }) {
             </div>
           ))}
           {/* Silent mode indicator */}
-          {isSilent && <span className="text-xs text-orange-500" title="Brainstorming silencieux">🤫</span>}
+          {isSilent && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-orange-100 text-orange-600"
+              title="Mode silencieux : chaque participant ne voit que ses propres cartes">
+              Silencieux
+            </span>
+          )}
           {/* Facilitator: toggle silent mode */}
           {state.isFacilitator && (
             <button onClick={() => {
               if (isSilent) socket.emit('reveal-cards', { columnKey: column.key });
               else socket.emit('toggle-silent-mode', { columnKey: column.key, active: !state.silentColumns[column.key] });
-            }} className="p-0.5 hover:bg-gray-100 rounded text-gray-400" title="Brainstorming silencieux">
+            }} className="p-0.5 rounded-btn transition-colors" style={{ color: 'var(--color-text-muted)' }}
+              title={isSilent ? 'Révéler toutes les cartes' : 'Activer le mode silencieux (chacun ne voit que ses cartes)'}>
               {isSilent ? <Eye size={14} /> : <EyeOff size={14} />}
             </button>
           )}
@@ -168,7 +174,7 @@ export default function ColumnView({ column, phase, locked }) {
                 </div>
               )}
               <textarea value={newContent} onChange={e => setNewContent(e.target.value)}
-                placeholder="Votre contribution..."
+                placeholder={newContent.startsWith('[Q] ') ? 'Écrivez votre réponse ici...' : 'Partagez votre idée, observation ou proposition...'}
                 className="input-field w-full text-sm resize-none"
                 rows={newContent.startsWith('[Q] ') ? 5 : 3} maxLength={500} autoFocus
                 ref={el => { if (el && newContent.startsWith('[Q] ') && el.selectionStart === 0) el.selectionStart = el.selectionEnd = newContent.length; }}
@@ -195,12 +201,17 @@ export default function ColumnView({ column, phase, locked }) {
           ))}
 
           {/* Empty state (quand pas de questions ET pas de cartes) */}
-          {cards.length === 0 && (!column.questions || column.questions.length === 0) && !adding && (
+          {cards.length === 0 && !adding && (
             <div className="text-center py-6">
               <Plus size={24} className="mx-auto mb-2" style={{ color: 'var(--color-border)' }} />
-              <p className="text-body-sm" style={{ color: 'var(--color-text-muted)' }}>
-                Aucune carte pour l'instant.
+              <p className="text-body-sm mb-1" style={{ color: 'var(--color-text-muted)' }}>
+                Aucune carte pour l'instant
               </p>
+              {!locked && !state.archived && (
+                <p className="text-caption" style={{ color: 'var(--color-text-muted)' }}>
+                  Cliquez sur « Ajouter » ci-dessous{column.questions?.length > 0 ? ' ou répondez à une question-guide' : ''}
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -209,8 +220,11 @@ export default function ColumnView({ column, phase, locked }) {
       {/* Add button */}
       {!collapsed && !adding && !locked && !state.archived && (
         <button onClick={() => setAdding(true)}
-          className="w-full py-2 flex items-center justify-center gap-1 text-sm text-gray-400 hover:text-insuffle-blue hover:bg-gray-50 transition-colors border-t border-gray-100">
-          <Plus size={16} /> Ajouter
+          className="w-full py-2.5 flex items-center justify-center gap-1.5 text-sm font-medium transition-all border-t hover:scale-[1.01]"
+          style={{ color: 'var(--color-text-muted)', borderColor: 'var(--color-border)' }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'var(--color-accent-dark)'; e.currentTarget.style.backgroundColor = 'rgba(255,222,89,0.06)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'var(--color-text-muted)'; e.currentTarget.style.backgroundColor = ''; }}>
+          <Plus size={16} /> Ajouter une carte
         </button>
       )}
     </div>

@@ -11,7 +11,9 @@ export default function ParticipantsBar() {
     <div className="border-b px-4 py-1.5 no-print" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
       <div className="max-w-[1600px] mx-auto flex items-center gap-3">
         <span className="text-label" style={{ color: 'var(--color-text-muted)' }}>
-          {state.participants.length} en ligne
+          {state.participants.length === 1
+            ? 'Vous êtes seul(e) pour le moment'
+            : `${state.participants.length} en ligne`}
         </span>
         <div className="flex -space-x-2">
           {visible.map((p, i) => (
