@@ -93,7 +93,7 @@
 
   /* US-369: Button variants */
   .btn-primary {
-    @apply font-semibold transition-all duration-150;
+    @apply font-bold transition-all duration-150;
     background-color: var(--color-accent);
     color: var(--color-primary);
     padding: 12px 24px;
@@ -103,6 +103,8 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
+    letter-spacing: 0.01em;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.3);
   }
   .btn-primary:hover { background-color: var(--color-accent-dark); transform: scale(1.02); box-shadow: var(--shadow-2); }
   .btn-primary:active { transform: scale(0.98); }

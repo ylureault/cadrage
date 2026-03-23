@@ -219,23 +219,29 @@ export default function OnboardingTour({ onComplete }) {
   }
 
   // ===== TOOLTIP STEP =====
-  const tooltipStyle = tooltipPos ? {
-    position: 'fixed',
-    top: tooltipPos.position === 'top' ? tooltipPos.top - 8 : tooltipPos.top,
-    left: tooltipPos.left,
-    transform:
-      tooltipPos.position === 'bottom' ? 'translateX(-50%)' :
-      tooltipPos.position === 'top' ? 'translate(-50%, -100%)' :
-      tooltipPos.position === 'right' ? 'translateY(-50%)' :
-      'translate(-100%, -50%)',
-    zIndex: 80,
-  } : {
-    position: 'fixed',
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
-    zIndex: 80,
-  };
+  // Clamp tooltip inside viewport so navigation buttons are always reachable
+  const tooltipStyle = (() => {
+    if (!tooltipPos) {
+      return { position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 80 };
+    }
+    const pad = 12; // min distance from viewport edge
+    const tooltipW = 320; // w-80 = 20rem = 320px
+    const tooltipH = 280; // estimated max height
+    let { top, left, position: pos } = tooltipPos;
+
+    // Compute raw position (before transform)
+    let rawTop = pos === 'top' ? top - 8 - tooltipH : top;
+    let rawLeft = pos === 'bottom' || pos === 'top' ? left - tooltipW / 2 :
+                  pos === 'right' ? left : left - tooltipW;
+
+    // Clamp horizontally
+    rawLeft = Math.max(pad, Math.min(rawLeft, window.innerWidth - tooltipW - pad));
+    // Clamp vertically — if tooltip would go above viewport, flip to below target
+    if (rawTop < pad) rawTop = pad;
+    if (rawTop + tooltipH > window.innerHeight - pad) rawTop = window.innerHeight - tooltipH - pad;
+
+    return { position: 'fixed', top: rawTop, left: rawLeft, zIndex: 80, maxHeight: `calc(100vh - ${pad * 2}px)`, overflowY: 'auto' };
+  })();
 
   return (
     <>
@@ -297,7 +303,7 @@ export default function OnboardingTour({ onComplete }) {
                 </button>
               )}
               <button onClick={() => isLast ? onComplete() : setStep(s => s + 1)}
-                className="btn-primary text-body-sm flex items-center gap-1">
+                className="btn-primary flex items-center gap-1">
                 {isLast ? 'Commencer' : 'Suivant'} {isLast ? null : <ArrowRight size={14} />}
               </button>
             </div>
