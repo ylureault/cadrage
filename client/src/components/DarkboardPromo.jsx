@@ -55,7 +55,7 @@ export default function DarkboardPromo({ spaceId, onOpenTab }) {
                 <span className="font-display font-bold text-white text-lg tracking-tight">DarkBoard</span>
                 <span className="text-xs px-1.5 py-0.5 rounded-full font-medium"
                   style={{ backgroundColor: 'rgba(255,222,89,0.15)', color: '#ffde59' }}>
-                  Gratuit
+                  by Insuffle
                 </span>
               </div>
               <p className="text-xs" style={{ color: 'rgba(255,255,255,0.5)' }}>

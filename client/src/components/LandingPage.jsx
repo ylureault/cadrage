@@ -37,7 +37,7 @@ const TARGETS = [
 const FAQ = [
   { q: 'Faut-il créer un compte ?', a: 'Non. L\'outil fonctionne sans inscription. Choisissez un pseudo et commencez.' },
   { q: 'Mes données sont-elles confidentielles ?', a: 'Oui. Les espaces ne sont accessibles que via leur URL unique. Aucune donnée personnelle n\'est collectée. Connexion HTTPS chiffrée.' },
-  { q: 'Combien de participants peuvent travailler en même temps ?', a: '5 en plan gratuit, 15 en plan Pro. Tout en temps réel.' },
+  { q: 'Combien de participants peuvent travailler en même temps ?', a: 'Jusqu\'à 15 personnes en temps réel sur le même espace de cadrage.' },
   { q: 'L\'outil fonctionne-t-il sur mobile ?', a: 'Oui, sur téléphone et tablette. L\'interface s\'adapte à la taille de l\'écran.' },
   { q: 'Qui est derrière cet outil ?', a: 'Insuffle, cabinet de facilitation stratégique fondé par Yoan Lureault. Insuffle Académie forme les facilitateurs et est certifié Qualiopi.' },
   { q: 'Puis-je exporter le cadrage ?', a: 'Oui. Export PDF (avec marque Insuffle), texte brut, et bientôt Notion et Google Docs.' },
@@ -103,7 +103,6 @@ export default function LandingPage() {
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <a href="#features" className="hover:text-[var(--color-accent)] transition-colors">Fonctionnalités</a>
             <a href="#method" className="hover:text-[var(--color-accent)] transition-colors">La méthode</a>
-            <a href="#pricing" className="hover:text-[var(--color-accent)] transition-colors">Tarifs</a>
             <a href="#faq" className="hover:text-[var(--color-accent)] transition-colors">FAQ</a>
             <button onClick={handleCreate} className="btn-primary text-sm">Créer un cadrage</button>
           </nav>
@@ -129,10 +128,10 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button onClick={handleCreate} disabled={creating}
               className="btn-primary text-lg px-8 py-3 h-auto animate-pulse-glow">
-              {creating ? 'Création...' : 'Créer un cadrage gratuit'} <ArrowRight size={20} />
+              {creating ? 'Création...' : 'Créer un cadrage'} <ArrowRight size={20} />
             </button>
           </div>
-          <p className="mt-6 text-sm opacity-40">Gratuit, sans inscription, prêt en 5 secondes</p>
+          <p className="mt-6 text-sm opacity-40">Sans inscription, prêt en 5 secondes</p>
         </div>
       </section>
 
@@ -298,68 +297,12 @@ export default function LandingPage() {
           <p className="font-display font-semibold mb-2">Insuffle Académie</p>
           <p className="text-body mb-8 max-w-xl mx-auto" style={{ color: 'var(--color-text-muted)' }}>
             Formez-vous à la facilitation, à l'intelligence collective et au cadrage de temps collectifs.
-            <strong> Plan Pro inclus pour les certifiés.</strong>
           </p>
           <a href="https://insuffle.com" target="_blank" rel="noopener"
             className="inline-flex items-center gap-2 font-semibold px-6 py-3 rounded-btn transition-all hover:scale-[1.02]"
             style={{ backgroundColor: 'var(--color-academie)', color: 'white' }}>
             Découvrir les formations <ArrowRight size={18} />
           </a>
-        </div>
-      </Section>
-
-      {/* ===== Pricing (US-397) ===== */}
-      <Section id="pricing" className="py-16 md:py-20">
-        <div className="max-w-5xl mx-auto px-4 md:px-8">
-          <h2 className="font-display text-h2-mobile md:text-h2 text-center mb-4">Tarifs</h2>
-          <p className="text-center mb-12 text-body-sm" style={{ color: 'var(--color-text-muted)' }}>Découvrez la méthode Insuffle</p>
-          <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {/* Free */}
-            <div className="rounded-card p-6 elevation-1" style={{ backgroundColor: 'var(--color-surface)' }}>
-              <h3 className="font-display font-bold text-lg mb-1">Gratuit</h3>
-              <p className="text-caption mb-4" style={{ color: 'var(--color-text-muted)' }}>Découvrez la méthode Insuffle</p>
-              <p className="text-3xl font-display font-bold mb-6">0€</p>
-              <ul className="space-y-2 text-body-sm mb-6" style={{ color: 'var(--color-text-muted)' }}>
-                <li>✓ 3 espaces actifs</li>
-                <li>✓ 5 participants max</li>
-                <li>✓ Export PDF</li>
-                <li>✓ Toutes les fonctionnalités de base</li>
-              </ul>
-              <button onClick={handleCreate} className="btn-primary w-full">Commencer gratuitement</button>
-            </div>
-
-            {/* Pro - highlighted */}
-            <div className="rounded-card p-6 elevation-3 relative ring-2" style={{ backgroundColor: 'var(--color-surface)', ringColor: 'var(--color-accent)' }}>
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-label font-bold"
-                style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>Populaire</div>
-              <h3 className="font-display font-bold text-lg mb-1">Pro</h3>
-              <p className="text-caption mb-4" style={{ color: 'var(--color-text-muted)' }}>Pour les facilitateurs professionnels</p>
-              <p className="text-3xl font-display font-bold mb-1">19€<span className="text-sm font-normal" style={{ color: 'var(--color-text-muted)' }}>/mois</span></p>
-              <p className="text-caption font-semibold mb-6" style={{ color: 'var(--color-academie)' }}>Inclus pour les certifiés Insuffle Académie</p>
-              <ul className="space-y-2 text-body-sm mb-6" style={{ color: 'var(--color-text-muted)' }}>
-                <li>✓ Espaces illimités</li>
-                <li>✓ 15 participants</li>
-                <li>✓ Templates Insuffle</li>
-                <li>✓ Co-branding client</li>
-                <li>✓ Support prioritaire</li>
-              </ul>
-              <button className="btn-primary w-full">Passer en Pro</button>
-            </div>
-
-            {/* Enterprise */}
-            <div className="rounded-card p-6 elevation-1" style={{ backgroundColor: 'var(--color-surface)' }}>
-              <h3 className="font-display font-bold text-lg mb-1">Entreprise</h3>
-              <p className="text-caption mb-4" style={{ color: 'var(--color-text-muted)' }}>Pour les équipes de facilitation</p>
-              <p className="text-3xl font-display font-bold mb-6">Sur devis</p>
-              <ul className="space-y-2 text-body-sm mb-6" style={{ color: 'var(--color-text-muted)' }}>
-                <li>✓ Tout le plan Pro</li>
-                <li>✓ Domaine personnalisé</li>
-                <li>✓ SSO / SAML</li>
-                <li>✓ Accompagnement Insuffle inclus</li>
-              </ul>
-              <button className="btn-secondary w-full">Nous contacter</button>
-            </div>
-          </div>
         </div>
       </Section>
 
@@ -389,7 +332,7 @@ export default function LandingPage() {
       <Section className="py-20 text-center">
         <div className="max-w-2xl mx-auto px-4 md:px-8">
           <h2 className="font-display text-h2-mobile md:text-h2 mb-4">Prêt à cadrer votre prochain temps collectif ?</h2>
-          <p className="text-body mb-8" style={{ color: 'var(--color-text-muted)' }}>Gratuit, sans inscription, prêt en 5 secondes.</p>
+          <p className="text-body mb-8" style={{ color: 'var(--color-text-muted)' }}>Sans inscription, prêt en 5 secondes.</p>
           <button onClick={handleCreate} disabled={creating} className="btn-primary text-lg px-8 py-3 h-auto">
             {creating ? 'Création...' : 'Créer votre premier cadrage'} <ArrowRight size={20} />
           </button>
@@ -417,7 +360,7 @@ export default function LandingPage() {
               <h4 className="font-semibold text-body-sm mb-3">Produit</h4>
               <div className="space-y-1.5 text-body-sm opacity-60">
                 <a href="#features" className="block hover:opacity-100 transition-opacity">Fonctionnalités</a>
-                <a href="#pricing" className="block hover:opacity-100 transition-opacity">Tarifs</a>
+                <a href="#method" className="block hover:opacity-100 transition-opacity">La méthode</a>
                 <a href="#faq" className="block hover:opacity-100 transition-opacity">FAQ</a>
               </div>
             </div>
