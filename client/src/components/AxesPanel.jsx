@@ -95,7 +95,7 @@ function AxisSlider({ axis, compact }) {
 
       {/* Slider track */}
       <div className="flex items-center gap-1 mb-1">
-        <span className="text-caption w-28 sm:w-32 text-right shrink-0" style={{ color: 'var(--color-text-muted)' }}>{axis.left}</span>
+        <span className="text-caption min-w-[7rem] max-w-[10rem] text-right shrink-0" style={{ color: 'var(--color-text-muted)' }}>{axis.left}</span>
         <div className="flex-1 flex items-center justify-between px-2 relative">
           {/* Track line */}
           <div className="absolute inset-x-2 top-1/2 h-0.5 -translate-y-1/2" style={{ backgroundColor: 'var(--color-border)' }} />
@@ -140,7 +140,7 @@ function AxisSlider({ axis, compact }) {
             </div>
           )}
         </div>
-        <span className="text-caption w-28 sm:w-32 shrink-0" style={{ color: 'var(--color-text-muted)' }}>{axis.right}</span>
+        <span className="text-caption min-w-[7rem] max-w-[10rem] shrink-0" style={{ color: 'var(--color-text-muted)' }}>{axis.right}</span>
       </div>
 
       {/* Respondents count */}

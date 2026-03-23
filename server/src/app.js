@@ -477,34 +477,40 @@ export function createApp(db) {
     let currentColor = null;
 
     socket.on('join-space', ({ spaceId, pseudo }) => {
-      const space = db.prepare(`SELECT id, archived FROM spaces WHERE id = ? AND deleted = 0`).get(spaceId);
-      if (!space) { socket.emit('error', { message: 'Espace inexistant' }); return; }
+      try {
+        if (!pseudo?.trim()) { socket.emit('error', { message: 'Pseudo requis.' }); return; }
+        const space = db.prepare(`SELECT id, archived FROM spaces WHERE id = ? AND deleted = 0`).get(spaceId);
+        if (!space) { socket.emit('error', { message: 'Espace inexistant' }); return; }
 
-      currentSpace = spaceId;
-      currentPseudo = pseudo;
-      currentColor = getParticipantColor(spaceId, pseudo);
-      socket.join(spaceId);
+        currentSpace = spaceId;
+        currentPseudo = pseudo;
+        currentColor = getParticipantColor(spaceId, pseudo);
+        socket.join(spaceId);
 
-      if (!spaceParticipants.has(spaceId)) spaceParticipants.set(spaceId, new Map());
-      const participants = spaceParticipants.get(spaceId);
+        if (!spaceParticipants.has(spaceId)) spaceParticipants.set(spaceId, new Map());
+        const participants = spaceParticipants.get(spaceId);
 
-      const uniquePseudos = new Set([...participants.values()].map(p => p.pseudo));
-      const spaceData = db.prepare(`SELECT plan FROM spaces WHERE id = ?`).get(spaceId);
-      const limit = spaceData?.plan === 'pro' ? 15 : 5;
-      if (!uniquePseudos.has(pseudo) && uniquePseudos.size >= limit) {
-        socket.emit('error', { message: `Cet espace a atteint sa capacité maximale (${limit} participants)` });
-        return;
+        const uniquePseudos = new Set([...participants.values()].map(p => p.pseudo));
+        const spaceData = db.prepare(`SELECT plan FROM spaces WHERE id = ?`).get(spaceId);
+        const limit = spaceData?.plan === 'pro' ? 15 : 5;
+        if (!uniquePseudos.has(pseudo) && uniquePseudos.size >= limit) {
+          socket.emit('error', { message: `Cet espace a atteint sa capacité maximale (${limit} participants)` });
+          return;
+        }
+
+        participants.set(socket.id, { pseudo, color: currentColor });
+        logActivity(spaceId, pseudo, 'join', '', '');
+
+        socket.emit('joined', { pseudo, color: currentColor, archived: !!space.archived });
+        io.to(spaceId).emit('participants', getParticipantsList(spaceId));
+        socket.to(spaceId).emit('notification', { message: `${pseudo} a rejoint le cadrage` });
+
+        const timer = spaceTimers.get(spaceId);
+        if (timer) socket.emit('timer-update', { remaining: timer.remaining, duration: timer.duration });
+      } catch (e) {
+        console.error('join-space error:', e);
+        socket.emit('error', { message: 'Erreur lors de la connexion à l\'espace.' });
       }
-
-      participants.set(socket.id, { pseudo, color: currentColor });
-      logActivity(spaceId, pseudo, 'join', '', '');
-
-      socket.emit('joined', { pseudo, color: currentColor, archived: space.archived });
-      io.to(spaceId).emit('participants', getParticipantsList(spaceId));
-      socket.to(spaceId).emit('notification', { message: `${pseudo} a rejoint le cadrage` });
-
-      const timer = spaceTimers.get(spaceId);
-      if (timer) socket.emit('timer-update', { remaining: timer.remaining, duration: timer.duration });
     });
 
     socket.on('update-header', (data) => {
@@ -519,7 +525,7 @@ export function createApp(db) {
     });
 
     socket.on('create-card', ({ phase, columnKey, content }) => {
-      if (!currentSpace || !currentPseudo) {
+      if (!currentSpace || !currentPseudo || !currentColor) {
         socket.emit('error', { message: 'Session expirée. Rechargez la page.' });
         return;
       }
@@ -650,7 +656,7 @@ export function createApp(db) {
     });
 
     socket.on('add-comment', ({ cardId, content }) => {
-      if (!currentSpace || !content?.trim()) return;
+      if (!currentSpace || !currentPseudo || !currentColor || !content?.trim()) return;
       const id = generateId();
       db.prepare(`INSERT INTO comments (id, card_id, space_id, author, author_color, content) VALUES (?, ?, ?, ?, ?, ?)`).run(
         id, cardId, currentSpace, currentPseudo, currentColor, content.trim()
@@ -660,7 +666,7 @@ export function createApp(db) {
     });
 
     socket.on('set-axis-position', ({ axisKey, position, explanation }) => {
-      if (!currentSpace) return;
+      if (!currentSpace || !currentPseudo || !currentColor) return;
       const axFinal = db.prepare(`SELECT locked FROM axes_final WHERE space_id = ? AND axis_key = ?`).get(currentSpace, axisKey);
       if (axFinal?.locked) { socket.emit('error', { message: 'Axe verrouillé' }); return; }
 

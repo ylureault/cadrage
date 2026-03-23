@@ -255,7 +255,7 @@ export default function SpacePage() {
                   borderBottomColor: isActive ? 'var(--color-accent)' : undefined,
                   color: isActive ? 'var(--color-text)' : 'var(--color-text-muted)',
                 }}>
-                {ps?.locked ? '🔒 ' : ''}{phase.name}
+                {ps?.locked ? '🔒 ' : null}{phase.name}
                 {cardCount > 0 ? (
                   <span className="text-label px-1.5 py-0.5 rounded-full"
                     style={{ backgroundColor: isActive ? 'rgba(255,222,89,0.2)' : 'var(--color-surface-alt)', color: isActive ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>

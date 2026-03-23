@@ -14,14 +14,15 @@ export default function Notifications() {
   const { state, dispatch } = useStore();
 
   useEffect(() => {
+    const timers = [];
     for (const n of state.notifications) {
       // Errors don't auto-dismiss (US-373)
       if (n.type === 'error') continue;
-      const timer = setTimeout(() => {
+      timers.push(setTimeout(() => {
         dispatch({ type: 'REMOVE_NOTIFICATION', id: n.id });
-      }, 3000);
-      return () => clearTimeout(timer);
+      }, 3000));
     }
+    return () => timers.forEach(t => clearTimeout(t));
   }, [state.notifications, dispatch]);
 
   return (

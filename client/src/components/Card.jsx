@@ -31,7 +31,7 @@ export default function Card({ card }) {
   const comments = state.comments.filter(c => c.card_id === card.id);
   const cardVotes = state.votes.filter(v => v.card_id === card.id);
   const myVote = cardVotes.find(v => v.pseudo === state.pseudo);
-  const isHighlighted = state.searchQuery && card.content.toLowerCase().includes(state.searchQuery.toLowerCase());
+  const isHighlighted = state.searchQuery && (card.content.toLowerCase().includes(state.searchQuery.toLowerCase()) || card.author.toLowerCase().includes(state.searchQuery.toLowerCase()));
 
   function saveEdit() {
     if (editContent.trim() && editContent !== card.content) {

@@ -11,7 +11,7 @@ export default function ColumnView({ column, phase, locked }) {
   const [submitting, setSubmitting] = useState(false);
   const [questionsOpen, setQuestionsOpen] = useState(true);
   const [newContent, setNewContent] = useState('');
-  const prevCardCount = useRef(0);
+  const prevCardIds = useRef(new Set());
 
   const cards = useMemo(() => {
     let filtered = state.cards.filter(c => c.column_key === column.key && c.phase === phase.key);
@@ -21,10 +21,10 @@ export default function ColumnView({ column, phase, locked }) {
       filtered = filtered.filter(c => c.author === state.pseudo);
     }
 
-    // Search filter
+    // Search filter (content + author)
     if (state.searchQuery) {
       const q = state.searchQuery.toLowerCase();
-      filtered = filtered.filter(c => c.content.toLowerCase().includes(q));
+      filtered = filtered.filter(c => c.content.toLowerCase().includes(q) || c.author.toLowerCase().includes(q));
     }
 
     return filtered.sort((a, b) => a.position - b.position);
@@ -34,15 +34,20 @@ export default function ColumnView({ column, phase, locked }) {
     .filter(([, col]) => col === column.key)
     .map(([pseudo]) => pseudo);
 
-  // Close form when a new card appears in this column (server confirmed)
+  // Close form when OUR new card appears in this column (server confirmed)
   useEffect(() => {
-    if (submitting && cards.length > prevCardCount.current) {
-      setNewContent('');
-      setAdding(false);
-      setSubmitting(false);
+    const currentIds = new Set(cards.map(c => c.id));
+    if (submitting) {
+      // Check if a new card by current user appeared
+      const hasOwnNewCard = cards.some(c => c.author === state.pseudo && !prevCardIds.current.has(c.id));
+      if (hasOwnNewCard) {
+        setNewContent('');
+        setAdding(false);
+        setSubmitting(false);
+      }
     }
-    prevCardCount.current = cards.length;
-  }, [cards.length, submitting]);
+    prevCardIds.current = currentIds;
+  }, [cards, submitting, state.pseudo]);
 
   function handleAdd() {
     if (!newContent.trim() || state.archived || submitting) return;
@@ -136,22 +141,7 @@ export default function ColumnView({ column, phase, locked }) {
             </div>
           )}
 
-          {/* Cards */}
-          {cards.map(card => (
-            <Card key={card.id} card={card} />
-          ))}
-
-          {/* Empty state (quand pas de questions ET pas de cartes) */}
-          {cards.length === 0 && (!column.questions || column.questions.length === 0) && !adding && (
-            <div className="text-center py-6">
-              <Plus size={24} className="mx-auto mb-2" style={{ color: 'var(--color-border)' }} />
-              <p className="text-body-sm" style={{ color: 'var(--color-text-muted)' }}>
-                Aucune carte pour l'instant.
-              </p>
-            </div>
-          )}
-
-          {/* Add card form */}
+          {/* Add card form — placed right after questions so they remain visible as inspiration */}
           {adding && (
             <div className="animate-slide-in">
               <textarea value={newContent} onChange={e => setNewContent(e.target.value)}
@@ -172,6 +162,21 @@ export default function ColumnView({ column, phase, locked }) {
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Cards */}
+          {cards.map(card => (
+            <Card key={card.id} card={card} />
+          ))}
+
+          {/* Empty state (quand pas de questions ET pas de cartes) */}
+          {cards.length === 0 && (!column.questions || column.questions.length === 0) && !adding && (
+            <div className="text-center py-6">
+              <Plus size={24} className="mx-auto mb-2" style={{ color: 'var(--color-border)' }} />
+              <p className="text-body-sm" style={{ color: 'var(--color-text-muted)' }}>
+                Aucune carte pour l'instant.
+              </p>
             </div>
           )}
         </div>

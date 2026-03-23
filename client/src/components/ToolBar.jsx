@@ -67,8 +67,12 @@ export default function ToolBar() {
                 autoFocus
               />
               {state.searchQuery && (
-                <span className="text-label" style={{ color: 'var(--color-accent)' }}>
-                  {state.cards.filter(c => c.content.toLowerCase().includes(state.searchQuery.toLowerCase())).length} résultat(s)
+                <span className="text-body-sm font-medium px-2 py-0.5 rounded-full"
+                  style={{ backgroundColor: 'rgba(255,222,89,0.2)', color: 'var(--color-accent)' }}>
+                  {state.cards.filter(c => {
+                    const q = state.searchQuery.toLowerCase();
+                    return c.content.toLowerCase().includes(q) || c.author.toLowerCase().includes(q);
+                  }).length} résultat(s)
                 </span>
               )}
               <button onClick={() => { dispatch({ type: 'SET_SEARCH', query: '' }); setShowSearch(false); }}
