@@ -189,10 +189,23 @@ export default function ExportPanel() {
 
           for (const card of cards) {
             if (cardY > H - 25) { doc.addPage(); pageHeader(doc, `${phase.name} (suite)`, phaseColor); cardY = 24; }
+
+            // Parse question-linked cards
+            const isQuestionCard = card.content.startsWith('[Q] ');
+            let questionText = '';
+            let answerText = card.content;
+            if (isQuestionCard) {
+              const parts = card.content.slice(4).split('\n\n');
+              questionText = parts[0];
+              answerText = parts.slice(1).join('\n\n');
+            }
+
             // Card background
             doc.setFillColor(255, 255, 255);
-            const textLines = doc.splitTextToSize(card.content, colWidth - 14);
-            const cardHeight = textLines.length * 3.5 + 5;
+            const questionLines = isQuestionCard ? doc.splitTextToSize(questionText, colWidth - 16) : [];
+            const answerLines = doc.splitTextToSize(answerText, colWidth - 14);
+            const questionH = isQuestionCard ? questionLines.length * 3 + 4 : 0;
+            const cardHeight = answerLines.length * 3.5 + 5 + questionH;
             doc.roundedRect(x + 1, cardY - 1, colWidth - 6, cardHeight, 1.5, 1.5, 'F');
             // Left accent
             doc.setFillColor(...gold);
@@ -201,10 +214,24 @@ export default function ExportPanel() {
             doc.setFontSize(6.5);
             doc.setTextColor(...muted);
             doc.text(card.author, x + 5, cardY + 2.5);
+
+            let contentY = cardY + 6;
+            // Question header if present
+            if (isQuestionCard && questionText) {
+              doc.setFillColor(255, 249, 224);
+              doc.roundedRect(x + 4, contentY - 2, colWidth - 12, questionLines.length * 3 + 2, 1, 1, 'F');
+              doc.setFontSize(6.5);
+              doc.setFont('helvetica', 'italic');
+              doc.setTextColor(...muted);
+              doc.text(questionLines, x + 5.5, contentY + 1);
+              doc.setFont('helvetica', 'normal');
+              contentY += questionH;
+            }
+
             // Content
             doc.setFontSize(8);
             doc.setTextColor(...navy);
-            doc.text(textLines, x + 5, cardY + 6);
+            doc.text(answerLines, x + 5, contentY);
             cardY += cardHeight + 2;
           }
         }
@@ -249,7 +276,7 @@ export default function ExportPanel() {
         doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(...navy);
-        doc.text(`${axis.left}  ↔  ${axis.right}`, ax + 12, axY + 6);
+        doc.text(`${axis.left}  ---  ${axis.right}`, ax + 12, axY + 6);
 
         // Status
         doc.setFontSize(7);
@@ -372,7 +399,9 @@ export default function ExportPanel() {
           if (spread >= 2) {
             hasAlerts = true;
             doc.setTextColor(spread >= 3 ? error[0] : warning[0], spread >= 3 ? error[1] : warning[1], spread >= 3 ? error[2] : warning[2]);
-            doc.text(spread >= 3 ? '⚠' : '△', 15, sy);
+            doc.setFont('helvetica', 'bold');
+            doc.text(spread >= 3 ? '/!\\' : '/!\\', 15, sy);
+            doc.setFont('helvetica', 'normal');
             doc.setTextColor(...navy);
             doc.text(`${axis.left} / ${axis.right} — ${spread >= 3 ? 'Divergence forte' : 'Écart modéré'} (écart de ${spread})`, 22, sy);
             sy += 7;
@@ -381,7 +410,7 @@ export default function ExportPanel() {
       }
       if (!hasAlerts) {
         doc.setTextColor(...success);
-        doc.text('✓ Alignement satisfaisant sur l\'ensemble des axes', 15, sy);
+        doc.text('OK - Alignement satisfaisant sur l\'ensemble des axes', 15, sy);
       }
 
       footer(doc);
@@ -427,7 +456,7 @@ export default function ExportPanel() {
   }
 
   // Darkboard link
-  const darkboardUrl = `https://darkboard.insuffle.com/${state.spaceId}`;
+  const darkboardUrl = `https://darkboard.insuffle.com/board/cadrage-${state.spaceId}`;
 
   return (
     <div className="fixed right-0 top-0 bottom-0 w-[380px] max-w-[90vw] z-40 flex flex-col animate-slide-in elevation-3"

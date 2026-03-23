@@ -111,7 +111,7 @@ export default function ToolBar() {
           </button>
 
           {/* Darkboard link */}
-          <a href={`https://darkboard.insuffle.com/${state.spaceId}`} target="_blank" rel="noopener"
+          <a href={`https://darkboard.insuffle.com/board/cadrage-${state.spaceId}`} target="_blank" rel="noopener"
             className="p-1.5 hover:bg-white/10 rounded" title="Ouvrir le Darkboard Insuffle">
             <QrCode size={18} />
           </a>

@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useStore } from '../store.jsx';
 import socket from '../socket.js';
 import Card from './Card.jsx';
-import { Plus, ChevronDown, ChevronUp, Eye, EyeOff, HelpCircle } from 'lucide-react';
+import { Plus, ChevronDown, ChevronUp, Eye, EyeOff, HelpCircle, MessageSquarePlus } from 'lucide-react';
 
 export default function ColumnView({ column, phase, locked }) {
   const { state, dispatch } = useStore();
@@ -57,6 +57,11 @@ export default function ColumnView({ column, phase, locked }) {
     // If error, the Notifications component will show it (socket 'error' → store notification)
     // Timeout fallback: if no response in 5s, re-enable the button
     setTimeout(() => setSubmitting(false), 5000);
+  }
+
+  function handleReplyToQuestion(question) {
+    setNewContent(`[Q] ${question}\n\n`);
+    setAdding(true);
   }
 
   function handleFocus() {
@@ -126,12 +131,24 @@ export default function ColumnView({ column, phase, locked }) {
                 </span>
               </button>
               {questionsOpen && (
-                <div className="px-3 pb-3 space-y-1.5 animate-fade-in">
+                <div className="px-3 pb-3 space-y-1 animate-fade-in">
                   {column.questions.map((q, i) => (
-                    <p key={i} className="text-body-sm italic leading-snug highlight-accent py-1"
-                      style={{ color: 'var(--color-text-muted)', borderLeftColor: 'var(--color-accent)' }}>
-                      {q}
-                    </p>
+                    <div key={i} className="flex items-start gap-1.5 group/q py-1 highlight-accent"
+                      style={{ borderLeftColor: 'var(--color-accent)' }}>
+                      <p className="text-body-sm italic leading-snug flex-1"
+                        style={{ color: 'var(--color-text-muted)' }}>
+                        {q}
+                      </p>
+                      {!locked && !state.archived && (
+                        <button
+                          onClick={() => handleReplyToQuestion(q)}
+                          className="shrink-0 opacity-0 group-hover/q:opacity-100 focus:opacity-100 transition-opacity flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded-btn"
+                          style={{ color: 'var(--color-accent-dark)', backgroundColor: 'rgba(255,222,89,0.15)' }}
+                          title="Créer une carte pour répondre à cette question">
+                          <MessageSquarePlus size={12} /> Répondre
+                        </button>
+                      )}
+                    </div>
                   ))}
                   <p className="text-label mt-2" style={{ color: 'var(--color-text-muted)' }}>
                     Questions issues de la méthode de cadrage Insuffle
@@ -144,10 +161,17 @@ export default function ColumnView({ column, phase, locked }) {
           {/* Add card form — placed right after questions so they remain visible as inspiration */}
           {adding && (
             <div className="animate-slide-in">
+              {newContent.startsWith('[Q] ') && (
+                <div className="text-[11px] font-medium px-2 py-1.5 rounded-t-btn mb-0"
+                  style={{ backgroundColor: 'rgba(255,222,89,0.12)', color: 'var(--color-text-muted)' }}>
+                  Carte liée à une question-guide
+                </div>
+              )}
               <textarea value={newContent} onChange={e => setNewContent(e.target.value)}
                 placeholder="Votre contribution..."
                 className="input-field w-full text-sm resize-none"
-                rows={3} maxLength={500} autoFocus
+                rows={newContent.startsWith('[Q] ') ? 5 : 3} maxLength={500} autoFocus
+                ref={el => { if (el && newContent.startsWith('[Q] ') && el.selectionStart === 0) el.selectionStart = el.selectionEnd = newContent.length; }}
                 onKeyDown={e => {
                   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleAdd();
                   if (e.key === 'Escape') { setAdding(false); setNewContent(''); }

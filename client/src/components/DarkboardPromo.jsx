@@ -11,7 +11,7 @@ export default function DarkboardPromo({ spaceId, onOpenTab }) {
 
   if (dismissed) return null;
 
-  const darkboardUrl = `https://darkboard.insuffle.com/${spaceId}`;
+  const darkboardUrl = `https://darkboard.insuffle.com/board/cadrage-${spaceId}`;
 
   function handleDismiss() {
     setDismissed(true);

@@ -91,8 +91,8 @@ export default function DarkboardTab({ spaceId }) {
   }
 
   return (
-    <div className={`flex flex-col ${fullscreen ? 'fixed inset-0 z-50' : ''}`}
-      style={fullscreen ? { backgroundColor: 'var(--color-surface)' } : undefined}>
+    <div className={`flex flex-col ${fullscreen ? 'fixed inset-0 z-50' : 'h-full'}`}
+      style={fullscreen ? { backgroundColor: 'var(--color-surface)' } : { minHeight: 'calc(100vh - 120px)' }}>
       {/* Toolbar */}
       <div className="flex items-center justify-between px-4 py-2 border-b"
         style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
@@ -122,13 +122,13 @@ export default function DarkboardTab({ spaceId }) {
         </div>
       </div>
 
-      {/* iframe */}
-      <div className={`flex-1 ${fullscreen ? '' : 'min-h-[600px]'}`}>
+      {/* iframe — full height, no white space */}
+      <div className="flex-1 flex flex-col" style={{ minHeight: 0 }}>
         <iframe
           src={embedUrl}
           title="DarkBoard — Tableau collaboratif"
-          className="w-full h-full border-0"
-          style={{ minHeight: fullscreen ? 'calc(100vh - 48px)' : '600px' }}
+          className="w-full border-0"
+          style={{ flex: 1, height: fullscreen ? 'calc(100vh - 48px)' : 'calc(100vh - 160px)', minHeight: '400px' }}
           allow="clipboard-write"
           sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
         />

@@ -11,46 +11,46 @@ export const PHASES = [
         key: 'clarifier_cadre',
         name: 'Clarifier le cadre et l\'intention',
         questions: [
-          'Quelle est la vraie raison pour laquelle on vous a appelé ?',
-          'Qu\'est-ce qui se passe concrètement si on ne fait rien ?',
-          'Qu\'est-ce qui va changer concrètement après cette session ?',
-          'Comment se fait-il que les solutions tentées jusque-là ne marchent pas ?',
-          'Quel est le non-dit ou la question taboue autour de cette commande ?',
-          'Est-ce que le vrai problème est celui qui est posé ?'
+          'Pourquoi fait-on appel à vous maintenant ?',
+          'Que se passe-t-il concrètement si on ne fait rien ?',
+          'Qu\'est-ce qui doit changer après cette session ?',
+          'Qu\'est-ce qui a déjà été tenté et pourquoi ça n\'a pas marché ?',
+          'Y a-t-il un sujet sensible ou un non-dit autour de cette demande ?',
+          'Le vrai problème est-il bien celui qui est posé ?'
         ]
       },
       {
         key: 'personnes_roles',
         name: 'Les personnes et les rôles',
         questions: [
-          'Il vous manquerait-il quelqu\'un ?',
-          'Où êtes-vous dans l\'échiquier politique de décision ?',
-          'Qui est-ce qui s\'est déjà exprimé contre cette initiative ?',
-          'Quels sont les rôles et les niveaux hiérarchiques des participants ?',
-          'Combien ont-ils de latitude pour décider et s\'engager réellement ?',
-          'Avez-vous un allié solide à l\'intérieur du groupe ?'
+          'Manque-t-il quelqu\'un d\'important dans le groupe ?',
+          'Qui décide vraiment dans cette organisation ?',
+          'Y a-t-il des personnes opposées à cette initiative ?',
+          'Quels sont les rôles et niveaux hiérarchiques des participants ?',
+          'Les participants peuvent-ils vraiment décider et s\'engager ?',
+          'Avez-vous un allié dans le groupe ?'
         ]
       },
       {
         key: 'definir_succes',
         name: 'Définir le succès',
         questions: [
-          'Ce n\'est pas un échec mais bien un succès si et seulement si...',
-          'Où allez-vous voir que ça a bougé ?',
-          'Quel comportement observable et concret sera différent ?',
-          'C\'est la fin/finalité exactement ?',
-          'Faites-vous une distinction entre résultats et satisfaction ?'
+          'C\'est un succès si et seulement si…',
+          'À quoi verra-t-on que ça a bougé ?',
+          'Quel comportement concret sera différent après ?',
+          'Quel est le livrable ou le résultat attendu ?',
+          'Fait-on la différence entre résultats et satisfaction ?'
         ]
       },
       {
         key: 'attentes',
         name: 'Les attentes',
         questions: [
-          'Quelle est la vraie posture client que vous avez ?',
-          'Quels sujets sont attendus comme prioritaires ?',
-          'Quelle est la tolérance aux exercices créatifs/décalés ?',
-          'Existe-t-il des attentes contradictoires entre participants ?',
-          'Les participants ont-ils déjà vécu des ateliers de facilitation ?'
+          'Quelle posture le client attend-il de vous ?',
+          'Quels sujets sont prioritaires pour le sponsor ?',
+          'Le groupe est-il ouvert aux exercices créatifs ou décalés ?',
+          'Y a-t-il des attentes contradictoires entre participants ?',
+          'Les participants ont-ils déjà vécu ce type d\'atelier ?'
         ]
       }
     ]
@@ -66,22 +66,22 @@ export const PHASES = [
         key: 'contenu_sujet',
         name: 'Contenu et sujet',
         questions: [
-          'Comment allez-vous du point de départ A au point d\'arrivée B avec eux ?',
-          'Qu\'est-ce que le groupe va produire, discuter, décider ?',
-          'Quel est le vrai sujet ? Pas le sujet officiel, le vrai.',
-          'Est-ce qu\'il faudra des informations de la part du client ?'
+          'Comment emmener le groupe du point A au point B ?',
+          'Que doit produire, discuter ou décider le groupe ?',
+          'Quel est le vrai sujet derrière la demande officielle ?',
+          'Faudra-t-il des informations ou données de la part du client ?'
         ]
       },
       {
         key: 'energie_dynamique',
         name: 'Énergie et dynamique',
         questions: [
-          'Comment est l\'ambiance du groupe actuellement ?',
-          'Quel est le niveau de confiance/défiance dans le collectif ?',
-          'Y a-t-il des personnes qui monopolisent la parole habituellement ?',
-          'Faut-il prévoir des sous-groupes pour libérer la parole ?',
-          'Quel est le rythme de la journée le plus adapté ?',
-          'Faut-il faciliter la rencontre, l\'expression ou les deux ?'
+          'Quelle est l\'ambiance actuelle du groupe ?',
+          'Quel est le niveau de confiance dans le collectif ?',
+          'Y a-t-il des personnes qui monopolisent la parole ?',
+          'Faut-il des sous-groupes pour libérer la parole ?',
+          'Quel rythme de journée est le plus adapté ?',
+          'Faut-il faciliter la rencontre, l\'expression, ou les deux ?'
         ]
       }
     ]
@@ -97,10 +97,10 @@ export const PHASES = [
         key: 'risques_resistances',
         name: 'Risques et résistances',
         questions: [
-          'Qu\'est-ce qui pourrait bloquer l\'atelier concrètement ?',
-          'Quel est le scénario catastrophe réaliste ?',
-          'Quelle résistance serait la plus destructrice pour le groupe ?',
-          'À qui le document/restitution devra être présenté ensuite ?',
+          'Qu\'est-ce qui pourrait bloquer l\'atelier ?',
+          'Quel est le pire scénario réaliste ?',
+          'Quelle résistance pourrait faire dérailler le groupe ?',
+          'À qui la restitution devra-t-elle être présentée ?',
           'Quel niveau de confidentialité est nécessaire ?',
           'Comment le groupe réagirait si on abordait le vrai sujet ?'
         ]
@@ -118,33 +118,32 @@ export const PHASES = [
         key: 'production_livrables',
         name: 'Production et livrables',
         questions: [
-          'Quel est le document/livrable attendu à la fin ?',
-          'Que doivent produire les participants concrètement ?',
-          'Des livrables sous quelle forme pour les participants ?',
-          'Combien de temps après doit-on livrer la synthèse ?',
-          'Faut-il un plan d\'action, un compte rendu, les deux ?'
+          'Quel livrable est attendu à la fin ?',
+          'Que doivent produire concrètement les participants ?',
+          'Sous quelle forme : compte rendu, plan d\'action, les deux ?',
+          'Dans quel délai faut-il livrer la synthèse ?'
         ]
       },
       {
         key: 'suite_impact',
         name: 'Suite et impact',
         questions: [
-          'Que se passe-t-il concrètement le lendemain de la session ?',
-          'Comment mesurer que ce temps collectif a réellement servi à quelque chose ?',
-          'Qui va porter les décisions après le temps collectif ?',
-          'Combien de temps est-il réaliste de voir un changement ?',
-          'Est-ce une action isolée ou le début d\'un parcours plus long ?'
+          'Que se passe-t-il le lendemain de la session ?',
+          'Comment saura-t-on que ce temps collectif a été utile ?',
+          'Qui porte les décisions après ?',
+          'En combien de temps peut-on espérer voir un changement ?',
+          'Est-ce une action isolée ou le début d\'un parcours ?'
         ]
       },
       {
         key: 'posture_meta',
         name: 'Posture et meta',
         questions: [
-          'Quelle posture m\'est demandée ici : guide, miroir, provocateur ?',
-          'Quel est mon niveau de confort avec cette commande ?',
+          'Quelle posture est attendue : guide, miroir, provocateur ?',
+          'Suis-je à l\'aise avec cette commande ?',
           'Qu\'est-ce que je risque si je dis la vérité dans la salle ?',
-          'Faut-il que je sois dans le faire ou dans le faire faire ?',
-          'Quelle question aurais-je aimé poser mais que je n\'ai pas osé ?'
+          'Mon rôle est-il de faire ou de faire faire ?',
+          'Quelle question n\'ai-je pas encore osé poser ?'
         ]
       }
     ]

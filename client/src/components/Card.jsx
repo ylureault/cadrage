@@ -123,6 +123,17 @@ export default function Card({ card }) {
               <button onClick={saveEdit} className="btn-primary text-xs px-2 py-1">Valider</button>
             </div>
           </div>
+        ) : card.content.startsWith('[Q] ') ? (
+          <>
+            <div className="text-[11px] italic px-2 py-1 rounded-btn mb-1.5"
+              style={{ backgroundColor: 'rgba(255,222,89,0.1)', color: 'var(--color-text-muted)' }}>
+              <HelpCircle size={10} className="inline mr-1" style={{ color: 'var(--color-accent)' }} />
+              {card.content.slice(4).split('\n\n')[0]}
+            </div>
+            <p className="text-sm whitespace-pre-wrap break-words">
+              {card.content.slice(4).split('\n\n').slice(1).join('\n\n') || ''}
+            </p>
+          </>
         ) : (
           <p className="text-sm whitespace-pre-wrap break-words">{card.content}</p>
         )}
