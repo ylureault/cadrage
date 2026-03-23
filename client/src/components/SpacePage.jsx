@@ -20,6 +20,8 @@ import OnboardingTour from './OnboardingTour.jsx';
 import DarkboardPromo from './DarkboardPromo.jsx';
 import DarkboardTab from './DarkboardTab.jsx';
 import RecapTab from './RecapTab.jsx';
+import DeroulePage from './DeroulePage.jsx';
+import AgendaPage from './AgendaPage.jsx';
 
 export default function SpacePage() {
   const { spaceId } = useParams();
@@ -31,6 +33,8 @@ export default function SpacePage() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showDarkboard, setShowDarkboard] = useState(false);
   const [showRecap, setShowRecap] = useState(false);
+  const [showDeroule, setShowDeroule] = useState(false);
+  const [showAgenda, setShowAgenda] = useState(false);
 
   // Session persistence: restore pseudo from sessionStorage on mount
   const sessionKey = `insuffle-session-${spaceId}`;
@@ -141,6 +145,32 @@ export default function SpacePage() {
     socket.on('space-archived', ({ archived }) => dispatch({ type: 'SET_SPACE_ARCHIVED', archived }));
     socket.on('welcome-message-updated', ({ message }) => dispatch({ type: 'SET_WELCOME_MESSAGE', message }));
     socket.on('setting-updated', ({ key, value }) => dispatch({ type: 'UPDATE_SETTING', key, value }));
+
+    // Déroulé — blocs
+    socket.on('block-created', (block) => dispatch({ type: 'ADD_BLOCK', block }));
+    socket.on('block-updated', (block) => dispatch({ type: 'UPDATE_BLOCK', block }));
+    socket.on('block-deleted', ({ blockId }) => dispatch({ type: 'DELETE_BLOCK', blockId }));
+    socket.on('blocks-reordered', ({ orderedIds }) => dispatch({ type: 'REORDER_BLOCKS', orderedIds }));
+    socket.on('block-comment-added', (comment) => dispatch({ type: 'ADD_BLOCK_COMMENT', comment }));
+
+    // Sections
+    socket.on('section-created', (section) => dispatch({ type: 'ADD_SECTION', section }));
+    socket.on('section-updated', (section) => dispatch({ type: 'UPDATE_SECTION', section }));
+    socket.on('section-deleted', ({ sectionId }) => dispatch({ type: 'DELETE_SECTION', sectionId }));
+    socket.on('sections-reordered', ({ orderedIds }) => dispatch({ type: 'REORDER_SECTIONS', orderedIds }));
+    socket.on('deroulement-loaded', ({ blocks, sections }) => {
+      dispatch({ type: 'SET_BLOCKS', blocks });
+    });
+
+    // Agenda
+    socket.on('agenda-day-created', (day) => dispatch({ type: 'ADD_AGENDA_DAY', day }));
+    socket.on('agenda-day-updated', (day) => dispatch({ type: 'UPDATE_AGENDA_DAY', day }));
+    socket.on('agenda-day-deleted', ({ dayId }) => dispatch({ type: 'DELETE_AGENDA_DAY', dayId }));
+    socket.on('agenda-slot-created', (slot) => dispatch({ type: 'ADD_AGENDA_SLOT', slot }));
+    socket.on('agenda-slot-updated', (slot) => dispatch({ type: 'UPDATE_AGENDA_SLOT', slot }));
+    socket.on('agenda-slot-deleted', ({ slotId }) => dispatch({ type: 'DELETE_AGENDA_SLOT', slotId }));
+    socket.on('agenda-slots-reordered', ({ dayId, orderedIds }) => dispatch({ type: 'REORDER_AGENDA_SLOTS', orderedIds }));
+    socket.on('agenda-auto-scheduled', ({ dayId, slots }) => dispatch({ type: 'SET_AGENDA_SLOTS', dayId, slots }));
 
     socket.on('notification', ({ message }) => dispatch({ type: 'ADD_NOTIFICATION', notification: { message, type: 'info' } }));
     socket.on('activity-notification', (data) => dispatch({ type: 'ADD_NOTIFICATION', notification: { ...data, type: 'activity' } }));
@@ -255,14 +285,14 @@ export default function SpacePage() {
           {state.phases.map(phase => {
             const ps = state.phaseStates.find(p => p.phase === phase.key);
             if (ps?.hidden && !state.isFacilitator) return null;
-            const isActive = state.activePhase === phase.key && !showDarkboard && !showRecap;
+            const isActive = state.activePhase === phase.key && !showDarkboard && !showRecap && !showDeroule && !showAgenda;
             const cardCount = state.cards.filter(c => c.phase === phase.key).length;
             return (
               <button key={phase.key}
                 role="tab"
                 aria-selected={isActive}
                 aria-controls={`phase-${phase.key}`}
-                onClick={() => { setShowDarkboard(false); setShowRecap(false); dispatch({ type: 'SET_ACTIVE_PHASE', phase: phase.key }); }}
+                onClick={() => { setShowDarkboard(false); setShowRecap(false); setShowDeroule(false); setShowAgenda(false); dispatch({ type: 'SET_ACTIVE_PHASE', phase: phase.key }); }}
                 className={`flex items-center gap-2 px-5 py-3 text-body-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200
                   ${isActive ? '' : 'border-transparent hover:border-[var(--color-border)]'}
                   ${ps?.hidden ? 'opacity-40' : ''}`}
@@ -281,11 +311,51 @@ export default function SpacePage() {
             );
           })}
 
+          {/* Onglet DÉROULÉ (US-D001) */}
+          <button
+            role="tab"
+            aria-selected={showDeroule}
+            onClick={() => { setShowDeroule(true); setShowAgenda(false); setShowDarkboard(false); setShowRecap(false); }}
+            className={`flex items-center gap-2 px-5 py-3 text-body-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200
+              ${showDeroule ? '' : 'border-transparent hover:border-[var(--color-border)]'}`}
+            style={{
+              borderBottomColor: showDeroule ? 'var(--color-accent)' : undefined,
+              color: showDeroule ? 'var(--color-text)' : 'var(--color-text-muted)',
+            }}>
+            DÉROULÉ
+            {state.blocks.length > 0 && (
+              <span className="text-label px-1.5 py-0.5 rounded-full"
+                style={{ backgroundColor: showDeroule ? 'rgba(255,222,89,0.2)' : 'var(--color-surface-alt)', color: showDeroule ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
+                {state.blocks.length}
+              </span>
+            )}
+          </button>
+
+          {/* Onglet AGENDA (US-A001) */}
+          <button
+            role="tab"
+            aria-selected={showAgenda}
+            onClick={() => { setShowAgenda(true); setShowDeroule(false); setShowDarkboard(false); setShowRecap(false); }}
+            className={`flex items-center gap-2 px-5 py-3 text-body-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200
+              ${showAgenda ? '' : 'border-transparent hover:border-[var(--color-border)]'}`}
+            style={{
+              borderBottomColor: showAgenda ? 'var(--color-accent)' : undefined,
+              color: showAgenda ? 'var(--color-text)' : 'var(--color-text-muted)',
+            }}>
+            AGENDA
+            {state.agendaDays.length > 0 && (
+              <span className="text-label px-1.5 py-0.5 rounded-full"
+                style={{ backgroundColor: showAgenda ? 'rgba(255,222,89,0.2)' : 'var(--color-surface-alt)', color: showAgenda ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
+                {(() => { const total = state.agendaSlots.reduce((a, s) => a + (s.duration_minutes || 0), 0); const h = Math.floor(total / 60); const m = total % 60; return h > 0 ? `${h}h${m > 0 ? String(m).padStart(2, '0') : ''}` : `${m}min`; })()}
+              </span>
+            )}
+          </button>
+
           {/* Onglet Fiche Récap */}
           <button
             role="tab"
             aria-selected={showRecap && !showDarkboard}
-            onClick={() => { setShowRecap(true); setShowDarkboard(false); }}
+            onClick={() => { setShowRecap(true); setShowDarkboard(false); setShowDeroule(false); setShowAgenda(false); }}
             className={`flex items-center gap-2 px-5 py-3 text-body-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200 ml-auto
               ${showRecap && !showDarkboard ? '' : 'border-transparent hover:border-[var(--color-border)]'}`}
             style={{
@@ -299,7 +369,7 @@ export default function SpacePage() {
           <button
             role="tab"
             aria-selected={showDarkboard}
-            onClick={() => { setShowDarkboard(true); setShowRecap(false); }}
+            onClick={() => { setShowDarkboard(true); setShowRecap(false); setShowDeroule(false); setShowAgenda(false); }}
             className={`flex items-center gap-2 px-5 py-3 text-body-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200
               ${showDarkboard ? '' : 'border-transparent hover:border-[var(--color-border)]'}`}
             style={{
@@ -326,6 +396,10 @@ export default function SpacePage() {
           <DarkboardTab spaceId={spaceId} />
         ) : showRecap ? (
           <RecapTab />
+        ) : showDeroule ? (
+          <DeroulePage />
+        ) : showAgenda ? (
+          <AgendaPage />
         ) : (
           <>
             {state.phases.map(phase => (

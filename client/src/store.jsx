@@ -28,6 +28,13 @@ const initialState = {
   participants: [],
   facilitators: [],
 
+  // Déroulé & Agenda
+  blocks: [],
+  blockComments: [],
+  sections: [],
+  agendaDays: [],
+  agendaSlots: [],
+
   // Canvas structure
   phases: [],
   axesDef: [],
@@ -73,6 +80,11 @@ function reducer(state, action) {
         axesFinal: d.axesFinal,
         phaseStates: d.phaseStates,
         votes: d.votes,
+        blocks: d.blocks || [],
+        blockComments: d.blockComments || [],
+        sections: d.sections || [],
+        agendaDays: d.agendaDays || [],
+        agendaSlots: d.agendaSlots || [],
         facilitators: d.space.facilitator_ids || [],
         archived: !!d.space.archived,
         welcomeMessage: d.space.welcome_message || '',
@@ -136,6 +148,68 @@ function reducer(state, action) {
         ...state,
         axesFinal: state.axesFinal.map(a => a.axis_key === action.axisKey ? { ...a, locked: action.locked ? 1 : 0 } : a)
       };
+    }
+
+    // Blocks (Déroulé)
+    case 'ADD_BLOCK': return { ...state, blocks: [...state.blocks, action.block] };
+    case 'UPDATE_BLOCK': return {
+      ...state,
+      blocks: state.blocks.map(b => b.id === action.block.id ? action.block : b)
+    };
+    case 'DELETE_BLOCK': return {
+      ...state,
+      blocks: state.blocks.filter(b => b.id !== action.blockId),
+      agendaSlots: state.agendaSlots.filter(s => s.block_id !== action.blockId)
+    };
+    case 'REORDER_BLOCKS': {
+      const orderMap = {};
+      action.orderedIds.forEach((id, i) => { orderMap[id] = i; });
+      return { ...state, blocks: [...state.blocks].sort((a, b) => (orderMap[a.id] ?? a.position) - (orderMap[b.id] ?? b.position)) };
+    }
+    case 'SET_BLOCKS': return { ...state, blocks: action.blocks };
+
+    // Block comments
+    case 'ADD_BLOCK_COMMENT': return { ...state, blockComments: [...state.blockComments, action.comment] };
+
+    // Sections
+    case 'ADD_SECTION': return { ...state, sections: [...state.sections, action.section] };
+    case 'UPDATE_SECTION': return {
+      ...state,
+      sections: state.sections.map(s => s.id === action.section.id ? action.section : s)
+    };
+    case 'DELETE_SECTION': return {
+      ...state,
+      sections: state.sections.filter(s => s.id !== action.sectionId),
+      blocks: state.blocks.map(b => b.section_id === action.sectionId ? { ...b, section_id: null } : b)
+    };
+    case 'REORDER_SECTIONS': {
+      const orderMap = {};
+      action.orderedIds.forEach((id, i) => { orderMap[id] = i; });
+      return { ...state, sections: [...state.sections].sort((a, b) => (orderMap[a.id] ?? a.position) - (orderMap[b.id] ?? b.position)) };
+    }
+
+    // Agenda
+    case 'ADD_AGENDA_DAY': return { ...state, agendaDays: [...state.agendaDays, action.day] };
+    case 'UPDATE_AGENDA_DAY': return {
+      ...state,
+      agendaDays: state.agendaDays.map(d => d.id === action.day.id ? action.day : d)
+    };
+    case 'DELETE_AGENDA_DAY': return {
+      ...state,
+      agendaDays: state.agendaDays.filter(d => d.id !== action.dayId),
+      agendaSlots: state.agendaSlots.filter(s => s.day_id !== action.dayId)
+    };
+    case 'ADD_AGENDA_SLOT': return { ...state, agendaSlots: [...state.agendaSlots, action.slot] };
+    case 'UPDATE_AGENDA_SLOT': return {
+      ...state,
+      agendaSlots: state.agendaSlots.map(s => s.id === action.slot.id ? action.slot : s)
+    };
+    case 'DELETE_AGENDA_SLOT': return { ...state, agendaSlots: state.agendaSlots.filter(s => s.id !== action.slotId) };
+    case 'SET_AGENDA_SLOTS': return { ...state, agendaSlots: action.slots.concat(state.agendaSlots.filter(s => s.day_id !== action.dayId)) };
+    case 'REORDER_AGENDA_SLOTS': {
+      const orderMap = {};
+      action.orderedIds.forEach((id, i) => { orderMap[id] = i; });
+      return { ...state, agendaSlots: [...state.agendaSlots].sort((a, b) => (orderMap[a.id] ?? a.position) - (orderMap[b.id] ?? b.position)) };
     }
 
     // Phase states

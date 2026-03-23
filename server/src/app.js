@@ -15,6 +15,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const serializePhaseState = (p) => ({ ...p, locked: !!p.locked, hidden: !!p.hidden });
 const serializeCard = (c) => ({ ...c, tags: JSON.parse(c.tags || '[]'), reactions: JSON.parse(c.reactions || '{}'), marked_discuss: !!c.marked_discuss });
 const serializeSpace = (s) => ({ ...s, facilitator_ids: JSON.parse(s.facilitator_ids || '[]'), archived: !!s.archived, hide_onboarding: !!s.hide_onboarding, hidden_columns: JSON.parse(s.hidden_columns || '[]') });
+const serializeBlock = (b) => ({ ...b, linked_axes: JSON.parse(b.linked_axes || '[]'), linked_card_ids: JSON.parse(b.linked_card_ids || '[]'), attention_flag: !!b.attention_flag, collapsed: !!b.collapsed });
 
 export function createApp(db) {
   const app = express();
@@ -83,13 +84,19 @@ export function createApp(db) {
     const axesFinal = db.prepare(`SELECT * FROM axes_final WHERE space_id = ?`).all(req.params.id);
     const phaseStates = db.prepare(`SELECT * FROM phase_state WHERE space_id = ?`).all(req.params.id);
     const votes = db.prepare(`SELECT * FROM votes WHERE space_id = ?`).all(req.params.id);
+    const blocks = db.prepare(`SELECT * FROM blocks WHERE space_id = ? ORDER BY position, created_at`).all(req.params.id).map(serializeBlock);
+    const blockComments = db.prepare(`SELECT * FROM block_comments WHERE space_id = ? ORDER BY created_at`).all(req.params.id);
+    const dSections = db.prepare(`SELECT * FROM sections WHERE space_id = ? ORDER BY position`).all(req.params.id);
+    const agendaDays = db.prepare(`SELECT * FROM agenda_days WHERE space_id = ? ORDER BY position`).all(req.params.id);
+    const agendaSlots = db.prepare(`SELECT * FROM agenda_slots WHERE space_id = ? ORDER BY position`).all(req.params.id);
 
     res.json({
       space: serializeSpace(space),
       cards: cards.map(serializeCard),
       comments, axes, axesFinal,
       phaseStates: phaseStates.map(serializePhaseState),
-      votes
+      votes,
+      blocks, blockComments, sections: dSections, agendaDays, agendaSlots
     });
   });
 
@@ -807,6 +814,312 @@ export function createApp(db) {
       const dbValue = key === 'hidden_columns' ? JSON.stringify(value) : (value ? 1 : 0);
       db.prepare(`UPDATE spaces SET ${key} = ? WHERE id = ?`).run(dbValue, currentSpace);
       io.to(currentSpace).emit('setting-updated', { key, value });
+    });
+
+    // ===================== DÉROULÉ — BLOCS =====================
+
+    socket.on('create-block', (data) => {
+      if (!currentSpace || !currentPseudo) return;
+      const space = db.prepare(`SELECT archived FROM spaces WHERE id = ?`).get(currentSpace);
+      if (space?.archived) return;
+      const { title, intention, block_type, duration_minutes, section_id } = data;
+      if (!title?.trim() || !intention?.trim()) { socket.emit('error', { message: "Titre et intention sont obligatoires." }); return; }
+      const id = generateId();
+      const maxPos = db.prepare(`SELECT MAX(position) as mp FROM blocks WHERE space_id = ?`).get(currentSpace);
+      const position = (maxPos?.mp ?? -1) + 1;
+      db.prepare(`INSERT INTO blocks (id, space_id, section_id, title, intention, block_type, duration_minutes, created_by, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+        id, currentSpace, section_id || null, title.trim(), intention.trim(), block_type || 'production', duration_minutes || 30, currentPseudo, position
+      );
+      logActivity(currentSpace, currentPseudo, 'create-block', title.trim(), '');
+      const block = db.prepare(`SELECT * FROM blocks WHERE id = ?`).get(id);
+      io.to(currentSpace).emit('block-created', serializeBlock(block));
+    });
+
+    socket.on('update-block', (data) => {
+      if (!currentSpace) return;
+      const space = db.prepare(`SELECT archived FROM spaces WHERE id = ?`).get(currentSpace);
+      if (space?.archived) return;
+      const { blockId, ...fields } = data;
+      const allowed = ['title', 'intention', 'description', 'block_type', 'duration_minutes', 'format', 'format_detail', 'material', 'deliverable', 'attention_flag', 'attention_note', 'linked_axes', 'linked_card_ids', 'collapsed', 'section_id', 'status'];
+      const sets = [];
+      const vals = [];
+      for (const [k, v] of Object.entries(fields)) {
+        if (!allowed.includes(k)) continue;
+        if (k === 'linked_axes' || k === 'linked_card_ids') {
+          sets.push(`${k} = ?`); vals.push(JSON.stringify(v));
+        } else if (k === 'attention_flag' || k === 'collapsed') {
+          sets.push(`${k} = ?`); vals.push(v ? 1 : 0);
+        } else {
+          sets.push(`${k} = ?`); vals.push(v);
+        }
+      }
+      if (sets.length === 0) return;
+      sets.push("updated_at = datetime('now')");
+      vals.push(blockId, currentSpace);
+      db.prepare(`UPDATE blocks SET ${sets.join(', ')} WHERE id = ? AND space_id = ?`).run(...vals);
+      const block = db.prepare(`SELECT * FROM blocks WHERE id = ?`).get(blockId);
+      if (block) io.to(currentSpace).emit('block-updated', serializeBlock(block));
+    });
+
+    socket.on('delete-block', ({ blockId }) => {
+      if (!currentSpace) return;
+      const block = db.prepare(`SELECT * FROM blocks WHERE id = ? AND space_id = ?`).get(blockId, currentSpace);
+      if (!block) return;
+      db.prepare(`DELETE FROM blocks WHERE id = ?`).run(blockId);
+      // Also remove from agenda slots
+      db.prepare(`DELETE FROM agenda_slots WHERE block_id = ? AND space_id = ?`).run(blockId, currentSpace);
+      logActivity(currentSpace, currentPseudo, 'delete-block', block.title, '');
+      io.to(currentSpace).emit('block-deleted', { blockId });
+    });
+
+    socket.on('duplicate-block', ({ blockId }) => {
+      if (!currentSpace) return;
+      const orig = db.prepare(`SELECT * FROM blocks WHERE id = ? AND space_id = ?`).get(blockId, currentSpace);
+      if (!orig) return;
+      const id = generateId();
+      const maxPos = db.prepare(`SELECT MAX(position) as mp FROM blocks WHERE space_id = ?`).get(currentSpace);
+      const position = (maxPos?.mp ?? -1) + 1;
+      db.prepare(`INSERT INTO blocks (id, space_id, section_id, title, intention, description, block_type, duration_minutes, format, format_detail, material, deliverable, attention_flag, attention_note, linked_axes, linked_card_ids, created_by, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+        id, currentSpace, orig.section_id, `Copie de - ${orig.title}`, orig.intention, orig.description, orig.block_type, orig.duration_minutes, orig.format, orig.format_detail, orig.material, orig.deliverable, orig.attention_flag, orig.attention_note, orig.linked_axes, orig.linked_card_ids, currentPseudo, position
+      );
+      const block = db.prepare(`SELECT * FROM blocks WHERE id = ?`).get(id);
+      io.to(currentSpace).emit('block-created', serializeBlock(block));
+    });
+
+    socket.on('reorder-blocks', ({ orderedIds }) => {
+      if (!currentSpace) return;
+      const stmt = db.prepare(`UPDATE blocks SET position = ? WHERE id = ? AND space_id = ?`);
+      const tx = db.transaction(() => {
+        orderedIds.forEach((id, i) => stmt.run(i, id, currentSpace));
+      });
+      tx();
+      io.to(currentSpace).emit('blocks-reordered', { orderedIds });
+    });
+
+    socket.on('add-block-comment', ({ blockId, content }) => {
+      if (!currentSpace || !currentPseudo || !currentColor || !content?.trim()) return;
+      const id = generateId();
+      db.prepare(`INSERT INTO block_comments (id, block_id, space_id, author, author_color, content) VALUES (?, ?, ?, ?, ?, ?)`).run(
+        id, blockId, currentSpace, currentPseudo, currentColor, content.trim()
+      );
+      const comment = db.prepare(`SELECT * FROM block_comments WHERE id = ?`).get(id);
+      io.to(currentSpace).emit('block-comment-added', comment);
+    });
+
+    // ===================== SECTIONS =====================
+
+    socket.on('create-section', ({ title }) => {
+      if (!currentSpace) return;
+      const id = generateId();
+      const maxPos = db.prepare(`SELECT MAX(position) as mp FROM sections WHERE space_id = ?`).get(currentSpace);
+      const position = (maxPos?.mp ?? -1) + 1;
+      db.prepare(`INSERT INTO sections (id, space_id, title, position) VALUES (?, ?, ?, ?)`).run(id, currentSpace, title || 'Nouvelle section', position);
+      const section = db.prepare(`SELECT * FROM sections WHERE id = ?`).get(id);
+      io.to(currentSpace).emit('section-created', section);
+    });
+
+    socket.on('update-section', ({ sectionId, title, collapsed }) => {
+      if (!currentSpace) return;
+      const sets = []; const vals = [];
+      if (title !== undefined) { sets.push('title = ?'); vals.push(title); }
+      if (collapsed !== undefined) { sets.push('collapsed = ?'); vals.push(collapsed ? 1 : 0); }
+      if (sets.length === 0) return;
+      vals.push(sectionId, currentSpace);
+      db.prepare(`UPDATE sections SET ${sets.join(', ')} WHERE id = ? AND space_id = ?`).run(...vals);
+      const section = db.prepare(`SELECT * FROM sections WHERE id = ?`).get(sectionId);
+      if (section) io.to(currentSpace).emit('section-updated', section);
+    });
+
+    socket.on('delete-section', ({ sectionId }) => {
+      if (!currentSpace) return;
+      // Detach blocks from section
+      db.prepare(`UPDATE blocks SET section_id = NULL WHERE section_id = ? AND space_id = ?`).run(sectionId, currentSpace);
+      db.prepare(`DELETE FROM sections WHERE id = ? AND space_id = ?`).run(sectionId, currentSpace);
+      io.to(currentSpace).emit('section-deleted', { sectionId });
+    });
+
+    socket.on('reorder-sections', ({ orderedIds }) => {
+      if (!currentSpace) return;
+      const stmt = db.prepare(`UPDATE sections SET position = ? WHERE id = ? AND space_id = ?`);
+      orderedIds.forEach((id, i) => stmt.run(i, id, currentSpace));
+      io.to(currentSpace).emit('sections-reordered', { orderedIds });
+    });
+
+    // ===================== AGENDA =====================
+
+    socket.on('create-agenda-day', ({ date, start_time, end_time }) => {
+      if (!currentSpace) return;
+      const id = generateId();
+      const maxPos = db.prepare(`SELECT MAX(position) as mp FROM agenda_days WHERE space_id = ?`).get(currentSpace);
+      const position = (maxPos?.mp ?? -1) + 1;
+      const dayNumber = position + 1;
+      db.prepare(`INSERT INTO agenda_days (id, space_id, day_number, date, start_time, end_time, position) VALUES (?, ?, ?, ?, ?, ?, ?)`).run(
+        id, currentSpace, dayNumber, date || '', start_time || '09:00', end_time || '17:30', position
+      );
+      const day = db.prepare(`SELECT * FROM agenda_days WHERE id = ?`).get(id);
+      io.to(currentSpace).emit('agenda-day-created', day);
+    });
+
+    socket.on('update-agenda-day', ({ dayId, ...fields }) => {
+      if (!currentSpace) return;
+      const allowed = ['date', 'start_time', 'end_time'];
+      const sets = []; const vals = [];
+      for (const [k, v] of Object.entries(fields)) {
+        if (!allowed.includes(k)) continue;
+        sets.push(`${k} = ?`); vals.push(v);
+      }
+      if (sets.length === 0) return;
+      vals.push(dayId, currentSpace);
+      db.prepare(`UPDATE agenda_days SET ${sets.join(', ')} WHERE id = ? AND space_id = ?`).run(...vals);
+      const day = db.prepare(`SELECT * FROM agenda_days WHERE id = ?`).get(dayId);
+      if (day) io.to(currentSpace).emit('agenda-day-updated', day);
+    });
+
+    socket.on('delete-agenda-day', ({ dayId }) => {
+      if (!currentSpace) return;
+      db.prepare(`DELETE FROM agenda_slots WHERE day_id = ? AND space_id = ?`).run(dayId, currentSpace);
+      db.prepare(`DELETE FROM agenda_days WHERE id = ? AND space_id = ?`).run(dayId, currentSpace);
+      io.to(currentSpace).emit('agenda-day-deleted', { dayId });
+    });
+
+    socket.on('create-agenda-slot', ({ dayId, block_id, slot_type, title, start_time, duration_minutes }) => {
+      if (!currentSpace) return;
+      const id = generateId();
+      const maxPos = db.prepare(`SELECT MAX(position) as mp FROM agenda_slots WHERE day_id = ?`).get(dayId);
+      const position = (maxPos?.mp ?? -1) + 1;
+      db.prepare(`INSERT INTO agenda_slots (id, space_id, day_id, block_id, slot_type, title, start_time, duration_minutes, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+        id, currentSpace, dayId, block_id || null, slot_type || 'block', title || '', start_time, duration_minutes || 30, position
+      );
+      const slot = db.prepare(`SELECT * FROM agenda_slots WHERE id = ?`).get(id);
+      io.to(currentSpace).emit('agenda-slot-created', slot);
+    });
+
+    socket.on('update-agenda-slot', ({ slotId, ...fields }) => {
+      if (!currentSpace) return;
+      const allowed = ['block_id', 'slot_type', 'title', 'start_time', 'duration_minutes', 'position'];
+      const sets = []; const vals = [];
+      for (const [k, v] of Object.entries(fields)) {
+        if (!allowed.includes(k)) continue;
+        sets.push(`${k} = ?`); vals.push(v);
+      }
+      if (sets.length === 0) return;
+      sets.push("updated_at = datetime('now')");
+      vals.push(slotId, currentSpace);
+      db.prepare(`UPDATE agenda_slots SET ${sets.join(', ')} WHERE id = ? AND space_id = ?`).run(...vals);
+      const slot = db.prepare(`SELECT * FROM agenda_slots WHERE id = ?`).get(slotId);
+      if (slot) io.to(currentSpace).emit('agenda-slot-updated', slot);
+    });
+
+    socket.on('delete-agenda-slot', ({ slotId }) => {
+      if (!currentSpace) return;
+      db.prepare(`DELETE FROM agenda_slots WHERE id = ? AND space_id = ?`).run(slotId, currentSpace);
+      io.to(currentSpace).emit('agenda-slot-deleted', { slotId });
+    });
+
+    socket.on('reorder-agenda-slots', ({ dayId, orderedIds }) => {
+      if (!currentSpace) return;
+      const stmt = db.prepare(`UPDATE agenda_slots SET position = ? WHERE id = ? AND space_id = ?`);
+      orderedIds.forEach((id, i) => stmt.run(i, id, currentSpace));
+      io.to(currentSpace).emit('agenda-slots-reordered', { dayId, orderedIds });
+    });
+
+    socket.on('auto-schedule-agenda', ({ dayId }) => {
+      if (!currentSpace) return;
+      const day = db.prepare(`SELECT * FROM agenda_days WHERE id = ? AND space_id = ?`).get(dayId, currentSpace);
+      if (!day) return;
+      const blocks = db.prepare(`SELECT * FROM blocks WHERE space_id = ? ORDER BY position`).all(currentSpace);
+      const scheduled = db.prepare(`SELECT block_id FROM agenda_slots WHERE space_id = ? AND block_id IS NOT NULL`).all(currentSpace).map(s => s.block_id);
+      const unscheduled = blocks.filter(b => !scheduled.includes(b.id));
+      if (unscheduled.length === 0) return;
+
+      // Clear existing slots for this day
+      db.prepare(`DELETE FROM agenda_slots WHERE day_id = ? AND space_id = ?`).run(dayId, currentSpace);
+
+      let currentTime = day.start_time;
+      let pos = 0;
+      let minutesSincePause = 0;
+      const lunchInserted = { done: false };
+
+      function addMinutes(time, mins) {
+        const [h, m] = time.split(':').map(Number);
+        const total = h * 60 + m + mins;
+        return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+      }
+      function timeToMinutes(time) { const [h, m] = time.split(':').map(Number); return h * 60 + m; }
+
+      const insertSlot = db.prepare(`INSERT INTO agenda_slots (id, space_id, day_id, block_id, slot_type, title, start_time, duration_minutes, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+
+      const tx = db.transaction(() => {
+        for (const block of unscheduled) {
+          // Insert lunch around 12:30
+          if (!lunchInserted.done && timeToMinutes(currentTime) >= 12 * 60 + 15) {
+            insertSlot.run(generateId(), currentSpace, dayId, null, 'pause', 'Déjeuner', currentTime, 60, pos++);
+            currentTime = addMinutes(currentTime, 60);
+            minutesSincePause = 0;
+            lunchInserted.done = true;
+          }
+          // Insert coffee break every 90 min
+          if (minutesSincePause >= 90 && block.block_type !== 'pause') {
+            insertSlot.run(generateId(), currentSpace, dayId, null, 'pause', 'Pause café', currentTime, 15, pos++);
+            currentTime = addMinutes(currentTime, 15);
+            minutesSincePause = 0;
+          }
+
+          insertSlot.run(generateId(), currentSpace, dayId, block.id, 'block', '', currentTime, block.duration_minutes, pos++);
+          currentTime = addMinutes(currentTime, block.duration_minutes);
+          minutesSincePause += block.duration_minutes;
+        }
+      });
+      tx();
+
+      const slots = db.prepare(`SELECT * FROM agenda_slots WHERE day_id = ? AND space_id = ? ORDER BY position`).all(dayId, currentSpace);
+      io.to(currentSpace).emit('agenda-auto-scheduled', { dayId, slots });
+    });
+
+    // ===================== TEMPLATES DÉROULÉ =====================
+
+    socket.on('save-deroulement-template', ({ name, description }) => {
+      if (!currentSpace || !currentPseudo) return;
+      const blocks = db.prepare(`SELECT * FROM blocks WHERE space_id = ? ORDER BY position`).all(currentSpace);
+      const sections = db.prepare(`SELECT * FROM sections WHERE space_id = ? ORDER BY position`).all(currentSpace);
+      const id = generateId();
+      db.prepare(`INSERT INTO deroulement_templates (id, space_id, name, description, data, created_by) VALUES (?, ?, ?, ?, ?, ?)`).run(
+        id, currentSpace, name || 'Mon template', description || '', JSON.stringify({ blocks: blocks.map(serializeBlock), sections }), currentPseudo
+      );
+      socket.emit('template-saved', { id, name });
+    });
+
+    socket.on('load-deroulement-template', ({ templateId }) => {
+      if (!currentSpace) return;
+      const tpl = db.prepare(`SELECT * FROM deroulement_templates WHERE id = ?`).get(templateId);
+      if (!tpl) return;
+      const data = JSON.parse(tpl.data);
+      const sectionMap = {};
+      const tx = db.transaction(() => {
+        for (const sec of (data.sections || [])) {
+          const newId = generateId();
+          sectionMap[sec.id] = newId;
+          db.prepare(`INSERT INTO sections (id, space_id, title, position) VALUES (?, ?, ?, ?)`).run(newId, currentSpace, sec.title, sec.position);
+        }
+        for (const block of (data.blocks || [])) {
+          const newId = generateId();
+          const secId = block.section_id ? (sectionMap[block.section_id] || null) : null;
+          db.prepare(`INSERT INTO blocks (id, space_id, section_id, title, intention, description, block_type, duration_minutes, format, format_detail, material, deliverable, created_by, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+            newId, currentSpace, secId, block.title, block.intention, block.description || '', block.block_type, block.duration_minutes, block.format || 'pleniere', block.format_detail || '', block.material || '', block.deliverable || '', currentPseudo, block.position
+          );
+        }
+      });
+      tx();
+      // Reload all data for the space
+      const blocks = db.prepare(`SELECT * FROM blocks WHERE space_id = ? ORDER BY position`).all(currentSpace).map(serializeBlock);
+      const sections = db.prepare(`SELECT * FROM sections WHERE space_id = ? ORDER BY position`).all(currentSpace);
+      io.to(currentSpace).emit('deroulement-loaded', { blocks, sections });
+    });
+
+    socket.on('list-templates', () => {
+      const system = db.prepare(`SELECT id, name, description, is_system, created_at FROM deroulement_templates WHERE is_system = 1 ORDER BY name`).all();
+      const personal = currentSpace ? db.prepare(`SELECT id, name, description, created_at FROM deroulement_templates WHERE space_id = ? AND is_system = 0 ORDER BY created_at DESC`).all(currentSpace) : [];
+      socket.emit('templates-list', { system, personal });
     });
 
     socket.on('disconnect', () => {
