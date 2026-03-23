@@ -135,6 +135,18 @@ function initSchema(d) {
   CREATE INDEX IF NOT EXISTS idx_activity_space ON activity_log(space_id);
   CREATE INDEX IF NOT EXISTS idx_votes_card ON votes(card_id);
 `);
+
+  // Migrations — add columns if they don't exist
+  const cols = d.prepare(`PRAGMA table_info(spaces)`).all().map(c => c.name);
+  if (!cols.includes('session_date_end')) {
+    d.exec(`ALTER TABLE spaces ADD COLUMN session_date_end TEXT DEFAULT ''`);
+  }
+  if (!cols.includes('hide_onboarding')) {
+    d.exec(`ALTER TABLE spaces ADD COLUMN hide_onboarding INTEGER DEFAULT 0`);
+  }
+  if (!cols.includes('hidden_columns')) {
+    d.exec(`ALTER TABLE spaces ADD COLUMN hidden_columns TEXT DEFAULT '[]'`);
+  }
 }
 
 const db = createDatabase();

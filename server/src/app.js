@@ -14,7 +14,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 // SQLite stores booleans as 0/1 integers. These helpers convert to real booleans for JSON responses.
 const serializePhaseState = (p) => ({ ...p, locked: !!p.locked, hidden: !!p.hidden });
 const serializeCard = (c) => ({ ...c, tags: JSON.parse(c.tags || '[]'), reactions: JSON.parse(c.reactions || '{}'), marked_discuss: !!c.marked_discuss });
-const serializeSpace = (s) => ({ ...s, facilitator_ids: JSON.parse(s.facilitator_ids || '[]'), archived: !!s.archived });
+const serializeSpace = (s) => ({ ...s, facilitator_ids: JSON.parse(s.facilitator_ids || '[]'), archived: !!s.archived, hide_onboarding: !!s.hide_onboarding, hidden_columns: JSON.parse(s.hidden_columns || '[]') });
 
 export function createApp(db) {
   const app = express();
@@ -94,15 +94,18 @@ export function createApp(db) {
   });
 
   app.patch('/api/spaces/:id', (req, res) => {
-    const { client_name, sponsor, facilitator, session_date, welcome_message, archived } = req.body;
+    const { client_name, sponsor, facilitator, session_date, session_date_end, welcome_message, archived, hide_onboarding, hidden_columns } = req.body;
     const fields = [];
     const values = [];
     if (client_name !== undefined) { fields.push('client_name = ?'); values.push(client_name); }
     if (sponsor !== undefined) { fields.push('sponsor = ?'); values.push(sponsor); }
     if (facilitator !== undefined) { fields.push('facilitator = ?'); values.push(facilitator); }
     if (session_date !== undefined) { fields.push('session_date = ?'); values.push(session_date); }
+    if (session_date_end !== undefined) { fields.push('session_date_end = ?'); values.push(session_date_end); }
     if (welcome_message !== undefined) { fields.push('welcome_message = ?'); values.push(welcome_message); }
     if (archived !== undefined) { fields.push('archived = ?'); values.push(archived ? 1 : 0); }
+    if (hide_onboarding !== undefined) { fields.push('hide_onboarding = ?'); values.push(hide_onboarding ? 1 : 0); }
+    if (hidden_columns !== undefined) { fields.push('hidden_columns = ?'); values.push(JSON.stringify(hidden_columns)); }
     if (fields.length === 0) return res.json({ ok: true });
 
     fields.push("updated_at = datetime('now')");
@@ -518,7 +521,7 @@ export function createApp(db) {
       const space = db.prepare(`SELECT archived FROM spaces WHERE id = ?`).get(currentSpace);
       if (space?.archived) return;
       const { field, value } = data;
-      const allowed = ['client_name', 'sponsor', 'facilitator', 'session_date'];
+      const allowed = ['client_name', 'sponsor', 'facilitator', 'session_date', 'session_date_end'];
       if (!allowed.includes(field)) return;
       db.prepare(`UPDATE spaces SET ${field} = ?, updated_at = datetime('now') WHERE id = ?`).run(value, currentSpace);
       socket.to(currentSpace).emit('header-updated', { field, value, by: currentPseudo });
@@ -775,6 +778,15 @@ export function createApp(db) {
       if (!currentSpace) return;
       db.prepare(`UPDATE spaces SET archived = ? WHERE id = ?`).run(archived ? 1 : 0, currentSpace);
       io.to(currentSpace).emit('space-archived', { archived });
+    });
+
+    socket.on('update-setting', ({ key, value }) => {
+      if (!currentSpace) return;
+      const allowed = ['hide_onboarding', 'hidden_columns'];
+      if (!allowed.includes(key)) return;
+      const dbValue = key === 'hidden_columns' ? JSON.stringify(value) : (value ? 1 : 0);
+      db.prepare(`UPDATE spaces SET ${key} = ? WHERE id = ?`).run(dbValue, currentSpace);
+      io.to(currentSpace).emit('setting-updated', { key, value });
     });
 
     socket.on('disconnect', () => {

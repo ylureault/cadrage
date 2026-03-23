@@ -50,6 +50,7 @@ const initialState = {
   notifications: [],
   focusZones: {},
   pendingCards: [],
+  hiddenColumns: [],
 };
 
 function reducer(state, action) {
@@ -76,6 +77,7 @@ function reducer(state, action) {
         archived: !!d.space.archived,
         welcomeMessage: d.space.welcome_message || '',
         isFacilitator: (d.space.facilitator_ids || []).includes(state.pseudo),
+        hiddenColumns: d.space.hidden_columns || [],
       };
     }
 
@@ -177,6 +179,12 @@ function reducer(state, action) {
     case 'TOGGLE_DARK': return { ...state, darkMode: !state.darkMode };
     case 'SET_SPACE_ARCHIVED': return { ...state, archived: action.archived };
     case 'SET_WELCOME_MESSAGE': return { ...state, welcomeMessage: action.message };
+    case 'UPDATE_SETTING': {
+      const newSpace = state.space ? { ...state.space, [action.key]: action.value } : state.space;
+      const extra = {};
+      if (action.key === 'hidden_columns') extra.hiddenColumns = action.value;
+      return { ...state, space: newSpace, ...extra };
+    }
     case 'ADD_NOTIFICATION': return { ...state, notifications: [...state.notifications, { id: Date.now(), ...action.notification }] };
     case 'REMOVE_NOTIFICATION': return { ...state, notifications: state.notifications.filter(n => n.id !== action.id) };
     case 'SET_FOCUS': return { ...state, focusZones: { ...state.focusZones, [action.pseudo]: action.columnKey } };

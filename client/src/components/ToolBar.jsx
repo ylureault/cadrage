@@ -5,8 +5,52 @@ import socket from '../socket.js';
 import {
   Search, Sliders, Activity, BarChart3, Download, Sun, Moon,
   Lock, Unlock, Eye, EyeOff, Timer, Star, MessageSquare, Copy,
-  QrCode, Link2, Archive, ArchiveRestore, Settings, X
+  QrCode, Link2, Archive, ArchiveRestore, Settings, X, BookOpen, Columns
 } from 'lucide-react';
+
+function ColumnHider() {
+  const { state } = useStore();
+  const [open, setOpen] = useState(false);
+  const hiddenCols = state.hiddenColumns || [];
+
+  function toggleColumn(colKey) {
+    const newHidden = hiddenCols.includes(colKey)
+      ? hiddenCols.filter(k => k !== colKey)
+      : [...hiddenCols, colKey];
+    socket.emit('update-setting', { key: 'hidden_columns', value: newHidden });
+  }
+
+  return (
+    <div className="relative">
+      <button onClick={() => setOpen(!open)}
+        className="flex items-center gap-1 bg-white/10 rounded px-2 py-1 hover:bg-white/20">
+        <Columns size={14} />
+        <span className="text-xs">Colonnes</span>
+        {hiddenCols.length > 0 && (
+          <span className="text-[10px] bg-insuffle-gold text-insuffle-navy px-1 rounded-full">{hiddenCols.length}</span>
+        )}
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg z-50 p-2 min-w-[200px] max-h-[300px] overflow-y-auto"
+          style={{ color: 'var(--color-text)' }}>
+          <p className="text-[10px] uppercase font-semibold text-gray-400 px-2 py-1">Colonnes visibles</p>
+          {state.phases.map(phase => (
+            <div key={phase.key}>
+              <p className="text-[10px] font-semibold px-2 pt-2 pb-0.5" style={{ color: phase.color }}>{phase.name}</p>
+              {phase.columns.map(col => (
+                <label key={col.key} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 rounded cursor-pointer text-xs">
+                  <input type="checkbox" checked={!hiddenCols.includes(col.key)} onChange={() => toggleColumn(col.key)}
+                    className="rounded border-gray-300" />
+                  {col.name}
+                </label>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ToolBar() {
   const navigate = useNavigate();
@@ -176,6 +220,19 @@ export default function ToolBar() {
             className="flex items-center gap-1 bg-white/10 rounded px-2 py-1 hover:bg-white/20">
             <BarChart3 size={14} /> <span className="text-xs">Stats</span>
           </button>
+
+          {/* Onboarding toggle */}
+          <button onClick={() => {
+            const newVal = !state.space?.hide_onboarding;
+            socket.emit('update-setting', { key: 'hide_onboarding', value: newVal });
+          }}
+            className="flex items-center gap-1 bg-white/10 rounded px-2 py-1 hover:bg-white/20">
+            <BookOpen size={14} />
+            <span className="text-xs">{state.space?.hide_onboarding ? 'Réactiver visite' : 'Cacher visite'}</span>
+          </button>
+
+          {/* Column hiding */}
+          <ColumnHider />
 
           {/* Archive */}
           <button onClick={toggleArchive}

@@ -19,6 +19,7 @@ import CommandPalette from './CommandPalette.jsx';
 import OnboardingTour from './OnboardingTour.jsx';
 import DarkboardPromo from './DarkboardPromo.jsx';
 import DarkboardTab from './DarkboardTab.jsx';
+import RecapTab from './RecapTab.jsx';
 
 export default function SpacePage() {
   const { spaceId } = useParams();
@@ -29,6 +30,7 @@ export default function SpacePage() {
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showDarkboard, setShowDarkboard] = useState(false);
+  const [showRecap, setShowRecap] = useState(false);
 
   // Session persistence: restore pseudo from sessionStorage on mount
   const sessionKey = `insuffle-session-${spaceId}`;
@@ -138,6 +140,7 @@ export default function SpacePage() {
     socket.on('participant-focus', ({ pseudo, color, columnKey }) => dispatch({ type: 'SET_FOCUS', pseudo, columnKey }));
     socket.on('space-archived', ({ archived }) => dispatch({ type: 'SET_SPACE_ARCHIVED', archived }));
     socket.on('welcome-message-updated', ({ message }) => dispatch({ type: 'SET_WELCOME_MESSAGE', message }));
+    socket.on('setting-updated', ({ key, value }) => dispatch({ type: 'UPDATE_SETTING', key, value }));
 
     socket.on('notification', ({ message }) => dispatch({ type: 'ADD_NOTIFICATION', notification: { message, type: 'info' } }));
     socket.on('error', ({ message }) => dispatch({ type: 'ADD_NOTIFICATION', notification: { message, type: 'error' } }));
@@ -155,10 +158,10 @@ export default function SpacePage() {
     dispatch({ type: 'SET_PSEUDO', pseudo, color: null });
     sessionStorage.setItem(sessionKey, pseudo);
     setShowPseudo(false);
-    // Show onboarding tour on first visit
+    // Show onboarding tour on first visit (unless disabled by facilitator)
     const onboardingKey = `insuffle-onboarding-done-${spaceId}`;
-    if (!localStorage.getItem(onboardingKey)) {
-      setTimeout(() => setShowOnboarding(true), 800); // Let canvas load first
+    if (!localStorage.getItem(onboardingKey) && !state.space?.hide_onboarding) {
+      setTimeout(() => setShowOnboarding(true), 800);
     }
   }
 
@@ -240,14 +243,14 @@ export default function SpacePage() {
           {state.phases.map(phase => {
             const ps = state.phaseStates.find(p => p.phase === phase.key);
             if (ps?.hidden && !state.isFacilitator) return null;
-            const isActive = state.activePhase === phase.key && !showDarkboard;
+            const isActive = state.activePhase === phase.key && !showDarkboard && !showRecap;
             const cardCount = state.cards.filter(c => c.phase === phase.key).length;
             return (
               <button key={phase.key}
                 role="tab"
                 aria-selected={isActive}
                 aria-controls={`phase-${phase.key}`}
-                onClick={() => { setShowDarkboard(false); dispatch({ type: 'SET_ACTIVE_PHASE', phase: phase.key }); }}
+                onClick={() => { setShowDarkboard(false); setShowRecap(false); dispatch({ type: 'SET_ACTIVE_PHASE', phase: phase.key }); }}
                 className={`flex items-center gap-2 px-5 py-3 text-body-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200
                   ${isActive ? '' : 'border-transparent hover:border-[var(--color-border)]'}
                   ${ps?.hidden ? 'opacity-40' : ''}`}
@@ -266,12 +269,26 @@ export default function SpacePage() {
             );
           })}
 
+          {/* Onglet Fiche Récap */}
+          <button
+            role="tab"
+            aria-selected={showRecap && !showDarkboard}
+            onClick={() => { setShowRecap(true); setShowDarkboard(false); }}
+            className={`flex items-center gap-2 px-5 py-3 text-body-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200 ml-auto
+              ${showRecap && !showDarkboard ? '' : 'border-transparent hover:border-[var(--color-border)]'}`}
+            style={{
+              borderBottomColor: showRecap && !showDarkboard ? 'var(--color-accent)' : undefined,
+              color: showRecap && !showDarkboard ? 'var(--color-text)' : 'var(--color-text-muted)',
+            }}>
+            Fiche Récap
+          </button>
+
           {/* Onglet DarkBoard — atelier collaboratif */}
           <button
             role="tab"
             aria-selected={showDarkboard}
-            onClick={() => setShowDarkboard(true)}
-            className={`flex items-center gap-2 px-5 py-3 text-body-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200 ml-auto
+            onClick={() => { setShowDarkboard(true); setShowRecap(false); }}
+            className={`flex items-center gap-2 px-5 py-3 text-body-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200
               ${showDarkboard ? '' : 'border-transparent hover:border-[var(--color-border)]'}`}
             style={{
               borderBottomColor: showDarkboard ? '#38bdf8' : undefined,
@@ -294,8 +311,9 @@ export default function SpacePage() {
       {/* Canvas */}
       <main className="flex-1 overflow-auto" role="main" aria-label="Canvas de cadrage">
         {showDarkboard ? (
-          /* Onglet Atelier — DarkBoard encapsulé */
           <DarkboardTab spaceId={spaceId} />
+        ) : showRecap ? (
+          <RecapTab />
         ) : (
           <>
             {state.phases.map(phase => (
@@ -303,7 +321,7 @@ export default function SpacePage() {
             ))}
 
             {/* DarkBoard promo — outil complémentaire */}
-            <DarkboardPromo spaceId={spaceId} onOpenTab={() => setShowDarkboard(true)} />
+            <DarkboardPromo spaceId={spaceId} onOpenTab={() => { setShowDarkboard(true); setShowRecap(false); }} />
 
             {/* 8 axes — section permanente en bas du canvas */}
             <div className="border-t" style={{ borderColor: 'var(--color-border)' }}>

@@ -7,6 +7,14 @@ import { Lock } from 'lucide-react';
 export default function PhaseView({ phase }) {
   const { state } = useStore();
   const ps = state.phaseStates.find(p => p.phase === phase.key);
+  const hiddenCols = state.hiddenColumns || [];
+
+  // Filter visible columns (facilitator always sees all, with opacity)
+  const visibleColumns = state.isFacilitator
+    ? phase.columns
+    : phase.columns.filter(col => !hiddenCols.includes(col.key));
+
+  if (visibleColumns.length === 0 && !state.isFacilitator) return null;
 
   return (
     <div className="animate-fade-in"
@@ -36,13 +44,15 @@ export default function PhaseView({ phase }) {
 
         {/* Responsive grid */}
         <div className={`grid gap-4 md:gap-6 ${
-          phase.columns.length === 1 ? 'grid-cols-1 max-w-xl' :
-          phase.columns.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
-          phase.columns.length === 3 ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' :
+          visibleColumns.length === 1 ? 'grid-cols-1 max-w-xl' :
+          visibleColumns.length === 2 ? 'grid-cols-1 md:grid-cols-2' :
+          visibleColumns.length === 3 ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' :
           'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'
         }`}>
-          {phase.columns.map(col => (
-            <ColumnView key={col.key} column={col} phase={phase} locked={!!ps?.locked} />
+          {visibleColumns.map(col => (
+            <div key={col.key} className={hiddenCols.includes(col.key) ? 'opacity-40' : ''}>
+              <ColumnView column={col} phase={phase} locked={!!ps?.locked} />
+            </div>
           ))}
         </div>
       </div>
