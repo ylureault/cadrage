@@ -94,7 +94,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-alt)' }}>
       {/* ===== Header (US-381) ===== */}
-      <header style={{ backgroundColor: 'var(--color-primary)' }} className="text-white sticky top-0 z-50">
+      <header style={{ backgroundColor: '#0c1629' }} className="text-white sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-btn flex items-center justify-center font-display font-bold text-lg" style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>I</div>
@@ -105,13 +105,14 @@ export default function LandingPage() {
             <a href="#features" className="hover:text-[var(--color-accent)] transition-colors">Fonctionnalités</a>
             <a href="#method" className="hover:text-[var(--color-accent)] transition-colors">La méthode</a>
             <a href="#faq" className="hover:text-[var(--color-accent)] transition-colors">FAQ</a>
+            <button onClick={() => navigate('/6AG_demo')} className="btn-ghost border border-white/20 text-sm hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all">Voir la démo</button>
             <button onClick={handleCreate} className="btn-primary text-sm">Créer un cadrage</button>
           </nav>
         </div>
       </header>
 
       {/* ===== Hero — Seth Godin + Malcolm Gladwell : les 8 axes au centre du récit ===== */}
-      <section style={{ backgroundColor: 'var(--color-primary)' }} className="text-white py-20 md:py-28">
+      <section style={{ backgroundColor: '#0c1629' }} className="text-white py-20 md:py-28">
         <div className="max-w-4xl mx-auto px-4 md:px-8 text-center">
           <p className="text-caption uppercase tracking-wider opacity-50 mb-4">
             Insuffle Cadrage Live <span className="inline-block ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full opacity-100" style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>BETA</span>
@@ -132,6 +133,10 @@ export default function LandingPage() {
             <button onClick={handleCreate} disabled={creating}
               className="btn-primary text-lg px-8 py-3 h-auto animate-pulse-glow">
               {creating ? 'Création...' : 'Créer un cadrage'} <ArrowRight size={20} />
+            </button>
+            <button onClick={() => navigate('/6AG_demo')}
+              className="inline-flex items-center justify-center gap-2 text-lg px-8 py-3 rounded-btn border-2 border-white/30 text-white font-semibold hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all">
+              Voir la démo <ExternalLink size={18} />
             </button>
           </div>
           <p className="mt-6 text-sm opacity-40">Sans inscription, prêt en 5 secondes</p>
@@ -158,7 +163,7 @@ export default function LandingPage() {
               { left: 'Contenu', right: 'Processus', desc: 'Problème de fond ou de fonctionnement ?' },
               { left: 'Prise de recul', right: 'Passage à l\'action', desc: 'Urgence d\'agir ou urgence de comprendre ?' },
               { left: 'Ouvert', right: 'Ciblé', desc: 'Agenda fixé ou accueil de l\'émergence ?' },
-              { left: 'Sérieux', right: 'Ludique', desc: 'La culture tolère-t-elle le décalage ?' },
+              { left: 'Sérieux', right: 'Énergie ludique', desc: 'La culture tolère-t-elle le décalage ?' },
             ].map((ax, i) => (
               <div key={i} className="flex items-center gap-3 p-4 rounded-card border"
                 style={{ borderColor: 'var(--color-border)' }}>
@@ -201,10 +206,11 @@ export default function LandingPage() {
                   className="text-left p-4 rounded-card elevation-1 hover:elevation-2 transition-all duration-200 group"
                   style={{ backgroundColor: 'var(--color-surface)' }}>
                   <div className="font-semibold text-body-sm group-hover:text-[var(--color-accent-dark)] transition-colors">
-                    {s.client || 'Cadrage sans titre'}
+                    {s.client || `Cadrage du ${(() => { try { return new Date(s.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }); } catch { return s.id; } })()}`}
                   </div>
                   <div className="text-caption" style={{ color: 'var(--color-text-muted)' }}>
-                    {new Date(s.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    {(() => { try { return new Date(s.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' }); } catch { return s.date || ''; } })()}
+                    <span className="ml-2 opacity-50">#{s.id}</span>
                   </div>
                 </button>
               ))}
@@ -280,7 +286,7 @@ export default function LandingPage() {
       </Section>
 
       {/* ===== Insuffle section (US-383, US-385) ===== */}
-      <Section className="py-16 md:py-20" style={{ backgroundColor: 'var(--color-primary)' }}>
+      <section className="py-16 md:py-20" style={{ backgroundColor: '#0c1629' }}>
         <div className="max-w-4xl mx-auto px-4 md:px-8 text-center text-white">
           <p className="text-caption uppercase tracking-wider mb-4 opacity-60">Un outil par</p>
           <h2 className="font-display text-h1-mobile md:text-h1 mb-4">Insuffle</h2>
@@ -292,7 +298,7 @@ export default function LandingPage() {
             Découvrir Insuffle <ArrowRight size={18} />
           </a>
         </div>
-      </Section>
+      </section>
 
       {/* ===== Académie (US-384, US-396, US-397) ===== */}
       <Section className="py-16 md:py-20" style={{ backgroundColor: 'var(--color-academie-bg, #f3e8f1)' }}>
@@ -349,7 +355,7 @@ export default function LandingPage() {
       </Section>
 
       {/* ===== Footer (US-459) ===== */}
-      <footer style={{ backgroundColor: 'var(--color-primary)' }} className="text-white py-12">
+      <footer style={{ backgroundColor: '#0c1629' }} className="text-white py-12">
         <div className="max-w-6xl mx-auto px-4 md:px-8">
           <div className="grid sm:grid-cols-3 gap-8 mb-8">
             <div>

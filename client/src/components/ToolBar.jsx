@@ -130,8 +130,12 @@ export default function ToolBar() {
             </button>
           )}
 
-          <button onClick={() => dispatch({ type: 'TOGGLE_AXES' })}
-            className={`p-1.5 hover:bg-white/10 rounded ${state.showAxes ? 'bg-white/20' : ''}`} title="8 axes de positionnement">
+          <button onClick={() => {
+              const axesEl = document.querySelector('[aria-label="8 axes de positionnement"]');
+              if (axesEl) axesEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              dispatch({ type: 'ADD_NOTIFICATION', notification: { message: '8 axes de positionnement', type: 'info' } });
+            }}
+            className="p-1.5 hover:bg-white/10 rounded" title="8 axes de positionnement — cliquer pour y aller">
             <Sliders size={18} />
           </button>
 

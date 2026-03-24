@@ -215,11 +215,12 @@ export default function SpacePage() {
   /* US-393: Loading screen avec animation Insuffle */
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-primary)' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0c1629' }}>
         <div className="text-center animate-fade-in">
           <div className="w-14 h-14 rounded-card mx-auto mb-4 flex items-center justify-center font-display font-bold text-2xl animate-pulse-glow"
-            style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>I</div>
-          <p className="text-body-sm" style={{ color: 'var(--color-text-muted)' }}>Chargement...</p>
+            style={{ backgroundColor: '#ffde59', color: '#0c1629' }}>I</div>
+          <div className="w-8 h-8 mx-auto mb-3 border-2 border-white/20 border-t-[#ffde59] rounded-full animate-spin" />
+          <p className="text-body-sm text-white/60">Chargement de votre cadrage...</p>
         </div>
       </div>
     );

@@ -54,6 +54,46 @@ export default function ExportPanel() {
       text += '\n';
     }
 
+    // Déroulé
+    const txtBlocks = (state.blocks || []).sort((a, b) => a.position - b.position);
+    if (txtBlocks.length > 0) {
+      text += `\n${'═'.repeat(50)}\n`;
+      text += `  DÉROULÉ DE L'ATELIER\n`;
+      text += `${'═'.repeat(50)}\n\n`;
+      let cumMin = 0;
+      for (const b of txtBlocks) {
+        cumMin += b.duration_minutes || 0;
+        text += `  [${(b.block_type || '').toUpperCase()}] ${b.title || ''}  —  ${b.duration_minutes || 0} min (cumul: ${Math.floor(cumMin / 60)}h${String(cumMin % 60).padStart(2, '0')})\n`;
+        if (b.intention) text += `    Intention: ${b.intention}\n`;
+        if (b.format && b.format !== 'pleniere') text += `    Format: ${b.format}${b.format_detail ? ' (' + b.format_detail + ')' : ''}\n`;
+        if (b.material) text += `    Matériel: ${b.material}\n`;
+        if (b.deliverable) text += `    Livrable: ${b.deliverable}\n`;
+        text += '\n';
+      }
+      text += `  Total: ${txtBlocks.length} blocs · ${Math.floor(cumMin / 60)}h${String(cumMin % 60).padStart(2, '0')}\n`;
+    }
+
+    // Agenda
+    const txtDays = (state.agendaDays || []).sort((a, b) => a.position - b.position);
+    const txtSlots = state.agendaSlots || [];
+    if (txtDays.length > 0) {
+      text += `\n${'═'.repeat(50)}\n`;
+      text += `  AGENDA\n`;
+      text += `${'═'.repeat(50)}\n\n`;
+      for (const day of txtDays) {
+        text += `── Jour ${day.day_number}${day.date ? ' — ' + day.date : ''} (${day.start_time} — ${day.end_time}) ──\n`;
+        const daySlots = txtSlots.filter(s => s.day_id === day.id).sort((a, b) => a.position - b.position);
+        for (const slot of daySlots) {
+          const block = txtBlocks.find(b => b.id === slot.block_id);
+          const [sh, sm] = (slot.start_time || '09:00').split(':').map(Number);
+          const endTotal = sh * 60 + sm + (slot.duration_minutes || 0);
+          const endTime = `${String(Math.floor(endTotal / 60)).padStart(2, '0')}:${String(endTotal % 60).padStart(2, '0')}`;
+          text += `  ${slot.start_time} — ${endTime}  ${block ? block.title : (slot.title || slot.slot_type)} (${slot.duration_minutes} min)\n`;
+        }
+        text += '\n';
+      }
+    }
+
     text += `\n────────────────────────────────────────\n`;
     text += `Cadrage réalisé avec Insuffle Cadrage Live\n`;
     text += `insuffle.com | Méthode de cadrage Insuffle\n`;
@@ -307,7 +347,7 @@ export default function ExportPanel() {
         doc.text(axis.right, scaleX + scaleW + 1, scaleY + 4, { maxWidth: 30, align: 'right' });
 
         // Position dots
-        for (const p of [1, 2, 4, 5]) {
+        for (const p of [1, 2, 3, 4, 5]) {
           const dotX = scaleX + ((p - 1) / 4) * scaleW;
           const pCount = positions.filter(pos => pos.position === p).length;
           // Circle
@@ -344,6 +384,158 @@ export default function ExportPanel() {
       }
 
       footer(doc);
+
+      // ===== PAGE DÉROULÉ =====
+      const blocks = (state.blocks || []).sort((a, b) => a.position - b.position);
+      const dSections = (state.sections || []).sort((a, b) => a.position - b.position);
+      if (blocks.length > 0) {
+        doc.addPage();
+        pageHeader(doc, 'DÉROULÉ DE L\'ATELIER');
+        const blockTypeColors = {
+          ouverture: [34, 197, 94], icebreaker: [245, 158, 11], production: [59, 130, 246],
+          exploration: [139, 92, 246], debriefing: [236, 72, 153], decision: [239, 68, 68],
+          pause: [107, 114, 128], cloture: [20, 184, 166], transition: [163, 163, 163], energizer: [249, 115, 22],
+        };
+        const blockTypeLabels = {
+          ouverture: 'Ouverture', icebreaker: 'Icebreaker', production: 'Production',
+          exploration: 'Exploration', debriefing: 'Débriefing', decision: 'Décision',
+          pause: 'Pause', cloture: 'Clôture', transition: 'Transition', energizer: 'Energizer',
+        };
+        let by = 24;
+        let cumMin = 0;
+        const secMap = {};
+        dSections.forEach(s => { secMap[s.id] = s; });
+        let lastSec = null;
+
+        for (const block of blocks) {
+          if (by > H - 30) { doc.addPage(); pageHeader(doc, 'DÉROULÉ (suite)'); by = 24; }
+
+          // Section header
+          if (block.section_id && block.section_id !== lastSec) {
+            lastSec = block.section_id;
+            const sec = secMap[block.section_id];
+            if (sec) {
+              doc.setFontSize(10);
+              doc.setFont('helvetica', 'bold');
+              doc.setTextColor(...navy);
+              doc.text(sec.title, 12, by + 4);
+              by += 8;
+            }
+          }
+
+          cumMin += block.duration_minutes || 0;
+          const tc = blockTypeColors[block.block_type] || muted;
+
+          // Block row
+          doc.setFillColor(...surface);
+          doc.roundedRect(10, by, W - 20, 14, 1.5, 1.5, 'F');
+          // Left accent
+          doc.setFillColor(...tc);
+          doc.rect(10, by, 2, 14, 'F');
+
+          // Type badge
+          doc.setFillColor(...tc);
+          doc.roundedRect(15, by + 2, 28, 5, 1, 1, 'F');
+          doc.setFontSize(6);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(...white);
+          doc.text(blockTypeLabels[block.block_type] || block.block_type, 16, by + 5.5, { maxWidth: 26 });
+
+          // Title
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(...navy);
+          doc.text(block.title || '', 46, by + 5.5, { maxWidth: 140 });
+
+          // Duration
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(8);
+          doc.setTextColor(...muted);
+          doc.text(`${block.duration_minutes || 0} min`, W - 55, by + 5.5);
+          doc.text(`${Math.floor(cumMin / 60)}h${String(cumMin % 60).padStart(2, '0')}`, W - 30, by + 5.5);
+
+          // Intention
+          if (block.intention) {
+            doc.setFontSize(7);
+            doc.setFont('helvetica', 'italic');
+            doc.setTextColor(...muted);
+            const intLines = doc.splitTextToSize(block.intention, W - 60);
+            doc.text(intLines[0], 15, by + 11, { maxWidth: W - 60 });
+          }
+
+          by += 17;
+        }
+
+        // Duration summary
+        if (by > H - 20) { doc.addPage(); pageHeader(doc, 'DÉROULÉ (suite)'); by = 24; }
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...navy);
+        doc.text(`Total : ${blocks.length} blocs · ${Math.floor(cumMin / 60)}h${String(cumMin % 60).padStart(2, '0')}`, 12, by + 4);
+        footer(doc);
+      }
+
+      // ===== PAGE AGENDA =====
+      const agendaDays = (state.agendaDays || []).sort((a, b) => a.position - b.position);
+      const agendaSlots = state.agendaSlots || [];
+      if (agendaDays.length > 0) {
+        doc.addPage();
+        pageHeader(doc, 'AGENDA');
+        let ay = 24;
+
+        for (const day of agendaDays) {
+          if (ay > H - 30) { doc.addPage(); pageHeader(doc, 'AGENDA (suite)'); ay = 24; }
+          const daySlots = agendaSlots.filter(s => s.day_id === day.id).sort((a, b) => a.position - b.position);
+
+          // Day header
+          doc.setFillColor(...navy);
+          doc.roundedRect(10, ay, W - 20, 8, 2, 2, 'F');
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(...white);
+          let dayLabel = `Jour ${day.day_number}`;
+          if (day.date) {
+            try { dayLabel += ` — ${new Date(day.date + 'T00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`; } catch { dayLabel += ` — ${day.date}`; }
+          }
+          doc.text(dayLabel, 14, ay + 5.5);
+          doc.setFontSize(8);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`${day.start_time} — ${day.end_time}`, W - 50, ay + 5.5);
+          ay += 12;
+
+          for (const slot of daySlots) {
+            if (ay > H - 20) { doc.addPage(); pageHeader(doc, 'AGENDA (suite)'); ay = 24; }
+            const block = blocks.find(b => b.id === slot.block_id);
+            const [sh, sm] = (slot.start_time || '09:00').split(':').map(Number);
+            const endTotal = sh * 60 + sm + (slot.duration_minutes || 0);
+            const endTime = `${String(Math.floor(endTotal / 60)).padStart(2, '0')}:${String(endTotal % 60).padStart(2, '0')}`;
+
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(...muted);
+            doc.text(`${slot.start_time} — ${endTime}`, 14, ay + 3.5);
+
+            if (block) {
+              const tc = blockTypeColors[block.block_type] || muted;
+              doc.setFillColor(...tc);
+              doc.circle(55, ay + 2.5, 1.5, 'F');
+              doc.setTextColor(...navy);
+              doc.setFont('helvetica', 'bold');
+              doc.text(block.title || '', 60, ay + 3.5, { maxWidth: 150 });
+            } else {
+              doc.setTextColor(...muted);
+              doc.text(slot.title || slot.slot_type || '', 60, ay + 3.5);
+            }
+
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(...muted);
+            doc.text(`${slot.duration_minutes} min`, W - 30, ay + 3.5);
+            ay += 7;
+          }
+          ay += 5;
+        }
+        footer(doc);
+      }
 
       // ===== PAGE SYNTHÈSE (optionnel si beaucoup de contenu) =====
       doc.addPage();
@@ -457,7 +649,7 @@ export default function ExportPanel() {
       }
     }
 
-    // Axes sheet (added as separate rows after a blank line)
+    // Axes sheet
     rows.push('');
     rows.push(['Axe', 'Gauche', 'Droite', 'Participant', 'Position', 'Explication'].join(sep));
     for (const axis of state.axesDef) {
@@ -471,6 +663,49 @@ export default function ExportPanel() {
           p.position,
           p.explanation ? `"${p.explanation.replace(/"/g, '""')}"` : '',
         ].join(sep));
+      }
+    }
+
+    // Déroulé sheet
+    const csvBlocks = (state.blocks || []).sort((a, b) => a.position - b.position);
+    if (csvBlocks.length > 0) {
+      rows.push('');
+      rows.push(['Bloc', 'Type', 'Durée (min)', 'Intention', 'Format', 'Matériel', 'Livrable', 'Description'].join(sep));
+      for (const b of csvBlocks) {
+        rows.push([
+          `"${(b.title || '').replace(/"/g, '""')}"`,
+          b.block_type || '',
+          b.duration_minutes || 0,
+          `"${(b.intention || '').replace(/"/g, '""')}"`,
+          b.format || '',
+          `"${(b.material || '').replace(/"/g, '""')}"`,
+          `"${(b.deliverable || '').replace(/"/g, '""')}"`,
+          `"${(b.description || '').replace(/"/g, '""')}"`,
+        ].join(sep));
+      }
+    }
+
+    // Agenda sheet
+    const csvDays = (state.agendaDays || []).sort((a, b) => a.position - b.position);
+    const csvSlots = state.agendaSlots || [];
+    if (csvDays.length > 0) {
+      rows.push('');
+      rows.push(['Jour', 'Date', 'Début', 'Fin', 'Bloc', 'Type créneau', 'Heure début', 'Durée (min)'].join(sep));
+      for (const day of csvDays) {
+        const daySlots = csvSlots.filter(s => s.day_id === day.id).sort((a, b) => a.position - b.position);
+        for (const slot of daySlots) {
+          const block = csvBlocks.find(b => b.id === slot.block_id);
+          rows.push([
+            `Jour ${day.day_number}`,
+            day.date || '',
+            day.start_time,
+            day.end_time,
+            block ? `"${block.title.replace(/"/g, '""')}"` : (slot.title || ''),
+            slot.slot_type,
+            slot.start_time,
+            slot.duration_minutes,
+          ].join(sep));
+        }
       }
     }
 
@@ -534,7 +769,7 @@ export default function ExportPanel() {
           <Download size={18} /> {exporting ? 'Génération du PDF...' : 'Exporter en PDF'}
         </button>
         <p className="text-label" style={{ color: 'var(--color-text-muted)' }}>
-          Inclut les 4 phases, toutes les cartes et les 8 axes de positionnement
+          Inclut les 4 phases, cartes, 8 axes, déroulé et agenda
         </p>
 
         {/* Text Export */}

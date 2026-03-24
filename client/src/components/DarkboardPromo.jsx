@@ -6,8 +6,10 @@ import { X, ExternalLink, Layout, Users, ThumbsUp, Timer, EyeOff } from 'lucide-
  * S'affiche une fois par session, peut être fermée. Réapparaît à la prochaine session.
  */
 export default function DarkboardPromo({ spaceId, onOpenTab }) {
-  const storageKey = `insuffle-darkboard-promo-dismissed-${spaceId}`;
-  const [dismissed, setDismissed] = useState(() => sessionStorage.getItem(storageKey) === 'true');
+  const storageKey = `insuffle-darkboard-promo-dismissed`;
+  const [dismissed, setDismissed] = useState(() => {
+    try { return localStorage.getItem(storageKey) === 'true'; } catch { return false; }
+  });
 
   if (dismissed) return null;
 
@@ -15,7 +17,7 @@ export default function DarkboardPromo({ spaceId, onOpenTab }) {
 
   function handleDismiss() {
     setDismissed(true);
-    sessionStorage.setItem(storageKey, 'true');
+    try { localStorage.setItem(storageKey, 'true'); } catch { /* ignore */ }
   }
 
   return (
