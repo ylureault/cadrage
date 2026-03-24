@@ -34,6 +34,7 @@ export default function Card({ card }) {
   const isHighlighted = state.searchQuery && (card.content.toLowerCase().includes(state.searchQuery.toLowerCase()) || card.author.toLowerCase().includes(state.searchQuery.toLowerCase()));
 
   function saveEdit() {
+    if (state.archived) { setEditing(false); return; }
     if (editContent.trim() && editContent !== card.content) {
       socket.emit('update-card', { cardId: card.id, content: editContent.trim() });
     }
@@ -41,6 +42,7 @@ export default function Card({ card }) {
   }
 
   function deleteCard() {
+    if (state.archived) return;
     if (confirm('Supprimer cette carte ?')) {
       socket.emit('delete-card', { cardId: card.id, asFacilitator: state.isFacilitator && !isAuthor });
     }

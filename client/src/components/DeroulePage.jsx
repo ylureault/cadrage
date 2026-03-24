@@ -480,20 +480,24 @@ export default function DeroulePage() {
   const [showTemplates, setShowTemplates] = useState(false);
   const [templates, setTemplates] = useState({ system: [], personal: [] });
   const [dragIndex, setDragIndex] = useState(null);
+  const archived = !!state.archived;
 
   const blocks = [...state.blocks].sort((a, b) => a.position - b.position);
 
   function handleCreate(data) {
+    if (archived) return;
     socket.emit('create-block', data);
     setShowForm(false);
   }
 
   function handleEdit(block) {
+    if (archived) return;
     setEditingBlock(block);
     setShowForm(false);
   }
 
   function handleSaveEdit(data) {
+    if (archived) return;
     socket.emit('update-block', { blockId: editingBlock.id, ...data });
     setEditingBlock(null);
   }
@@ -511,7 +515,7 @@ export default function DeroulePage() {
 
   function handleDrop(e, toIndex) {
     e.preventDefault();
-    if (dragIndex === null || dragIndex === toIndex) { setDragIndex(null); return; }
+    if (archived || dragIndex === null || dragIndex === toIndex) { setDragIndex(null); return; }
     const reordered = [...blocks];
     const [moved] = reordered.splice(dragIndex, 1);
     reordered.splice(toIndex, 0, moved);
@@ -527,6 +531,7 @@ export default function DeroulePage() {
   }
 
   function useTemplate(id) {
+    if (archived) return;
     socket.emit('load-deroulement-template', { templateId: id });
     setShowTemplates(false);
   }
@@ -538,6 +543,7 @@ export default function DeroulePage() {
 
   // Sections (US-D033)
   function addSection() {
+    if (archived) return;
     const title = prompt('Nom de la section (ex: Matin - Jour 1) :');
     if (title) socket.emit('create-section', { title });
   }
@@ -554,14 +560,19 @@ export default function DeroulePage() {
         <p className="text-body mb-8" style={{ color: 'var(--color-text-muted)' }}>
           Ajoutez des blocs d'activité, définissez les intentions et organisez la séquence de votre atelier.
         </p>
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <button onClick={() => setShowForm(true)} className="btn-primary text-body-sm flex items-center gap-2">
-            <Plus size={18} /> Ajouter un bloc
-          </button>
-          <button onClick={loadTemplates} className="btn-ghost text-body-sm flex items-center gap-2">
-            <FileText size={18} /> Importer un template
-          </button>
-        </div>
+        {!archived && (
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button onClick={() => setShowForm(true)} className="btn-primary text-body-sm flex items-center gap-2">
+              <Plus size={18} /> Ajouter un bloc
+            </button>
+            <button onClick={loadTemplates} className="btn-ghost text-body-sm flex items-center gap-2">
+              <FileText size={18} /> Importer un template
+            </button>
+          </div>
+        )}
+        {archived && (
+          <p className="text-body-sm" style={{ color: 'var(--color-text-muted)' }}>Cet espace est archivé en lecture seule.</p>
+        )}
 
         {/* Templates modal */}
         {showTemplates && <TemplatesModal templates={templates} onUse={useTemplate} onClose={() => setShowTemplates(false)} />}

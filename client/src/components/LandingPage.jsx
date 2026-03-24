@@ -21,9 +21,9 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  { num: '1', title: 'Créez un espace', desc: 'Un clic, pas de compte, une URL unique générée.' },
-  { num: '2', title: 'Partagez le lien', desc: 'Client, sponsor, co-facilitateur : tout le monde entre.' },
-  { num: '3', title: 'Cadrez ensemble en live', desc: 'Cartes, curseurs, discussions : tout se synchronise.' },
+  { num: '1', title: 'Créez votre espace', desc: 'Un clic. Pas de compte. Une URL unique, prête à partager.' },
+  { num: '2', title: 'Invitez vos interlocuteurs', desc: 'Sponsor, co-facilitateur, client : un lien suffit.' },
+  { num: '3', title: 'Cadrez en temps réel', desc: 'Cartes, curseurs, axes : tout se synchronise instantanément.' },
 ];
 
 const TARGETS = [
@@ -101,13 +101,17 @@ export default function LandingPage() {
             <span className="font-display text-lg font-bold">Insuffle <span style={{ color: 'var(--color-accent)' }}>Cadrage Live</span></span>
             <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'var(--color-accent)', color: '#0c1629' }}>Beta</span>
           </div>
-          <nav className="hidden md:flex items-center gap-6 text-sm">
+          <nav className="hidden md:flex items-center gap-6 text-sm" aria-label="Navigation principale">
             <a href="#features" className="hover:text-[var(--color-accent)] transition-colors">Fonctionnalités</a>
             <a href="#method" className="hover:text-[var(--color-accent)] transition-colors">La méthode</a>
             <a href="#faq" className="hover:text-[var(--color-accent)] transition-colors">FAQ</a>
             <button onClick={() => navigate('/6AG_demo')} className="btn-ghost border border-white/20 text-sm hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all">Voir la démo</button>
             <button onClick={handleCreate} className="btn-primary text-sm">Créer un cadrage</button>
           </nav>
+          <div className="flex md:hidden items-center gap-2">
+            <button onClick={() => navigate('/6AG_demo')} className="text-xs px-3 py-1.5 rounded-btn border border-white/20 hover:border-[var(--color-accent)]">Démo</button>
+            <button onClick={handleCreate} className="btn-primary text-xs px-3 py-1.5">Créer</button>
+          </div>
         </div>
       </header>
 
@@ -118,15 +122,14 @@ export default function LandingPage() {
             Insuffle Cadrage Live <span className="inline-block ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full opacity-100" style={{ backgroundColor: 'var(--color-accent)', color: '#0c1629' }}>BETA</span>
           </p>
           <h1 className="font-display text-h1-mobile md:text-[36px] md:leading-tight mb-6">
-            Rendez visibles les <span style={{ color: 'var(--color-accent)' }}>non-dits</span><br className="hidden sm:block" />
-            avant le temps collectif.
+            Cadrez vos temps collectifs<br />
+            en rendant visibles les <span style={{ color: 'var(--color-accent)' }}>non-dits</span>.
           </h1>
           <p className="text-body md:text-lg opacity-70 mb-4 max-w-2xl mx-auto">
-            Un DG met 5 sur l'axe "Porter le cap". Le facilitateur met 1 — "Agir ensemble".
-            <strong style={{ color: 'var(--color-accent)', opacity: 1 }}> Divergence forte.</strong> Silence.
+            Le sponsor met 5 sur « Porter le cap ». Vous mettez 1 — « Agir ensemble ».
+            <br /><strong style={{ color: 'var(--color-accent)', opacity: 1 }}>Divergence forte.</strong> C'est là que le vrai cadrage commence.
           </p>
-          <p className="text-body md:text-lg opacity-60 mb-10 max-w-2xl mx-auto">
-            C'est à ce moment-là que le vrai cadrage commence.
+          <p className="text-body-sm opacity-50 mb-10 max-w-2xl mx-auto">
             Insuffle Cadrage Live rend cet écart visible — avant l'atelier, pas après.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -135,11 +138,11 @@ export default function LandingPage() {
               {creating ? 'Création...' : 'Créer un cadrage'} <ArrowRight size={20} />
             </button>
             <button onClick={() => navigate('/6AG_demo')}
-              className="inline-flex items-center justify-center gap-2 text-lg px-8 py-3 rounded-btn border-2 border-white/30 text-white font-semibold hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all">
+              className="inline-flex items-center justify-center gap-2 text-base px-8 py-3 rounded-btn border-2 border-white/30 text-white font-semibold hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all">
               Voir la démo <ExternalLink size={18} />
             </button>
           </div>
-          <p className="mt-6 text-sm opacity-40">Sans inscription, prêt en 5 secondes</p>
+          <p className="mt-4 text-sm opacity-40">Gratuit · Sans inscription · Prêt en 5 secondes</p>
         </div>
       </section>
 
@@ -148,10 +151,10 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto px-4 md:px-8">
           <div className="text-center mb-10">
             <h2 className="font-display text-h2-mobile md:text-h2 mb-3">
-              Les <span style={{ color: 'var(--color-accent)' }}>8 axes</span> qu'aucun autre outil ne propose
+              <span style={{ color: 'var(--color-accent)' }}>8 axes</span> de positionnement<br />que personne d'autre ne propose
             </h2>
             <p className="text-body" style={{ color: 'var(--color-text-muted)' }}>
-              Insuffle a formalisé les 8 tensions fondamentales de tout temps collectif. Cet outil vous permet de les calibrer avec votre client en temps réel.
+              15 ans de terrain encodés dans 8 tensions fondamentales. Calibrez votre temps collectif avec le sponsor — en live.
             </p>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
@@ -188,16 +191,16 @@ export default function LandingPage() {
       <Section className="py-16 md:py-20 text-center">
         <div className="max-w-3xl mx-auto px-4 md:px-8">
           <p className="text-h2-mobile md:text-h2 font-display" style={{ color: 'var(--color-text-muted)' }}>
-            Préparer un temps collectif prend trop de temps.
-            Les allers-retours avec le sponsor s'accumulent.
-            Le cadrage se perd dans les emails.
+            Les allers-retours s'accumulent.<br />
+            Le cadrage se perd dans les emails.<br />
+            Les vrais sujets restent dans l'angle mort.
           </p>
         </div>
       </Section>
 
       {/* ===== Recent spaces ===== */}
       {recentSpaces.length > 0 && (
-        <Section className="pb-8 pt-0">
+        <Section className="py-8">
           <div className="max-w-4xl mx-auto px-4 md:px-8">
             <h2 className="text-label uppercase tracking-wide mb-4" style={{ color: 'var(--color-text-muted)' }}>Vos cadrages récents</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -222,7 +225,7 @@ export default function LandingPage() {
       {/* ===== Steps ===== */}
       <Section className="py-16 md:py-20" style={{ backgroundColor: 'var(--color-surface)' }}>
         <div className="max-w-4xl mx-auto px-4 md:px-8">
-          <h2 className="font-display text-h2-mobile md:text-h2 text-center mb-12">Comment ça marche</h2>
+          <h2 className="font-display text-h2-mobile md:text-h2 text-center mb-12">3 étapes, 5 secondes</h2>
           <div className="grid md:grid-cols-3 gap-8">
             {STEPS.map(s => (
               <div key={s.num} className="text-center">
@@ -248,7 +251,7 @@ export default function LandingPage() {
           <p className="text-caption mb-6" style={{ color: 'var(--color-text-muted)' }}>
             Questions issues de la méthode de cadrage Insuffle
           </p>
-          <a href="https://insuffle.com" target="_blank" rel="noopener"
+          <a href="https://insuffle.com/facilitation/" target="_blank" rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 font-semibold hover:underline transition-colors" style={{ color: 'var(--color-text)' }}>
             En savoir plus sur la méthode <ExternalLink size={14} />
           </a>
@@ -258,7 +261,7 @@ export default function LandingPage() {
       {/* ===== Features (US-382: jaune partout) ===== */}
       <Section id="features" className="py-16 md:py-20" style={{ backgroundColor: 'var(--color-surface)' }}>
         <div className="max-w-6xl mx-auto px-4 md:px-8">
-          <h2 className="font-display text-h2-mobile md:text-h2 text-center mb-12">Ce que vous pouvez faire</h2>
+          <h2 className="font-display text-h2-mobile md:text-h2 text-center mb-12">Tout ce qu'il faut pour cadrer, rien de plus</h2>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {FEATURES.map(f => (
               <div key={f.title} className="p-6 rounded-card elevation-1 hover:elevation-2 transition-all duration-200"
@@ -282,6 +285,7 @@ export default function LandingPage() {
                 style={{ backgroundColor: 'var(--color-surface)' }}>{t}</span>
             ))}
           </div>
+          <p className="text-body-sm mt-6" style={{ color: 'var(--color-text-muted)' }}>Et tous ceux qui préparent des temps collectifs à fort enjeu.</p>
         </div>
       </Section>
 
@@ -294,7 +298,7 @@ export default function LandingPage() {
           <p className="text-body-sm opacity-50 mb-8 max-w-xl mx-auto">
             Insuffle accompagne les organisations dans leurs transformations. Insuffle Académie forme les facilitateurs (certifié Qualiopi).
           </p>
-          <a href="https://insuffle.com" target="_blank" rel="noopener" className="btn-primary text-base px-8 py-3 h-auto inline-flex items-center gap-2">
+          <a href="https://insuffle.com/cabinet/" target="_blank" rel="noopener noreferrer" className="btn-primary text-base px-8 py-3 h-auto inline-flex items-center gap-2">
             Découvrir Insuffle <ArrowRight size={18} />
           </a>
         </div>
@@ -313,7 +317,7 @@ export default function LandingPage() {
           <p className="text-body mb-8 max-w-xl mx-auto" style={{ color: 'var(--color-text-muted)' }}>
             Formez-vous à la facilitation, à l'intelligence collective et au cadrage de temps collectifs.
           </p>
-          <a href="https://insuffle.com" target="_blank" rel="noopener"
+          <a href="https://insuffle.com/formation/" target="_blank" rel="noopener noreferrer"
             className="inline-flex items-center gap-2 font-semibold px-6 py-3 rounded-btn transition-all hover:scale-[1.02]"
             style={{ backgroundColor: 'var(--color-academie)', color: 'white' }}>
             Découvrir les formations <ArrowRight size={18} />
@@ -330,7 +334,8 @@ export default function LandingPage() {
               <div key={i} className="rounded-card border" style={{ borderColor: 'var(--color-border)' }}>
                 <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
                   className="w-full flex items-center justify-between p-4 text-left font-medium text-body"
-                  aria-expanded={openFaq === i}>
+                  aria-expanded={openFaq === i}
+                  aria-label={"Question : " + f.q}>
                   {f.q}
                   {openFaq === i ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                 </button>
@@ -346,8 +351,8 @@ export default function LandingPage() {
       {/* ===== CTA final ===== */}
       <Section className="py-20 text-center">
         <div className="max-w-2xl mx-auto px-4 md:px-8">
-          <h2 className="font-display text-h2-mobile md:text-h2 mb-4">Prêt à cadrer votre prochain temps collectif ?</h2>
-          <p className="text-body mb-8" style={{ color: 'var(--color-text-muted)' }}>Sans inscription, prêt en 5 secondes.</p>
+          <h2 className="font-display text-h2-mobile md:text-h2 mb-4">Votre prochain cadrage commence ici</h2>
+          <p className="text-body mb-8" style={{ color: 'var(--color-text-muted)' }}>Gratuit · Sans inscription · Prêt en 5 secondes</p>
           <button onClick={handleCreate} disabled={creating} className="btn-primary text-lg px-8 py-3 h-auto animate-pulse-glow">
             {creating ? 'Création...' : 'Créer votre premier cadrage'} <ArrowRight size={20} />
           </button>
@@ -382,14 +387,14 @@ export default function LandingPage() {
             <div>
               <h4 className="font-semibold text-body-sm mb-3">Ressources</h4>
               <div className="space-y-1.5 text-body-sm opacity-60">
-                <a href="https://insuffle.com" target="_blank" rel="noopener" className="inline-flex items-center gap-1 hover:opacity-100 transition-opacity">Insuffle.com <ExternalLink size={10} /></a>
-                <a href="https://insuffle.com" target="_blank" rel="noopener" className="block hover:opacity-100 transition-opacity">Formations</a>
-                <a href="https://insuffle.com" target="_blank" rel="noopener" className="block hover:opacity-100 transition-opacity">Blog</a>
+                <a href="https://insuffle.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 hover:opacity-100 transition-opacity">Insuffle.com <ExternalLink size={10} /></a>
+                <a href="https://insuffle.com/formation/" target="_blank" rel="noopener noreferrer" className="block hover:opacity-100 transition-opacity">Formations</a>
+                <a href="https://insuffle.com/blog/" target="_blank" rel="noopener noreferrer" className="block hover:opacity-100 transition-opacity">Blog</a>
               </div>
             </div>
           </div>
           <div className="border-t border-white/10 pt-6 text-center text-caption opacity-40">
-            © 2024-2026 Insuffle. Tous droits réservés. | Outil de cadrage Insuffle | insuffle.com
+            © 2025-2026 Insuffle. Tous droits réservés. | Outil de cadrage Insuffle | insuffle.com
           </div>
         </div>
       </footer>

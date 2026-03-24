@@ -59,6 +59,16 @@ export function createApp(db) {
     ).run(spaceId, pseudo, action, target, details);
   }
 
+  function isFacilitator(spaceId, pseudo) {
+    const space = db.prepare(`SELECT facilitator_ids FROM spaces WHERE id = ?`).get(spaceId);
+    return (JSON.parse(space?.facilitator_ids || '[]')).includes(pseudo);
+  }
+
+  function isArchived(spaceId) {
+    const space = db.prepare(`SELECT archived FROM spaces WHERE id = ?`).get(spaceId);
+    return !!space?.archived;
+  }
+
   // ===================== REST API =====================
 
   app.get('/api/canvas-structure', (req, res) => {
@@ -525,6 +535,7 @@ export function createApp(db) {
 
     socket.on('update-header', (data) => {
       if (!currentSpace) return;
+      if (!isFacilitator(currentSpace, currentPseudo)) return;
       const space = db.prepare(`SELECT archived FROM spaces WHERE id = ?`).get(currentSpace);
       if (space?.archived) return;
       const { field, value } = data;
@@ -591,6 +602,7 @@ export function createApp(db) {
 
     socket.on('update-card', ({ cardId, content }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       const card = db.prepare(`SELECT * FROM cards WHERE id = ? AND space_id = ?`).get(cardId, currentSpace);
       if (!card || card.author !== currentPseudo) return;
       if (content.length > 500) content = content.substring(0, 500);
@@ -602,7 +614,7 @@ export function createApp(db) {
       if (!currentSpace) return;
       const card = db.prepare(`SELECT * FROM cards WHERE id = ? AND space_id = ?`).get(cardId, currentSpace);
       if (!card) return;
-      if (!asFacilitator && card.author !== currentPseudo) return;
+      if (card.author !== currentPseudo && !isFacilitator(currentSpace, currentPseudo)) return;
       db.prepare(`DELETE FROM cards WHERE id = ?`).run(cardId);
       logActivity(currentSpace, currentPseudo, 'delete-card', card.column_key, asFacilitator ? 'Carte supprimée par le facilitateur' : '');
       io.to(currentSpace).emit('card-deleted', { cardId, by: currentPseudo });
@@ -610,6 +622,7 @@ export function createApp(db) {
 
     socket.on('move-card', ({ cardId, toPhase, toColumnKey, toPosition }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       db.prepare(`UPDATE cards SET phase = ?, column_key = ?, position = ?, updated_at = datetime('now') WHERE id = ? AND space_id = ?`).run(
         toPhase, toColumnKey, toPosition, cardId, currentSpace
       );
@@ -618,6 +631,7 @@ export function createApp(db) {
 
     socket.on('mark-discuss', ({ cardId }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       const card = db.prepare(`SELECT marked_discuss FROM cards WHERE id = ? AND space_id = ?`).get(cardId, currentSpace);
       if (!card) return;
       const newVal = card.marked_discuss ? 0 : 1;
@@ -627,6 +641,7 @@ export function createApp(db) {
 
     socket.on('add-tag', ({ cardId, tag }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       const card = db.prepare(`SELECT tags FROM cards WHERE id = ? AND space_id = ?`).get(cardId, currentSpace);
       if (!card) return;
       const tags = JSON.parse(card.tags || '[]');
@@ -637,6 +652,7 @@ export function createApp(db) {
 
     socket.on('remove-tag', ({ cardId, tag }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       const card = db.prepare(`SELECT tags FROM cards WHERE id = ? AND space_id = ?`).get(cardId, currentSpace);
       if (!card) return;
       const tags = JSON.parse(card.tags || '[]').filter(t => t !== tag);
@@ -646,6 +662,7 @@ export function createApp(db) {
 
     socket.on('react', ({ cardId, emoji }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       const card = db.prepare(`SELECT reactions FROM cards WHERE id = ? AND space_id = ?`).get(cardId, currentSpace);
       if (!card) return;
       const reactions = JSON.parse(card.reactions || '{}');
@@ -660,6 +677,7 @@ export function createApp(db) {
 
     socket.on('vote', ({ cardId }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       const existing = db.prepare(`SELECT COUNT(*) as c FROM votes WHERE space_id = ? AND pseudo = ?`).get(currentSpace, currentPseudo);
       if (existing.c >= 3) { socket.emit('error', { message: 'Vous avez utilisé tous vos votes (3 max)' }); return; }
       try {
@@ -671,6 +689,7 @@ export function createApp(db) {
 
     socket.on('unvote', ({ cardId }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       db.prepare(`DELETE FROM votes WHERE space_id = ? AND card_id = ? AND pseudo = ?`).run(currentSpace, cardId, currentPseudo);
       const votes = db.prepare(`SELECT card_id, COUNT(*) as count FROM votes WHERE space_id = ? GROUP BY card_id`).all(currentSpace);
       io.to(currentSpace).emit('votes-updated', votes);
@@ -678,6 +697,7 @@ export function createApp(db) {
 
     socket.on('add-comment', ({ cardId, content }) => {
       if (!currentSpace || !currentPseudo || !currentColor || !content?.trim()) return;
+      if (isArchived(currentSpace)) return;
       const id = generateId();
       db.prepare(`INSERT INTO comments (id, card_id, space_id, author, author_color, content) VALUES (?, ?, ?, ?, ?, ?)`).run(
         id, cardId, currentSpace, currentPseudo, currentColor, content.trim()
@@ -710,6 +730,7 @@ export function createApp(db) {
 
     socket.on('set-axis-final', ({ axisKey, position }) => {
       if (!currentSpace) return;
+      if (!isFacilitator(currentSpace, currentPseudo)) return;
       db.prepare(`INSERT INTO axes_final (space_id, axis_key, position, updated_at) VALUES (?, ?, ?, datetime('now'))
         ON CONFLICT(space_id, axis_key) DO UPDATE SET position = excluded.position, updated_at = datetime('now')`).run(
         currentSpace, axisKey, position
@@ -719,6 +740,7 @@ export function createApp(db) {
 
     socket.on('lock-axis', ({ axisKey, locked }) => {
       if (!currentSpace) return;
+      if (!isFacilitator(currentSpace, currentPseudo)) return;
       db.prepare(`INSERT INTO axes_final (space_id, axis_key, position, locked) VALUES (?, ?, 3, ?)
         ON CONFLICT(space_id, axis_key) DO UPDATE SET locked = excluded.locked`).run(
         currentSpace, axisKey, locked ? 1 : 0
@@ -730,6 +752,8 @@ export function createApp(db) {
       if (!currentSpace) return;
       const space = db.prepare(`SELECT facilitator_ids FROM spaces WHERE id = ?`).get(currentSpace);
       const ids = JSON.parse(space?.facilitator_ids || '[]');
+      // First facilitator can self-assign; after that, only facilitators can add/remove
+      if (ids.length > 0 && !ids.includes(currentPseudo)) return;
       if (add && !ids.includes(pseudo)) ids.push(pseudo);
       if (!add) { const idx = ids.indexOf(pseudo); if (idx >= 0) ids.splice(idx, 1); }
       db.prepare(`UPDATE spaces SET facilitator_ids = ? WHERE id = ?`).run(JSON.stringify(ids), currentSpace);
@@ -738,18 +762,22 @@ export function createApp(db) {
 
     socket.on('lock-phase', ({ phase, locked }) => {
       if (!currentSpace) return;
+      if (!isFacilitator(currentSpace, currentPseudo)) return;
       db.prepare(`UPDATE phase_state SET locked = ? WHERE space_id = ? AND phase = ?`).run(locked ? 1 : 0, currentSpace, phase);
       io.to(currentSpace).emit('phase-state-changed', { phase, locked, hidden: null });
     });
 
     socket.on('hide-phase', ({ phase, hidden }) => {
       if (!currentSpace) return;
+      if (!isFacilitator(currentSpace, currentPseudo)) return;
       db.prepare(`UPDATE phase_state SET hidden = ? WHERE space_id = ? AND phase = ?`).run(hidden ? 1 : 0, currentSpace, phase);
       io.to(currentSpace).emit('phase-state-changed', { phase, locked: null, hidden });
     });
 
     socket.on('start-timer', ({ duration }) => {
       if (!currentSpace) return;
+      if (!isFacilitator(currentSpace, currentPseudo)) return;
+      if (!duration || duration < 1 || duration > 3600) return;
       const existing = spaceTimers.get(currentSpace);
       if (existing?.interval) clearInterval(existing.interval);
 
@@ -769,6 +797,7 @@ export function createApp(db) {
 
     socket.on('stop-timer', () => {
       if (!currentSpace) return;
+      if (!isFacilitator(currentSpace, currentPseudo)) return;
       const timer = spaceTimers.get(currentSpace);
       if (timer?.interval) clearInterval(timer.interval);
       spaceTimers.delete(currentSpace);
@@ -777,11 +806,13 @@ export function createApp(db) {
 
     socket.on('spotlight', ({ cardId }) => {
       if (!currentSpace) return;
+      if (!isFacilitator(currentSpace, currentPseudo)) return;
       io.to(currentSpace).emit('spotlight-changed', { cardId });
     });
 
     socket.on('set-welcome-message', ({ message }) => {
       if (!currentSpace) return;
+      if (!isFacilitator(currentSpace, currentPseudo)) return;
       db.prepare(`UPDATE spaces SET welcome_message = ? WHERE id = ?`).run(message, currentSpace);
       io.to(currentSpace).emit('welcome-message-updated', { message });
     });
@@ -803,6 +834,7 @@ export function createApp(db) {
 
     socket.on('archive-space', ({ archived }) => {
       if (!currentSpace) return;
+      if (!isFacilitator(currentSpace, currentPseudo)) return;
       db.prepare(`UPDATE spaces SET archived = ? WHERE id = ?`).run(archived ? 1 : 0, currentSpace);
       io.to(currentSpace).emit('space-archived', { archived });
     });
@@ -863,6 +895,7 @@ export function createApp(db) {
 
     socket.on('delete-block', ({ blockId }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       const block = db.prepare(`SELECT * FROM blocks WHERE id = ? AND space_id = ?`).get(blockId, currentSpace);
       if (!block) return;
       db.prepare(`DELETE FROM blocks WHERE id = ?`).run(blockId);
@@ -874,6 +907,7 @@ export function createApp(db) {
 
     socket.on('duplicate-block', ({ blockId }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       const orig = db.prepare(`SELECT * FROM blocks WHERE id = ? AND space_id = ?`).get(blockId, currentSpace);
       if (!orig) return;
       const id = generateId();
@@ -888,6 +922,7 @@ export function createApp(db) {
 
     socket.on('reorder-blocks', ({ orderedIds }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       const stmt = db.prepare(`UPDATE blocks SET position = ? WHERE id = ? AND space_id = ?`);
       const tx = db.transaction(() => {
         orderedIds.forEach((id, i) => stmt.run(i, id, currentSpace));
@@ -898,6 +933,7 @@ export function createApp(db) {
 
     socket.on('add-block-comment', ({ blockId, content }) => {
       if (!currentSpace || !currentPseudo || !currentColor || !content?.trim()) return;
+      if (isArchived(currentSpace)) return;
       const id = generateId();
       db.prepare(`INSERT INTO block_comments (id, block_id, space_id, author, author_color, content) VALUES (?, ?, ?, ?, ?, ?)`).run(
         id, blockId, currentSpace, currentPseudo, currentColor, content.trim()
@@ -910,6 +946,7 @@ export function createApp(db) {
 
     socket.on('create-section', ({ title }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       const id = generateId();
       const maxPos = db.prepare(`SELECT MAX(position) as mp FROM sections WHERE space_id = ?`).get(currentSpace);
       const position = (maxPos?.mp ?? -1) + 1;
@@ -920,6 +957,7 @@ export function createApp(db) {
 
     socket.on('update-section', ({ sectionId, title, collapsed }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       const sets = []; const vals = [];
       if (title !== undefined) { sets.push('title = ?'); vals.push(title); }
       if (collapsed !== undefined) { sets.push('collapsed = ?'); vals.push(collapsed ? 1 : 0); }
@@ -932,6 +970,7 @@ export function createApp(db) {
 
     socket.on('delete-section', ({ sectionId }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       // Detach blocks from section
       db.prepare(`UPDATE blocks SET section_id = NULL WHERE section_id = ? AND space_id = ?`).run(sectionId, currentSpace);
       db.prepare(`DELETE FROM sections WHERE id = ? AND space_id = ?`).run(sectionId, currentSpace);
@@ -940,6 +979,7 @@ export function createApp(db) {
 
     socket.on('reorder-sections', ({ orderedIds }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       const stmt = db.prepare(`UPDATE sections SET position = ? WHERE id = ? AND space_id = ?`);
       orderedIds.forEach((id, i) => stmt.run(i, id, currentSpace));
       io.to(currentSpace).emit('sections-reordered', { orderedIds });
@@ -949,6 +989,7 @@ export function createApp(db) {
 
     socket.on('create-agenda-day', ({ date, start_time, end_time }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       const id = generateId();
       const maxPos = db.prepare(`SELECT MAX(position) as mp FROM agenda_days WHERE space_id = ?`).get(currentSpace);
       const position = (maxPos?.mp ?? -1) + 1;
@@ -962,6 +1003,7 @@ export function createApp(db) {
 
     socket.on('update-agenda-day', ({ dayId, ...fields }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       const allowed = ['date', 'start_time', 'end_time'];
       const sets = []; const vals = [];
       for (const [k, v] of Object.entries(fields)) {
@@ -977,6 +1019,7 @@ export function createApp(db) {
 
     socket.on('delete-agenda-day', ({ dayId }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       db.prepare(`DELETE FROM agenda_slots WHERE day_id = ? AND space_id = ?`).run(dayId, currentSpace);
       db.prepare(`DELETE FROM agenda_days WHERE id = ? AND space_id = ?`).run(dayId, currentSpace);
       io.to(currentSpace).emit('agenda-day-deleted', { dayId });
@@ -984,6 +1027,7 @@ export function createApp(db) {
 
     socket.on('create-agenda-slot', ({ dayId, block_id, slot_type, title, start_time, duration_minutes }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       const id = generateId();
       const maxPos = db.prepare(`SELECT MAX(position) as mp FROM agenda_slots WHERE day_id = ?`).get(dayId);
       const position = (maxPos?.mp ?? -1) + 1;
@@ -996,6 +1040,7 @@ export function createApp(db) {
 
     socket.on('update-agenda-slot', ({ slotId, ...fields }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       const allowed = ['block_id', 'slot_type', 'title', 'start_time', 'duration_minutes', 'position'];
       const sets = []; const vals = [];
       for (const [k, v] of Object.entries(fields)) {
@@ -1012,12 +1057,14 @@ export function createApp(db) {
 
     socket.on('delete-agenda-slot', ({ slotId }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       db.prepare(`DELETE FROM agenda_slots WHERE id = ? AND space_id = ?`).run(slotId, currentSpace);
       io.to(currentSpace).emit('agenda-slot-deleted', { slotId });
     });
 
     socket.on('reorder-agenda-slots', ({ dayId, orderedIds }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       const stmt = db.prepare(`UPDATE agenda_slots SET position = ? WHERE id = ? AND space_id = ?`);
       orderedIds.forEach((id, i) => stmt.run(i, id, currentSpace));
       io.to(currentSpace).emit('agenda-slots-reordered', { dayId, orderedIds });
@@ -1025,6 +1072,7 @@ export function createApp(db) {
 
     socket.on('auto-schedule-agenda', ({ dayId }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       const day = db.prepare(`SELECT * FROM agenda_days WHERE id = ? AND space_id = ?`).get(dayId, currentSpace);
       if (!day) return;
       const blocks = db.prepare(`SELECT * FROM blocks WHERE space_id = ? ORDER BY position`).all(currentSpace);
@@ -1080,6 +1128,7 @@ export function createApp(db) {
 
     socket.on('save-deroulement-template', ({ name, description }) => {
       if (!currentSpace || !currentPseudo) return;
+      if (isArchived(currentSpace)) return;
       const blocks = db.prepare(`SELECT * FROM blocks WHERE space_id = ? ORDER BY position`).all(currentSpace);
       const sections = db.prepare(`SELECT * FROM sections WHERE space_id = ? ORDER BY position`).all(currentSpace);
       const id = generateId();
@@ -1091,6 +1140,7 @@ export function createApp(db) {
 
     socket.on('load-deroulement-template', ({ templateId }) => {
       if (!currentSpace) return;
+      if (isArchived(currentSpace)) return;
       const tpl = db.prepare(`SELECT * FROM deroulement_templates WHERE id = ?`).get(templateId);
       if (!tpl) return;
       const data = JSON.parse(tpl.data);
@@ -1132,6 +1182,13 @@ export function createApp(db) {
           logActivity(currentSpace, currentPseudo, 'leave', '', '');
           io.to(currentSpace).emit('notification', { message: `${currentPseudo} a quitté le cadrage` });
         }
+      }
+      // Clean up timer if this was the last user in the space
+      const remaining = spaceParticipants.get(currentSpace);
+      if (remaining && remaining.size === 0) {
+        const timer = spaceTimers.get(currentSpace);
+        if (timer?.interval) clearInterval(timer.interval);
+        spaceTimers.delete(currentSpace);
       }
     });
   });

@@ -222,6 +222,7 @@ function UnscheduledBlocks({ blocks, scheduledIds, onSchedule }) {
 // ===== Main AgendaPage =====
 export default function AgendaPage() {
   const { state } = useStore();
+  const archived = !!state.archived;
   const [viewMode, setViewMode] = useState('timeline'); // 'timeline' | 'table'
   const [dragIndex, setDragIndex] = useState(null);
 
@@ -231,6 +232,7 @@ export default function AgendaPage() {
 
   // Create first day automatically if none exists
   function createDay() {
+    if (archived) return;
     socket.emit('create-agenda-day', {
       date: state.space?.session_date || '',
       start_time: '09:00',
@@ -239,10 +241,12 @@ export default function AgendaPage() {
   }
 
   function updateDay(dayId, fields) {
+    if (archived) return;
     socket.emit('update-agenda-day', { dayId, ...fields });
   }
 
   function deleteDay(dayId) {
+    if (archived) return;
     if (confirm('Supprimer ce jour et tous ses créneaux ?')) {
       socket.emit('delete-agenda-day', { dayId });
     }
@@ -250,6 +254,7 @@ export default function AgendaPage() {
 
   // US-A004: Schedule a block
   function scheduleBlock(dayId, block) {
+    if (archived) return;
     const daySlots = state.agendaSlots.filter(s => s.day_id === dayId).sort((a, b) => a.position - b.position);
     const day = days.find(d => d.id === dayId);
     let startTime = day?.start_time || '09:00';
@@ -265,6 +270,7 @@ export default function AgendaPage() {
 
   // US-A005: Quick pause
   function addPause(dayId, pause) {
+    if (archived) return;
     const daySlots = state.agendaSlots.filter(s => s.day_id === dayId).sort((a, b) => a.position - b.position);
     const day = days.find(d => d.id === dayId);
     let startTime = day?.start_time || '09:00';
@@ -280,6 +286,7 @@ export default function AgendaPage() {
 
   // US-A006: Buffer
   function addBuffer(dayId) {
+    if (archived) return;
     const daySlots = state.agendaSlots.filter(s => s.day_id === dayId).sort((a, b) => a.position - b.position);
     const day = days.find(d => d.id === dayId);
     let startTime = day?.start_time || '09:00';
@@ -294,6 +301,7 @@ export default function AgendaPage() {
   }
 
   function deleteSlot(slotId) {
+    if (archived) return;
     socket.emit('delete-agenda-slot', { slotId });
   }
 
@@ -303,6 +311,7 @@ export default function AgendaPage() {
 
   // US-A010: Auto schedule
   function autoSchedule(dayId) {
+    if (archived) return;
     socket.emit('auto-schedule-agenda', { dayId });
   }
 
@@ -319,7 +328,7 @@ export default function AgendaPage() {
 
   function handleDrop(e, toIdx, dayId) {
     e.preventDefault();
-    if (!dragIndex || dragIndex.dayId !== dayId) { setDragIndex(null); return; }
+    if (archived || !dragIndex || dragIndex.dayId !== dayId) { setDragIndex(null); return; }
     const daySlots = state.agendaSlots.filter(s => s.day_id === dayId).sort((a, b) => a.position - b.position);
     const reordered = [...daySlots];
     const [moved] = reordered.splice(dragIndex.idx, 1);
