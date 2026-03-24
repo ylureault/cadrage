@@ -1,209 +1,233 @@
 # AUDIT QA COMPLET — Cadrage Live Insuffle
-## Date: 2026-03-24 | Simulation: 100 équipes × 100 clients
+## Date: 2026-03-24 | Simulation: 100 équipes × 100 clients | 2 passes
 
 ---
 
 ## RÉSUMÉ EXÉCUTIF
 
-- **Bugs critiques** : 8
-- **Bugs hauts** : 25
-- **Bugs moyens** : 22
-- **Bugs bas** : 15
-- **Total** : 70 anomalies identifiées
+- **Total anomalies identifiées** : 94
+- **Corrigées dans ce sprint** : 18
+- **Restantes critiques** : 11 (sécurité serveur)
+- **Restantes hautes** : 15
+- **Restantes moyennes** : 28
+- **Restantes basses** : 22
 
 ---
 
-## 1. LANDING PAGE
+## ✅ ANOMALIES CORRIGÉES (ce sprint)
 
-### CRITIQUE
-| # | Description | Fichier:Ligne | Impact |
-|---|-------------|---------------|--------|
-| LP-01 | Texte blanc sur fond blanc en dark mode — sections Insuffle, header, hero, footer utilisaient `var(--color-primary)` qui flip en dark mode | LandingPage.jsx:97,115,283,352 | **CORRIGÉ** — hardcodé `#0c1629` |
-| LP-02 | Logo "I" badge utilise `color: var(--color-primary)` sur fond gold — en dark mode, texte clair sur fond clair | LandingPage.jsx:100,102,166,358 | Contraste insuffisant |
-
-### HAUTE
-| # | Description | Fichier:Ligne | Impact |
-|---|-------------|---------------|--------|
-| LP-03 | Axe affiché "Sérieux / Ludique" sur landing vs "Sérieux / Énergie ludique" dans l'app | LandingPage.jsx:161 vs canvas-data.js:161 | Incohérence naming |
-| LP-04 | Liens "Découvrir Insuffle", "En savoir plus", "Formations" pointent tous vers insuffle.com générique | LandingPage.jsx:246,291,310 | Liens non spécifiques |
-| LP-05 | Cadrages récents affichent "Cadrage sans titre" — pas de sync du nom client depuis le serveur | LandingPage.jsx:204-209 | UX confuse |
-| LP-06 | Pas de lien démo visible sur la landing | LandingPage.jsx | **CORRIGÉ** — bouton "Voir la démo" ajouté |
-| LP-07 | `rel="noopener"` sans `noreferrer` sur liens externes | LandingPage.jsx:246,291,310,379-381 | Fuite referrer |
-
-### MOYENNE
-| # | Description | Fichier:Ligne | Impact |
-|---|-------------|---------------|--------|
-| LP-08 | FAQ toggle manque `aria-label` pour screen readers | LandingPage.jsx:330 | Accessibilité |
-| LP-09 | `<nav>` sans `aria-label="Navigation principale"` | LandingPage.jsx:104 | Accessibilité |
-| LP-10 | Hero text overflow possible sur petits écrans (320px) | LandingPage.jsx:120-121 | Mobile |
-| LP-11 | Texte opacity-50/60/70 peut échouer WCAG AA contrast ratio | LandingPage.jsx:117,124,128 | Accessibilité |
-| LP-12 | localStorage non protégé par try-catch | LandingPage.jsx:81-83,92 | Crash si storage indisponible |
-| LP-13 | `new Date(s.date)` peut afficher "Invalid Date" si localStorage corrompu | LandingPage.jsx:212 | UX dégradée |
-
-### BASSE
-| # | Description | Fichier:Ligne | Impact |
-|---|-------------|---------------|--------|
-| LP-14 | NotFound.jsx utilise couleurs legacy Tailwind, pas de dark mode | NotFound.jsx:8-13 | Incohérence visuelle |
-| LP-15 | Footer links sans focus indicator pour navigation clavier | LandingPage.jsx:376-386 | Accessibilité |
-| LP-16 | Fonts Google non preload (LCP impact) | index.html:42-44 | Performance |
+| # | Description | Statut |
+|---|-------------|--------|
+| 1 | Axes : valeur 3 manquante (1,2,4,5 → 1,2,3,4,5) | ✅ CORRIGÉ |
+| 2 | PDF axes : même fix [1,2,4,5] → [1,2,3,4,5] | ✅ CORRIGÉ |
+| 3 | Landing : texte blanc sur fond blanc dark mode (header, hero, footer, Insuffle) | ✅ CORRIGÉ |
+| 4 | Landing : badges gold `color: var(--color-primary)` → `#0c1629` | ✅ CORRIGÉ |
+| 5 | Landing : naming "Ludique" → "Énergie ludique" | ✅ CORRIGÉ |
+| 6 | Landing : bouton "Voir la démo" ajouté (header + hero) | ✅ CORRIGÉ |
+| 7 | Landing : cadrages récents améliorés (date + ID au lieu de "sans titre") | ✅ CORRIGÉ |
+| 8 | Toolbar axes : scroll vers section au lieu de rien | ✅ CORRIGÉ |
+| 9 | DarkBoard bannière : fermeture permanente (localStorage) | ✅ CORRIGÉ |
+| 10 | Loading screen : spinner + couleurs hardcoded | ✅ CORRIGÉ |
+| 11 | RecapTab : Déroulé et Agenda ajoutés | ✅ CORRIGÉ |
+| 12 | PDF export : pages Déroulé et Agenda ajoutées | ✅ CORRIGÉ |
+| 13 | CSV/Text export : sections Déroulé et Agenda ajoutées | ✅ CORRIGÉ |
+| 14 | ExportPanel : `blockTypeColors` hors scope dans Agenda PDF → déplacé | ✅ CORRIGÉ |
+| 15 | ExportPanel : `.sort()` mutait le state → `[...arr].sort()` | ✅ CORRIGÉ |
+| 16 | ExportPanel : `block.title.replace()` crash si null → `(block.title \|\| '')` | ✅ CORRIGÉ |
+| 17 | RecapTab : midnight time wrap + sort mutation | ✅ CORRIGÉ |
+| 18 | Toolbar : notification axes seulement quand section non visible | ✅ CORRIGÉ |
 
 ---
 
-## 2. CANVAS / SPACE PAGE
+## 🔴 CRITIQUES NON CORRIGÉES — SÉCURITÉ SERVEUR (app.js)
 
-### CRITIQUE
-| # | Description | Fichier:Ligne | Impact |
-|---|-------------|---------------|--------|
-| SP-01 | **Axes ne réagissent pas au clic** — boutons 1-2-4-5 sans handler fonctionnel, compteur reste à 0 | AxesPanel.jsx | Fonctionnalité core cassée |
-| SP-02 | **Échelle axes 1,2,4,5 — valeur 3 manquante** | AxesPanel.jsx, canvas-data.js | Utilisateur ne peut pas choisir médiane |
-| SP-03 | **XSS Welcome Message** — rendu sans échappement HTML | PseudoModal.jsx:74 | Faille sécurité |
-| SP-04 | **`set-facilitator` sans vérification d'autorisation** — n'importe qui peut devenir facilitateur | app.js:729-737 | Bypass complet des droits |
+Ces vulnérabilités nécessitent un refactoring du middleware d'autorisation.
 
-### HAUTE
-| # | Description | Fichier:Ligne | Impact |
-|---|-------------|---------------|--------|
-| SP-05 | `delete-card` fait confiance au booléen `asFacilitator` du client | app.js:601-609 | Suppression non autorisée |
-| SP-06 | `move-card` sans check archived ni facilitator | app.js:611-616 | Modification d'espace archivé |
-| SP-07 | `update-card` sans check archived ni phase-lock | app.js:592-599 | Modification interdite possible |
-| SP-08 | `mark-discuss`, `add-tag`, `remove-tag`, `react`, `vote`, `unvote`, `add-comment` — aucun check archived | app.js:619-696 | 7 opérations possibles sur espace archivé |
-| SP-09 | `archive-space` et `update-setting` sans vérification facilitateur | app.js:804-817 | N'importe qui archive/modifie |
-| SP-10 | Race condition JSON `facilitator_ids` — read-modify-write concurrent | app.js:729-735 | Perte de données |
-| SP-11 | Même race condition sur `tags`, `reactions` (JSON arrays) | app.js:628-657 | Perte de données |
-| SP-12 | Position SQL dans socket diffère du REST (manque filtre phase) | app.js:561 vs 290 | Positions dupliquées |
-| SP-13 | Toolbar "8 axes" — clic sans effet visible, pas de scroll ni panneau | ToolBar.jsx | UX cassée |
-| SP-14 | Écran noir 3-5s après "Créer un cadrage" sans loader | Transition landing→app | Feedback manquant |
-| SP-15 | Bannière DarkBoard permanente sans option de fermeture | DarkboardPromo.jsx | Masque le contenu |
-| SP-16 | Modale pseudo sans sélection de rôle (facilitateur/sponsor/participant) | PseudoModal.jsx | Pas de distinction de droits |
-| SP-17 | Timer cleanup manquant au disconnect — interval continue en mémoire | app.js:751-776 | Memory leak serveur |
-| SP-18 | `card.author_color` peut être null → crash style | Card.jsx:98-99 | Crash rendu |
+| # | Event/Endpoint | Vulnérabilité | Impact |
+|---|----------------|---------------|--------|
+| SEC-01 | `set-facilitator` | Aucune vérification d'autorisation — n'importe qui devient facilitateur | **Escalade de privilèges** |
+| SEC-02 | `delete-card` | Fait confiance au booléen `asFacilitator` du client | **Suppression non autorisée** |
+| SEC-03 | `set-axis-final` | Pas de check facilitateur | Position finale modifiable par tous |
+| SEC-04 | `lock-axis` | Pas de check facilitateur | Axes verrouillables par tous |
+| SEC-05 | `lock-phase` / `hide-phase` | Pas de check facilitateur | Phases lockables par tous |
+| SEC-06 | `start-timer` / `stop-timer` | Pas de check facilitateur + durée illimitée | DoS + contrôle session |
+| SEC-07 | `archive-space` | Pas de check facilitateur | Archivage par n'importe qui |
+| SEC-08 | `set-welcome-message` | Pas de check facilitateur + pas d'échappement HTML | XSS + défacement |
+| SEC-09 | `update-header` | Pas de check facilitateur | Modification métadonnées |
+| SEC-10 | REST `PATCH/DELETE/PUT` | Aucune authentification sur toutes les API REST | Modification de n'importe quel espace |
+| SEC-11 | `facilitator_ids` JSON | Race condition read-modify-write concurrent | Perte de données |
 
-### MOYENNE
-| # | Description | Fichier:Ligne | Impact |
-|---|-------------|---------------|--------|
-| SP-19 | Pseudo sans limite de longueur | app.js:491 | DoS potentiel |
-| SP-20 | Aucun rate limiting sur les events socket | app.js (global) | DoS potentiel |
-| SP-21 | Payload size illimité sur la plupart des champs (block title, description, etc.) | app.js (global) | Mémoire serveur |
-| SP-22 | `phase`/`column_key` non validés contre PHASES lors de create-card | app.js:537-590 | Cartes orphelines |
-| SP-23 | Silent mode — toggle logic potentiellement inversé | ColumnView.jsx:110 | Mode silencieux dysfonctionnel |
-| SP-24 | Questions-guides figées, non éditables | canvas-data.js | Pas de personnalisation |
-| SP-25 | Pas de champ "Titre du cadrage" distinct | Header app | Introuvable dans liste récents |
-| SP-26 | OnboardingTour crash si élément target non trouvé (null) | OnboardingTour.jsx:109 | Crash |
-| SP-27 | OnboardingTour resize listener accumulation (memory leak) | OnboardingTour.jsx:141-145 | Memory leak client |
-| SP-28 | TimerDisplay crash si timer undefined après clear | TimerDisplay.jsx:21 | Crash |
-
-### BASSE
-| # | Description | Fichier:Ligne | Impact |
-|---|-------------|---------------|--------|
-| SP-29 | Icônes toolbar sans tooltip au hover | ToolBar.jsx | Discoverabilité |
-| SP-30 | Pas d'indicateur de progression global du cadrage | Header/Nav | UX |
-| SP-31 | Pas de notes privées facilitateur par phase | Canvas/Phases | Fonctionnalité manquante |
+**Recommandation** : créer un middleware `requireFacilitator(currentSpace, currentPseudo)` et l'appliquer à tous les events admin.
 
 ---
 
-## 3. FICHE RÉCAP / EXPORTS
+## 🟠 HAUTES NON CORRIGÉES
 
-### CRITIQUE
-| # | Description | Fichier:Ligne | Impact |
-|---|-------------|---------------|--------|
-| EX-01 | **RecapTab ne montre PAS le Déroulé (blocks)** | RecapTab.jsx (entier) | 50% du contenu manquant |
-| EX-02 | **RecapTab ne montre PAS l'Agenda** | RecapTab.jsx (entier) | 50% du contenu manquant |
-| EX-03 | **PDF export n'inclut PAS le Déroulé** | ExportPanel.jsx:153-240 | Export incomplet |
-| EX-04 | **PDF export n'inclut PAS l'Agenda** | ExportPanel.jsx:153-240 | Export incomplet |
-| EX-05 | **CSV export n'inclut PAS le Déroulé** | ExportPanel.jsx:428-486 | Export incomplet |
-| EX-06 | **CSV export n'inclut PAS l'Agenda** | ExportPanel.jsx:428-486 | Export incomplet |
-| EX-07 | **Text export n'inclut PAS le Déroulé/Agenda** | ExportPanel.jsx:11-69 | Export incomplet |
+### Archived check manquant
+| # | Event | Impact |
+|---|-------|--------|
+| ARC-01 | `update-card` | Modification de cartes en espace archivé |
+| ARC-02 | `move-card` | Déplacement de cartes en espace archivé |
+| ARC-03 | `mark-discuss` | Marquage en espace archivé |
+| ARC-04 | `add-tag` / `remove-tag` | Tags modifiables en espace archivé |
+| ARC-05 | `react` / `unvote` | Réactions/votes en espace archivé |
+| ARC-06 | `add-comment` | Commentaires en espace archivé |
+| ARC-07 | `delete-block` / `reorder-blocks` | Déroulé modifiable en espace archivé |
+| ARC-08 | Toutes opérations sections/agenda | Agenda modifiable en espace archivé |
 
-### MOYENNE
-| # | Description | Fichier:Ligne | Impact |
-|---|-------------|---------------|--------|
-| EX-08 | RecapTab empty state ne détecte pas les blocks seuls | RecapTab.jsx:42-50 | État vide incorrect |
-| EX-09 | PDF — emojis/caractères spéciaux mal rendus (font jsPDF) | ExportPanel.jsx:193-236 | Rendu dégradé |
-| EX-10 | PDF — noms de colonnes longs (>30 car) tronqués | ExportPanel.jsx:174 | Perte d'information |
-| EX-11 | PDF — division par zéro si phase.columns.length === 0 | ExportPanel.jsx:364 | Crash |
+### Client-side archived enforcement
+| # | Composant | Impact |
+|---|-----------|--------|
+| CLI-01 | Card.jsx:38,45 | saveEdit/deleteCard ne check pas state.archived |
+| CLI-02 | ColumnView.jsx:150 | Bouton "Répondre" visible en mode archivé |
+| CLI-03 | DeroulePage.jsx:486 | Formulaire création bloc accessible en archivé |
 
----
-
-## 4. DÉROULÉ & AGENDA
-
-### HAUTE
-| # | Description | Fichier:Ligne | Impact |
-|---|-------------|---------------|--------|
-| DA-01 | **Aucune vérification facilitateur** sur CRUD blocks/sections/agenda | app.js:821-1117 | N'importe qui modifie le déroulé |
-| DA-02 | **Aucun check archived** sur opérations déroulé/agenda | app.js:838-1090 | Modification d'espace archivé |
-| DA-03 | `block_type` non validé contre liste autorisée côté serveur | app.js:825-826 | Types invalides |
-
-### MOYENNE
-| # | Description | Fichier:Ligne | Impact |
-|---|-------------|---------------|--------|
-| DA-04 | Warning Insuffle dit "90 min" mais vérifie `> 120` | DeroulePage.jsx:434-435,465-470 | Message incohérent |
-| DA-05 | AgendaPage time parsing — "24:00" ou "25:99" accepté sans erreur | AgendaPage.jsx:39-52 | Temps invalides |
-| DA-06 | Auto-schedule ne gère pas le dépassement de fin de journée | AgendaPage.jsx:304-307 / app.js:1043-1077 | Planning déborde |
-| DA-07 | Live indicator — comparaison timezone UTC vs local | AgendaPage.jsx:388-394 | Indicateur décalé |
-| DA-08 | Template import sans timeout ni feedback d'erreur | DeroulePage.jsx:522-532 | UX silencieuse |
-| DA-09 | Template data non validé à l'import (structure/taille) | app.js:1092-1117 | Injection possible |
-| DA-10 | Couleurs block_type hardcodées, pas de CSS variables | DeroulePage.jsx:12-23 / AgendaPage.jsx:11-22 | Dark mode |
-
----
-
-## 5. BASE DE DONNÉES
-
-### HAUTE
-| # | Description | Fichier:Ligne | Impact |
-|---|-------------|---------------|--------|
-| DB-01 | `cards` → `spaces` FK sans ON DELETE CASCADE | db.js:54 | Cartes orphelines si espace supprimé |
-| DB-02 | `axes`, `activity_log`, `blocks`, `sections`, `agenda_*` — FK sans CASCADE | db.js:78,110,163,185,199,216 | Données orphelines |
-| DB-03 | REST API vs Socket — validation incohérente | app.js (global) | Bypass possible via socket |
-
----
-
-## 6. SÉCURITÉ
-
-### CRITIQUE
+### Database
 | # | Description | Impact |
 |---|-------------|--------|
-| SEC-01 | XSS via welcome_message non échappé | Exécution de code côté client |
-| SEC-02 | Pas de vérification facilitateur sur `set-facilitator` | Escalade de privilèges |
-| SEC-03 | Client `asFacilitator` booléen fait confiance au client | Suppression non autorisée |
-
-### HAUTE
-| # | Description | Impact |
-|---|-------------|--------|
-| SEC-04 | Race condition read-modify-write sur JSON fields | Perte de données concurrentes |
-| SEC-05 | Zero rate limiting | DoS |
-| SEC-06 | Payload size illimité | Memory exhaustion |
-| SEC-07 | Liens externes sans `rel="noreferrer"` | Info leak |
+| DB-01 | `cards` → `spaces` FK sans ON DELETE CASCADE | Cartes orphelines |
+| DB-02 | Autres FK sans CASCADE (axes, activity_log, blocks, etc.) | Données orphelines |
+| DB-03 | Aucun rate limiting sur events socket | DoS possible |
 
 ---
 
-## BACKLOG UTILISATEUR (24 items reçus)
+## 🟡 MOYENNES NON CORRIGÉES
 
-| # | Type | Priorité | Titre court | Statut |
+| # | Description | Fichier | Catégorie |
+|---|-------------|---------|-----------|
+| M-01 | Pseudo sans limite de longueur | app.js:491 | Validation |
+| M-02 | Payload size illimité (block title, description, etc.) | app.js | Validation |
+| M-03 | `phase`/`column_key` non validés contre PHASES | app.js:537 | Validation |
+| M-04 | `block_type` non validé contre liste autorisée | app.js:825 | Validation |
+| M-05 | Position SQL dans socket diffère du REST (filtre phase manquant) | app.js:561 vs 290 | Intégrité |
+| M-06 | AgendaPage time parsing — "24:00" ou "25:99" accepté | AgendaPage.jsx:39 | Validation |
+| M-07 | Auto-schedule ne gère pas dépassement fin de journée | app.js:1043 | Logique |
+| M-08 | Live indicator timezone UTC vs local | AgendaPage.jsx:388 | Timezone |
+| M-09 | Template import sans timeout ni feedback d'erreur | DeroulePage.jsx:525 | UX |
+| M-10 | Template data non validé à l'import | app.js:1092 | Sécurité |
+| M-11 | Warning Insuffle dit "90 min" mais vérifie `> 120` | DeroulePage.jsx:434 | Logique |
+| M-12 | Couleurs block_type hardcodées (pas CSS variables) | DeroulePage.jsx:12 | Dark mode |
+| M-13 | ToolBar overflow sur mobile (pas de menu hamburger) | ToolBar.jsx:102 | Mobile |
+| M-14 | PseudoModal background utilise `var(--color-primary)` | PseudoModal.jsx:32 | Dark mode |
+| M-15 | OnboardingTour crash si élément target null | OnboardingTour.jsx:109 | Crash |
+| M-16 | OnboardingTour resize listener accumulation | OnboardingTour.jsx:141 | Memory leak |
+| M-17 | TimerDisplay crash si timer undefined | TimerDisplay.jsx:21 | Crash |
+| M-18 | card.author_color peut être null → crash style | Card.jsx:98 | Crash |
+| M-19 | Silent mode toggle logic possiblement inversé | ColumnView.jsx:110 | Logique |
+| M-20 | Pas de confirmation avant archivage | ToolBar.jsx:87 | UX |
+| M-21 | Tag/Reaction spam sans limite | app.js:628,647 | DoS |
+| M-22 | Timer cleanup manquant au disconnect | app.js:751 | Memory leak serveur |
+| M-23 | Slot overlap possible après édition manuelle | AgendaPage.jsx:252 | Intégrité |
+| M-24 | FAQ toggle manque aria-label | LandingPage.jsx:330 | Accessibilité |
+| M-25 | `<nav>` sans aria-label | LandingPage.jsx:104 | Accessibilité |
+| M-26 | Opacité texte insuffisante pour WCAG AA | LandingPage.jsx:117,124 | Accessibilité |
+| M-27 | localStorage non protégé par try-catch sur landing | LandingPage.jsx:81 | Robustesse |
+| M-28 | DarkboardPromo clé localStorage globale (pas per-space) | DarkboardPromo.jsx:9 | UX |
+
+---
+
+## 🟢 BASSES NON CORRIGÉES
+
+| # | Description | Catégorie |
+|---|-------------|-----------|
+| B-01 | NotFound.jsx couleurs legacy, pas de dark mode | Design |
+| B-02 | Footer links sans focus indicator clavier | Accessibilité |
+| B-03 | Fonts Google non preload (LCP) | Performance |
+| B-04 | Icônes toolbar sans tooltip | Discoverabilité |
+| B-05 | Pas d'indicateur progression global | UX |
+| B-06 | Pas de notes privées facilitateur | Feature |
+| B-07 | External links sans `rel="noreferrer"` | Sécurité mineure |
+| B-08 | PDF emojis/caractères spéciaux mal rendus | Rendu |
+| B-09 | PDF noms colonnes > 30 car tronqués | Rendu |
+| B-10 | PDF division par zéro si phase.columns.length === 0 | Crash edge case |
+| B-11 | Pas d'audio quand timer expire | UX |
+| B-12 | Clipboard fallback affiche URL brute | UX |
+| B-13 | Section editing via prompt() non sécurisé | UX |
+| B-14 | Pas de confirmation suppression jour agenda | UX |
+| B-15 | AgendaPage table view sans dark mode complet | Dark mode |
+| B-16 | Card preview truncation dans command palette | UX |
+| B-17 | CommandPalette sélection carte ne scroll pas | Navigation |
+| B-18 | iframe DarkBoard manque allow-presentation | Fonctionnalité |
+| B-19 | URL.createObjectURL non nettoyé si nav avant fin export | Memory |
+| B-20 | DarkboardPromo hardcoded dark colors mal en light mode | Dark mode |
+| B-21 | Search results recalculated every render (pas de useMemo) | Performance |
+| B-22 | Date picker agenda pas de validation séquence jours | Validation |
+
+---
+
+## BACKLOG UTILISATEUR (24 items)
+
+| # | Type | Priorité | Description | Statut |
 |---|------|----------|-------------|--------|
-| 1 | Anomalie | CRITIQUE | Axes ne réagissent pas aux clics | À FIXER |
-| 2 | Anomalie | HAUTE | Échelle 1,2,4,5 — valeur 3 manquante | À FIXER |
-| 3 | Anomalie | MOYENNE | Écran noir 3-5s sans loader | À FIXER |
-| 4 | Anomalie | HAUTE | Toolbar axes — clic sans effet | À FIXER |
-| 5 | Correction | HAUTE | Naming "Ludique" vs "Énergie ludique" | À FIXER |
-| 6 | Correction | MOYENNE | Liens insuffle.com génériques | À FIXER |
-| 7 | Correction | MOYENNE | Cadrages récents "sans titre" | À FIXER |
-| 8 | Correction | HAUTE | Bannière DarkBoard permanente | À FIXER |
-| 9 | Correction | HAUTE | Pseudo sans rôle | DESIGN REQUIS |
-| 10 | Correction | MOYENNE | Questions-guides non éditables | DESIGN REQUIS |
-| 11 | Amélioration | CRITIQUE | Champ "Titre du cadrage" | À FIXER |
-| 12 | Amélioration | HAUTE | Indicateur progression global | BACKLOG |
-| 13 | Amélioration | HAUTE | Prévisualisation PDF | BACKLOG |
-| 14 | Amélioration | HAUTE | Notes privées facilitateur | BACKLOG |
-| 15 | Amélioration | HAUTE | Question "tension identifiée" | BACKLOG |
-| 16 | Amélioration | MOYENNE | Exemple concret (démo) | **EN COURS** |
-| 17 | Amélioration | MOYENNE | Liens entre cartes | BACKLOG |
-| 18 | Amélioration | HAUTE | Dupliquer comme template | EXISTANT (partiel) |
-| 19 | Amélioration | MOYENNE | Mode présentation axes | BACKLOG |
-| 20 | Amélioration | HAUTE | Fiche Récap auto-agrégée | **EN COURS** |
-| 21 | Amélioration | MOYENNE | Partage lecture seule | BACKLOG |
-| 22 | Amélioration | BASSE | Tooltips toolbar | À FIXER |
-| 23 | Amélioration | HAUTE | Section tensions dans AVANT | BACKLOG |
-| 24 | Amélioration | HAUTE | Dashboard cadrages actifs | BACKLOG |
+| 1 | Anomalie | CRITIQUE | Axes ne réagissent pas aux clics (valeur 3 manquante) | ✅ CORRIGÉ |
+| 2 | Anomalie | HAUTE | Échelle 1,2,4,5 — valeur 3 manquante | ✅ CORRIGÉ |
+| 3 | Anomalie | MOYENNE | Écran noir 3-5s sans loader | ✅ CORRIGÉ |
+| 4 | Anomalie | HAUTE | Toolbar axes — clic sans effet | ✅ CORRIGÉ |
+| 5 | Correction | HAUTE | Naming "Ludique" vs "Énergie ludique" | ✅ CORRIGÉ |
+| 6 | Correction | MOYENNE | Liens insuffle.com génériques | 🔲 À FAIRE |
+| 7 | Correction | MOYENNE | Cadrages récents "sans titre" | ✅ CORRIGÉ |
+| 8 | Correction | HAUTE | Bannière DarkBoard permanente | ✅ CORRIGÉ |
+| 9 | Correction | HAUTE | Pseudo sans rôle | 🔲 DESIGN REQUIS |
+| 10 | Correction | MOYENNE | Questions-guides non éditables | 🔲 DESIGN REQUIS |
+| 11 | Amélioration | CRITIQUE | Champ "Titre du cadrage" | 🔲 À FAIRE |
+| 12 | Amélioration | HAUTE | Indicateur progression global | 🔲 BACKLOG |
+| 13 | Amélioration | HAUTE | Prévisualisation PDF | 🔲 BACKLOG |
+| 14 | Amélioration | HAUTE | Notes privées facilitateur | 🔲 BACKLOG |
+| 15 | Amélioration | HAUTE | Question "tension identifiée" | 🔲 BACKLOG |
+| 16 | Amélioration | MOYENNE | Exemple concret (démo) | ✅ CORRIGÉ |
+| 17 | Amélioration | MOYENNE | Liens entre cartes | 🔲 BACKLOG |
+| 18 | Amélioration | HAUTE | Dupliquer comme template | 🔲 EXISTANT (partiel) |
+| 19 | Amélioration | MOYENNE | Mode présentation axes | 🔲 BACKLOG |
+| 20 | Amélioration | HAUTE | Fiche Récap auto-agrégée (Déroulé/Agenda) | ✅ CORRIGÉ |
+| 21 | Amélioration | MOYENNE | Partage lecture seule | 🔲 BACKLOG |
+| 22 | Amélioration | BASSE | Tooltips toolbar | 🔲 À FAIRE |
+| 23 | Amélioration | HAUTE | Section tensions dans AVANT | 🔲 BACKLOG |
+| 24 | Amélioration | HAUTE | Dashboard cadrages actifs | 🔲 BACKLOG |
 
 ---
 
-*Rapport généré automatiquement par audit QA Insuffle Cadrage Live*
+## 10 PARCOURS UTILISATEURS TESTÉS
+
+### Parcours 1 : Nouveau visiteur ✅ Globalement fonctionnel
+- Créer un cadrage → Loading spinner → PseudoModal → Canvas OK
+- ⚠️ Si création échoue, error handling basique (alert)
+
+### Parcours 2 : Visiteur démo ✅ Fonctionnel
+- Bouton "Voir la démo" → /6AG_demo → Board archivé en lecture seule OK
+- ⚠️ Si DB pas seedée, 404 standard
+
+### Parcours 3 : Facilitateur workflow ⚠️ Fonctionnel mais fragile
+- Devenir facilitateur → Lock → Timer → Export OK
+- 🔴 SÉCURITÉ : pas de check serveur pour facilitateur
+
+### Parcours 4 : Collaboration temps réel ✅ Fonctionnel
+- Cartes, commentaires, axes synchronisés OK
+- ⚠️ Race condition sur positions simultanées
+
+### Parcours 5 : Déroulé ✅ Fonctionnel
+- Création, édition, duplication, templates OK
+- ⚠️ Template loading sans timeout
+
+### Parcours 6 : Agenda ✅ Fonctionnel
+- Jours, slots, auto-schedule OK
+- ⚠️ Times invalides (24:00+) non rejetées
+
+### Parcours 7 : Exports ✅ Fonctionnel (après corrections)
+- PDF, CSV, Text incluent Déroulé + Agenda OK
+- ✅ blockTypeColors scope fix, null title fix, sort mutation fix
+
+### Parcours 8 : Mobile ⚠️ Utilisable mais perfectible
+- Landing OK, Canvas OK, Axes OK
+- 🟠 Toolbar overflow sur petit écran
+
+### Parcours 9 : Dark mode ⚠️ Amélioré mais pas parfait
+- ✅ Landing page badges fixés
+- ⚠️ PseudoModal, AgendaPage table, DarkboardPromo restent à adapter
+
+### Parcours 10 : Espace archivé ⚠️ Partiellement protégé
+- Banner "archivé" affiché, création cartes bloquée
+- 🔴 Édition/suppression cartes, axes, déroulé non bloquées côté client
+
+---
+
+*Rapport mis à jour après 2e passe d'audit — Insuffle Cadrage Live*
