@@ -39,8 +39,8 @@ export default function RecapTab() {
   const moderates = axesData.filter(a => a.spread >= 2 && a.spread < 3);
 
   // Déroulé data
-  const blocks = (state.blocks || []).sort((a, b) => a.position - b.position);
-  const sections = (state.sections || []).sort((a, b) => a.position - b.position);
+  const blocks = [...(state.blocks || [])].sort((a, b) => a.position - b.position);
+  const sections = [...(state.sections || [])].sort((a, b) => a.position - b.position);
   const totalDuration = blocks.reduce((sum, b) => sum + (b.duration_minutes || 0), 0);
 
   const BLOCK_TYPE_LABELS = {
@@ -55,7 +55,7 @@ export default function RecapTab() {
   };
 
   // Agenda data
-  const agendaDays = (state.agendaDays || []).sort((a, b) => a.position - b.position);
+  const agendaDays = [...(state.agendaDays || [])].sort((a, b) => a.position - b.position);
   const agendaSlots = state.agendaSlots || [];
 
   // Nothing to show
@@ -383,8 +383,8 @@ export default function RecapTab() {
                     {daySlots.map(slot => {
                       const block = blocks.find(b => b.id === slot.block_id);
                       const endTime = (() => {
-                        const [h, m] = slot.start_time.split(':').map(Number);
-                        const total = h * 60 + m + (slot.duration_minutes || 0);
+                        const [h, m] = (slot.start_time || '09:00').split(':').map(Number);
+                        const total = (h * 60 + m + (slot.duration_minutes || 0)) % 1440;
                         return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
                       })();
                       return (

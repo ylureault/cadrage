@@ -97,9 +97,9 @@ export default function LandingPage() {
       <header style={{ backgroundColor: '#0c1629' }} className="text-white sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-btn flex items-center justify-center font-display font-bold text-lg" style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>I</div>
+            <div className="w-8 h-8 rounded-btn flex items-center justify-center font-display font-bold text-lg" style={{ backgroundColor: 'var(--color-accent)', color: '#0c1629' }}>I</div>
             <span className="font-display text-lg font-bold">Insuffle <span style={{ color: 'var(--color-accent)' }}>Cadrage Live</span></span>
-            <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>Beta</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'var(--color-accent)', color: '#0c1629' }}>Beta</span>
           </div>
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <a href="#features" className="hover:text-[var(--color-accent)] transition-colors">Fonctionnalités</a>
@@ -115,7 +115,7 @@ export default function LandingPage() {
       <section style={{ backgroundColor: '#0c1629' }} className="text-white py-20 md:py-28">
         <div className="max-w-4xl mx-auto px-4 md:px-8 text-center">
           <p className="text-caption uppercase tracking-wider opacity-50 mb-4">
-            Insuffle Cadrage Live <span className="inline-block ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full opacity-100" style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>BETA</span>
+            Insuffle Cadrage Live <span className="inline-block ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full opacity-100" style={{ backgroundColor: 'var(--color-accent)', color: '#0c1629' }}>BETA</span>
           </p>
           <h1 className="font-display text-h1-mobile md:text-[36px] md:leading-tight mb-6">
             Rendez visibles les <span style={{ color: 'var(--color-accent)' }}>non-dits</span><br className="hidden sm:block" />
@@ -168,7 +168,7 @@ export default function LandingPage() {
               <div key={i} className="flex items-center gap-3 p-4 rounded-card border"
                 style={{ borderColor: 'var(--color-border)' }}>
                 <div className="w-8 h-8 rounded-full flex items-center justify-center text-caption font-bold shrink-0"
-                  style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>
+                  style={{ backgroundColor: 'var(--color-accent)', color: '#0c1629' }}>
                   {i + 1}
                 </div>
                 <div className="min-w-0">
@@ -227,7 +227,7 @@ export default function LandingPage() {
             {STEPS.map(s => (
               <div key={s.num} className="text-center">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-display font-bold mx-auto mb-4"
-                  style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>{s.num}</div>
+                  style={{ backgroundColor: 'var(--color-accent)', color: '#0c1629' }}>{s.num}</div>
                 <h3 className="font-display font-semibold mb-2">{s.title}</h3>
                 <p className="text-body-sm" style={{ color: 'var(--color-text-muted)' }}>{s.desc}</p>
               </div>
@@ -249,7 +249,7 @@ export default function LandingPage() {
             Questions issues de la méthode de cadrage Insuffle
           </p>
           <a href="https://insuffle.com" target="_blank" rel="noopener"
-            className="inline-flex items-center gap-1.5 font-semibold hover:underline transition-colors" style={{ color: 'var(--color-primary)' }}>
+            className="inline-flex items-center gap-1.5 font-semibold hover:underline transition-colors" style={{ color: 'var(--color-text)' }}>
             En savoir plus sur la méthode <ExternalLink size={14} />
           </a>
         </div>
@@ -361,10 +361,10 @@ export default function LandingPage() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <div className="w-7 h-7 rounded flex items-center justify-center font-display font-bold"
-                  style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>I</div>
+                  style={{ backgroundColor: 'var(--color-accent)', color: '#0c1629' }}>I</div>
                 <span className="font-display font-bold">Insuffle</span>
               </div>
-              <p className="text-body-sm opacity-60 mb-3">Cabinet de facilitation stratégique · <span className="inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>BETA</span></p>
+              <p className="text-body-sm opacity-60 mb-3">Cabinet de facilitation stratégique · <span className="inline-block text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'var(--color-accent)', color: '#0c1629' }}>BETA</span></p>
               <div className="flex items-center gap-2 mt-2">
                 <div className="w-5 h-5 rounded flex items-center justify-center font-bold text-[8px]"
                   style={{ backgroundColor: 'var(--color-academie)', color: 'white' }}>IA</div>

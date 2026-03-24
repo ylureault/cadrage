@@ -55,7 +55,7 @@ export default function ExportPanel() {
     }
 
     // Déroulé
-    const txtBlocks = (state.blocks || []).sort((a, b) => a.position - b.position);
+    const txtBlocks = [...(state.blocks || [])].sort((a, b) => a.position - b.position);
     if (txtBlocks.length > 0) {
       text += `\n${'═'.repeat(50)}\n`;
       text += `  DÉROULÉ DE L'ATELIER\n`;
@@ -386,21 +386,21 @@ export default function ExportPanel() {
       footer(doc);
 
       // ===== PAGE DÉROULÉ =====
-      const blocks = (state.blocks || []).sort((a, b) => a.position - b.position);
-      const dSections = (state.sections || []).sort((a, b) => a.position - b.position);
+      const blocks = [...(state.blocks || [])].sort((a, b) => a.position - b.position);
+      const dSections = [...(state.sections || [])].sort((a, b) => a.position - b.position);
+      const blockTypeColors = {
+        ouverture: [34, 197, 94], icebreaker: [245, 158, 11], production: [59, 130, 246],
+        exploration: [139, 92, 246], debriefing: [236, 72, 153], decision: [239, 68, 68],
+        pause: [107, 114, 128], cloture: [20, 184, 166], transition: [163, 163, 163], energizer: [249, 115, 22],
+      };
+      const blockTypeLabels = {
+        ouverture: 'Ouverture', icebreaker: 'Icebreaker', production: 'Production',
+        exploration: 'Exploration', debriefing: 'Débriefing', decision: 'Décision',
+        pause: 'Pause', cloture: 'Clôture', transition: 'Transition', energizer: 'Energizer',
+      };
       if (blocks.length > 0) {
         doc.addPage();
         pageHeader(doc, 'DÉROULÉ DE L\'ATELIER');
-        const blockTypeColors = {
-          ouverture: [34, 197, 94], icebreaker: [245, 158, 11], production: [59, 130, 246],
-          exploration: [139, 92, 246], debriefing: [236, 72, 153], decision: [239, 68, 68],
-          pause: [107, 114, 128], cloture: [20, 184, 166], transition: [163, 163, 163], energizer: [249, 115, 22],
-        };
-        const blockTypeLabels = {
-          ouverture: 'Ouverture', icebreaker: 'Icebreaker', production: 'Production',
-          exploration: 'Exploration', debriefing: 'Débriefing', decision: 'Décision',
-          pause: 'Pause', cloture: 'Clôture', transition: 'Transition', energizer: 'Energizer',
-        };
         let by = 24;
         let cumMin = 0;
         const secMap = {};
@@ -667,7 +667,7 @@ export default function ExportPanel() {
     }
 
     // Déroulé sheet
-    const csvBlocks = (state.blocks || []).sort((a, b) => a.position - b.position);
+    const csvBlocks = [...(state.blocks || [])].sort((a, b) => a.position - b.position);
     if (csvBlocks.length > 0) {
       rows.push('');
       rows.push(['Bloc', 'Type', 'Durée (min)', 'Intention', 'Format', 'Matériel', 'Livrable', 'Description'].join(sep));
@@ -700,7 +700,7 @@ export default function ExportPanel() {
             day.date || '',
             day.start_time,
             day.end_time,
-            block ? `"${block.title.replace(/"/g, '""')}"` : (slot.title || ''),
+            block ? `"${(block.title || '').replace(/"/g, '""')}"` : (slot.title || ''),
             slot.slot_type,
             slot.start_time,
             slot.duration_minutes,
