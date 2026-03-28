@@ -16,7 +16,6 @@ import SpotlightOverlay from './SpotlightOverlay.jsx';
 import Notifications from './Notifications.jsx';
 import ParticipantsBar from './ParticipantsBar.jsx';
 import CommandPalette from './CommandPalette.jsx';
-import OnboardingTour from './OnboardingTour.jsx';
 import DarkboardPromo from './DarkboardPromo.jsx';
 import DarkboardTab from './DarkboardTab.jsx';
 import RecapTab from './RecapTab.jsx';
@@ -30,7 +29,6 @@ export default function SpacePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const [showDarkboard, setShowDarkboard] = useState(false);
   const [showRecap, setShowRecap] = useState(false);
   const [showDeroule, setShowDeroule] = useState(false);
@@ -200,16 +198,6 @@ export default function SpacePage() {
     dispatch({ type: 'SET_PSEUDO', pseudo, color: null });
     sessionStorage.setItem(sessionKey, pseudo);
     setShowPseudo(false);
-    // Show onboarding tour on first visit (unless disabled by facilitator)
-    const onboardingKey = `insuffle-onboarding-done-${spaceId}`;
-    if (!localStorage.getItem(onboardingKey) && !state.space?.hide_onboarding) {
-      setTimeout(() => setShowOnboarding(true), 800);
-    }
-  }
-
-  function handleOnboardingComplete() {
-    setShowOnboarding(false);
-    localStorage.setItem(`insuffle-onboarding-done-${spaceId}`, 'true');
   }
 
   /* US-393: Loading screen avec animation Insuffle */
@@ -430,9 +418,6 @@ export default function SpacePage() {
       {showCommandPalette && (
         <CommandPalette onClose={() => setShowCommandPalette(false)} onAction={handleCommandAction} />
       )}
-
-      {/* Onboarding tour */}
-      {showOnboarding && <OnboardingTour onComplete={handleOnboardingComplete} />}
 
       {/* Notifications */}
       <Notifications />

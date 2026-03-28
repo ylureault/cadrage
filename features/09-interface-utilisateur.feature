@@ -86,19 +86,6 @@ Fonctionnalité: Interface utilisateur et navigation
     Quand je réaffiche la colonne
     Alors elle réapparaît dans le canvas
 
-  # --- Tour d'onboarding ---
-
-  Scénario: Premier accès à un espace
-    Soit c'est ma première visite dans un espace
-    Quand l'espace se charge
-    Alors un tour guidé d'onboarding s'affiche
-    Et il me présente les principales fonctionnalités
-
-  Scénario: Masquer le tour d'onboarding
-    Soit le tour d'onboarding s'affiche
-    Quand je le ferme
-    Alors il ne s'affiche plus pour cet espace
-
   # --- Responsive mobile ---
 
   Scénario: Accéder à la page d'accueil sur mobile

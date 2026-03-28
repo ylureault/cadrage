@@ -5,7 +5,7 @@ import socket from '../socket.js';
 import {
   Search, Sliders, Activity, BarChart3, Download, Sun, Moon,
   Lock, Unlock, Eye, EyeOff, Timer, Star, MessageSquare, Copy,
-  QrCode, Link2, Archive, ArchiveRestore, Settings, X, BookOpen, Columns
+  QrCode, Link2, Archive, ArchiveRestore, Settings, X, Columns
 } from 'lucide-react';
 
 function ColumnHider() {
@@ -226,16 +226,6 @@ export default function ToolBar() {
           <button onClick={() => dispatch({ type: 'TOGGLE_STATS' })}
             className="flex items-center gap-1 bg-white/10 rounded px-2 py-1 hover:bg-white/20">
             <BarChart3 size={14} /> <span className="text-xs">Stats</span>
-          </button>
-
-          {/* Onboarding toggle */}
-          <button onClick={() => {
-            const newVal = !state.space?.hide_onboarding;
-            socket.emit('update-setting', { key: 'hide_onboarding', value: newVal });
-          }}
-            className="flex items-center gap-1 bg-white/10 rounded px-2 py-1 hover:bg-white/20">
-            <BookOpen size={14} />
-            <span className="text-xs">{state.space?.hide_onboarding ? 'Réactiver visite' : 'Cacher visite'}</span>
           </button>
 
           {/* Column hiding */}
