@@ -75,7 +75,7 @@ export default function Card({ card }) {
 
   /* US-379: Card micro-animations, US-365: radius, US-366: elevations */
   return (
-    <div className={`rounded-card border-l-[3px] elevation-1 hover:elevation-2 transition-all duration-200 animate-scale-in
+    <div className={`rounded-card border-l-[3px] elevation-1 hover:elevation-2 transition-all duration-200 animate-scale-in card-lift
       ${isSpotlight ? 'ring-2 scale-[1.02] z-10' : ''}
       ${isHighlighted ? 'ring-2' : ''}
       ${card.marked_discuss ? 'ring-1' : ''}`}

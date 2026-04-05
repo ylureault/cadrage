@@ -105,7 +105,7 @@ export default function ExportPanel() {
     a.download = `cadrage-${state.space?.client_name || 'insuffle'}-${new Date().toISOString().slice(0, 10)}.txt`;
     a.click();
     URL.revokeObjectURL(url);
-    dispatch({ type: 'ADD_NOTIFICATION', notification: { message: 'Export texte téléchargé', type: 'success' } });
+    dispatch({ type: 'ADD_NOTIFICATION', notification: { message: '\u2705 Export texte téléchargé avec succes', type: 'success' } });
   }
 
   async function exportPDF() {
@@ -608,7 +608,7 @@ export default function ExportPanel() {
       footer(doc);
 
       doc.save(`cadrage-${state.space?.client_name || 'insuffle'}-${new Date().toISOString().slice(0, 10)}.pdf`);
-      dispatch({ type: 'ADD_NOTIFICATION', notification: { message: 'PDF exporté avec succès', type: 'success' } });
+      dispatch({ type: 'ADD_NOTIFICATION', notification: { message: '\u2705 PDF exporté avec succes', type: 'success' } });
     } catch (e) {
       console.error('PDF export error:', e);
       dispatch({ type: 'ADD_NOTIFICATION', notification: { message: 'Erreur export PDF: ' + e.message, type: 'error' } });
@@ -717,13 +717,13 @@ export default function ExportPanel() {
     a.download = `cadrage-${state.space?.client_name || 'insuffle'}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    dispatch({ type: 'ADD_NOTIFICATION', notification: { message: 'Export Excel (CSV) téléchargé', type: 'success' } });
+    dispatch({ type: 'ADD_NOTIFICATION', notification: { message: '\u2705 Export Excel (CSV) telecharge', type: 'success' } });
   }
 
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      dispatch({ type: 'ADD_NOTIFICATION', notification: { message: 'Lien copié dans le presse-papier', type: 'success' } });
+      dispatch({ type: 'ADD_NOTIFICATION', notification: { message: '\u2705 Lien copie dans le presse-papier', type: 'success' } });
     } catch {
       dispatch({ type: 'ADD_NOTIFICATION', notification: { message: window.location.href, type: 'info' } });
     }
@@ -733,7 +733,7 @@ export default function ExportPanel() {
     try {
       const { id } = await api.duplicateSpace(state.spaceId, false);
       window.open(`/${id}`, '_blank');
-      dispatch({ type: 'ADD_NOTIFICATION', notification: { message: 'Espace dupliqué', type: 'success' } });
+      dispatch({ type: 'ADD_NOTIFICATION', notification: { message: '\u2705 Espace duplique avec succes', type: 'success' } });
     } catch (e) {
       dispatch({ type: 'ADD_NOTIFICATION', notification: { message: e.message, type: 'error' } });
     }
@@ -743,7 +743,7 @@ export default function ExportPanel() {
     if (!snapshotName.trim()) return;
     try {
       await api.createSnapshot(state.spaceId, snapshotName.trim());
-      dispatch({ type: 'ADD_NOTIFICATION', notification: { message: 'Snapshot sauvegardé', type: 'success' } });
+      dispatch({ type: 'ADD_NOTIFICATION', notification: { message: '\u2705 Snapshot sauvegarde', type: 'success' } });
       setSnapshotName('');
     } catch (e) {
       dispatch({ type: 'ADD_NOTIFICATION', notification: { message: e.message, type: 'error' } });
@@ -815,7 +815,7 @@ export default function ExportPanel() {
             <button onClick={async () => {
               try {
                 await navigator.clipboard.writeText(darkboardUrl);
-                dispatch({ type: 'ADD_NOTIFICATION', notification: { message: 'Lien Darkboard copié', type: 'success' } });
+                dispatch({ type: 'ADD_NOTIFICATION', notification: { message: '\u2705 Lien Darkboard copie', type: 'success' } });
               } catch {
                 dispatch({ type: 'ADD_NOTIFICATION', notification: { message: darkboardUrl, type: 'info' } });
               }

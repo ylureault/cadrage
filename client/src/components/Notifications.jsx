@@ -102,7 +102,9 @@ export default function Notifications() {
             <div key={n.id}
               className="flex items-center gap-3 px-4 py-3 rounded-card elevation-2 animate-slide-in max-w-sm"
               style={{ backgroundColor: config.bg, borderLeft: `4px solid ${config.border}` }}>
-              <Icon size={18} style={{ color: config.iconColor }} strokeWidth={2} />
+              <span className={n.type === 'success' ? 'animate-pop-in' : ''}>
+                <Icon size={18} style={{ color: config.iconColor }} strokeWidth={2} />
+              </span>
               <span className="text-body-sm flex-1" style={{ color: 'var(--color-text)' }}>{n.message}</span>
               <button onClick={() => dispatch({ type: 'REMOVE_NOTIFICATION', id: n.id })}
                 className="p-1 rounded-btn transition-colors shrink-0" style={{ color: 'var(--color-text-muted)' }}>

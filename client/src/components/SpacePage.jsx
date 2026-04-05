@@ -203,6 +203,7 @@ export default function SpacePage() {
     dispatch({ type: 'SET_PSEUDO', pseudo, color: null });
     try { sessionStorage.setItem(sessionKey, pseudo); } catch (_) { /* sessionStorage unavailable */ }
     setShowPseudo(false);
+    dispatch({ type: 'ADD_NOTIFICATION', notification: { message: `Bienvenue ${pseudo} !`, type: 'success' } });
   }
 
   /* US-393: Loading screen avec animation Insuffle */

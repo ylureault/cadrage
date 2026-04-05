@@ -19,6 +19,7 @@ function AxisSlider({ axis, compact }) {
   const { state } = useStore();
   const [showDetail, setShowDetail] = useState(false);
   const [explanation, setExplanation] = useState('');
+  const [pulsePos, setPulsePos] = useState(null);
 
   const positions = state.axes.filter(a => a.axis_key === axis.key);
   const myPos = positions.find(p => p.pseudo === state.pseudo);
@@ -34,6 +35,8 @@ function AxisSlider({ axis, compact }) {
   function setPosition(pos) {
     if (isLocked || state.archived) return;
     socket.emit('set-axis-position', { axisKey: axis.key, position: pos, explanation });
+    setPulsePos(pos);
+    setTimeout(() => setPulsePos(null), 600);
   }
 
   function lockAxis() {
@@ -108,7 +111,8 @@ function AxisSlider({ axis, compact }) {
               <button key={pos} onClick={() => setPosition(pos)}
                 title={isLocked ? 'Axe verrouillé par le facilitateur' : isMyPos ? 'Votre position actuelle' : `Positionner sur ${pos}`}
                 className={`relative z-10 w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-200
-                  ${isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:scale-110'}`}
+                  ${isLocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:scale-110'}
+                  ${pulsePos === pos ? 'animate-pulse-axis' : ''}`}
                 style={{
                   borderColor: isMyPos ? 'var(--color-accent)' : isFinalPos ? 'var(--color-accent)' : 'var(--color-border)',
                   backgroundColor: isMyPos ? 'var(--color-accent)' : isFinalPos ? 'rgba(255,222,89,0.3)' : 'var(--color-surface)',

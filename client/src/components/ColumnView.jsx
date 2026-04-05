@@ -71,7 +71,7 @@ export default function ColumnView({ column, phase, locked }) {
   const isSilent = state.silentColumns[column.key] && !state.revealedColumns[column.key];
 
   return (
-    <div className="rounded-card elevation-1 overflow-hidden transition-shadow hover:elevation-2"
+    <div className="rounded-card elevation-1 overflow-hidden transition-all duration-200 hover:elevation-2"
       style={{ backgroundColor: 'var(--color-surface)' }}
       onClick={handleFocus}
       role="region" aria-label={column.name}>

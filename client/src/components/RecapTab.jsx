@@ -418,7 +418,7 @@ export default function RecapTab() {
       {/* Footer */}
       <div className="text-center py-6 border-t" style={{ borderColor: 'var(--color-border)' }}>
         <p className="text-caption" style={{ color: 'var(--color-text-muted)' }}>
-          Fiche générée par Insuffle Cadrage Live — insuffle.com
+          Fiche generee le {new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} par Insuffle Cadrage Live — insuffle.com
         </p>
       </div>
     </div>

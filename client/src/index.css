@@ -233,6 +233,54 @@
     border-left: 3px solid var(--color-accent);
     padding-left: 12px;
   }
+
+  /* Smooth transitions on all interactive elements */
+  button, a, input, textarea, select {
+    transition: all 150ms ease;
+  }
+
+  /* Card hover lift effect */
+  .card-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  /* Subtle border glow on focus for inputs */
+  .input-field:focus {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(255,222,89,0.15);
+  }
+
+  /* Animated gradient for loading states */
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  .loading-gradient {
+    background: linear-gradient(270deg, var(--color-accent), var(--color-success), var(--color-accent));
+    background-size: 200% 200%;
+    animation: gradient-shift 3s ease infinite;
+  }
+
+  /* Success icon scale animation */
+  @keyframes pop-in {
+    0% { transform: scale(0); opacity: 0; }
+    60% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .animate-pop-in {
+    animation: pop-in 300ms ease-out forwards;
+  }
+
+  /* Pulse highlight for axis selection */
+  @keyframes pulse-highlight {
+    0% { box-shadow: 0 0 0 0 rgba(255,222,89,0.4); }
+    70% { box-shadow: 0 0 0 8px rgba(255,222,89,0); }
+    100% { box-shadow: 0 0 0 0 rgba(255,222,89,0); }
+  }
+  .animate-pulse-axis {
+    animation: pulse-highlight 600ms ease-out;
+  }
 }
 
 /* US-376: Custom scrollbar */
