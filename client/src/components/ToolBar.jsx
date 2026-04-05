@@ -31,14 +31,14 @@ function ColumnHider() {
         )}
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 bg-white rounded-lg shadow-lg z-50 p-2 min-w-[200px] max-h-[300px] overflow-y-auto"
-          style={{ color: 'var(--color-text)' }}>
-          <p className="text-[10px] uppercase font-semibold text-gray-400 px-2 py-1">Colonnes visibles</p>
+        <div className="absolute top-full left-0 mt-1 rounded-card elevation-3 z-50 p-2 min-w-[200px] max-h-[300px] overflow-y-auto"
+          style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }}>
+          <p className="text-[10px] uppercase font-semibold px-2 py-1" style={{ color: 'var(--color-text-muted)' }}>Colonnes visibles</p>
           {state.phases.map(phase => (
             <div key={phase.key}>
               <p className="text-[10px] font-semibold px-2 pt-2 pb-0.5" style={{ color: phase.color }}>{phase.name}</p>
               {phase.columns.map(col => (
-                <label key={col.key} className="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 rounded cursor-pointer text-xs">
+                <label key={col.key} className="flex items-center gap-2 px-2 py-1 hover:bg-black/5 rounded cursor-pointer text-xs transition-colors">
                   <input type="checkbox" checked={!hiddenCols.includes(col.key)} onChange={() => toggleColumn(col.key)}
                     className="rounded border-gray-300" />
                   {col.name}

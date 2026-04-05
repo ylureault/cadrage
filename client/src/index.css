@@ -132,6 +132,7 @@
     gap: 8px;
     letter-spacing: 0.01em;
     text-shadow: 0 1px 0 rgba(255,255,255,0.3);
+    cursor: pointer;
   }
   .btn-primary:hover { background-color: var(--color-accent-dark); transform: scale(1.02); box-shadow: var(--shadow-2); }
   .btn-primary:active { transform: scale(0.98); }
@@ -149,6 +150,7 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
+    cursor: pointer;
   }
   .btn-secondary:hover { opacity: 0.9; transform: scale(1.02); }
   .btn-secondary:active { transform: scale(0.98); }
@@ -159,6 +161,7 @@
     color: var(--color-text-muted);
     padding: 8px 12px;
     border-radius: var(--radius-btn);
+    cursor: pointer;
   }
   .btn-ghost:hover { background-color: var(--color-surface-alt); color: var(--color-text); }
   .btn-ghost:active { transform: scale(0.98); }

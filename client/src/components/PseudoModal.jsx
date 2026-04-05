@@ -30,7 +30,7 @@ export default function PseudoModal({ onJoin, spaceName, welcomeMessage, facilit
 
   return (
     <div className={`min-h-screen flex items-center justify-center transition-all duration-300 ${mounted ? 'backdrop-blur-sm' : ''}`}
-      style={{ backgroundColor: 'var(--color-primary)' }}>
+      style={{ backgroundColor: '#0c1629' }}>
 
       <div className={`rounded-modal w-full max-w-lg mx-4 transition-all duration-250 elevation-3 overflow-hidden ${mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
         style={{ backgroundColor: 'var(--color-surface)' }}
@@ -39,7 +39,7 @@ export default function PseudoModal({ onJoin, spaceName, welcomeMessage, facilit
         {/* Header avec contexte — Tim Brown : Acte 1 */}
         <div className="p-8 pb-0 text-center">
           <div className="w-14 h-14 rounded-card mx-auto mb-4 flex items-center justify-center font-display font-bold text-2xl"
-            style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>I</div>
+            style={{ backgroundColor: 'var(--color-accent)', color: '#0c1629' }}>I</div>
 
           <h1 className="font-display text-h2-mobile md:text-h2 mb-2">
             {spaceName ? spaceName : 'Insuffle Cadrage Live'}

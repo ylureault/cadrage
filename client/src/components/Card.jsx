@@ -7,11 +7,11 @@ import {
 } from 'lucide-react';
 
 const TAG_COLORS = {
-  'Urgent': 'bg-red-100 text-red-700',
-  'À valider': 'bg-orange-100 text-orange-700',
-  'Fait': 'bg-green-100 text-green-700',
-  'Question': 'bg-blue-100 text-blue-700',
-  'Hors scope': 'bg-gray-100 text-gray-700',
+  'Urgent': { bg: 'rgba(239,68,68,0.15)', color: '#ef4444' },
+  'À valider': { bg: 'rgba(245,158,11,0.15)', color: '#f59e0b' },
+  'Fait': { bg: 'rgba(16,185,129,0.15)', color: '#10b981' },
+  'Question': { bg: 'rgba(59,130,246,0.15)', color: '#3b82f6' },
+  'Hors scope': { bg: 'rgba(107,114,128,0.15)', color: '#6b7280' },
 };
 
 const EMOJIS = ['👍', '👎', '❓', '💡', '🔥'];
@@ -97,7 +97,7 @@ export default function Card({ card }) {
       <div className="px-3 pt-2 flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <div className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[10px] font-medium"
-            style={{ backgroundColor: card.author_color }}>
+            style={{ backgroundColor: card.author_color || '#6b7280' }}>
             {card.author[0]?.toUpperCase()}
           </div>
           <span className="text-xs font-medium" style={{ color: 'var(--color-text-muted)' }}>{card.author}</span>
@@ -106,14 +106,18 @@ export default function Card({ card }) {
           ) : null}
         </div>
         <div className="flex gap-1 flex-wrap justify-end">
-          {(card.tags || []).map(tag => (
-            <span key={tag} className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${TAG_COLORS[tag] || 'bg-gray-100 text-gray-600'}`}>
-              {tag}
-              {(isAuthor || state.isFacilitator) && (
-                <button onClick={() => removeTag(tag)} className="ml-0.5 hover:text-red-500">×</button>
-              )}
-            </span>
-          ))}
+          {(card.tags || []).map(tag => {
+            const tc = TAG_COLORS[tag] || { bg: 'rgba(107,114,128,0.15)', color: '#6b7280' };
+            return (
+              <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+                style={{ backgroundColor: tc.bg, color: tc.color }}>
+                {tag}
+                {(isAuthor || state.isFacilitator) && !state.archived && (
+                  <button onClick={() => removeTag(tag)} className="ml-0.5 hover:opacity-60 cursor-pointer">×</button>
+                )}
+              </span>
+            );
+          })}
         </div>
       </div>
 
@@ -151,7 +155,11 @@ export default function Card({ card }) {
         <div className="px-3 pb-1 flex gap-1 flex-wrap">
           {Object.entries(card.reactions).map(([emoji, users]) => (
             <button key={emoji} onClick={() => handleReact(emoji)}
-              className={`text-xs px-1.5 py-0.5 rounded-full border ${users.includes(state.pseudo) ? 'bg-insuffle-gold/20 border-insuffle-gold' : 'bg-gray-50 border-gray-200'}`}
+              className="text-xs px-1.5 py-0.5 rounded-full border cursor-pointer transition-all"
+              style={{
+                backgroundColor: users.includes(state.pseudo) ? 'rgba(255,222,89,0.2)' : 'var(--color-surface-alt)',
+                borderColor: users.includes(state.pseudo) ? 'var(--color-accent)' : 'var(--color-border)'
+              }}
               title={users.join(', ')}>
               {emoji} {users.length}
             </button>
@@ -162,7 +170,9 @@ export default function Card({ card }) {
       {/* Votes */}
       {cardVotes.length > 0 && (
         <div className="px-3 pb-1">
-          <span className="text-xs text-insuffle-blue font-medium">⬆ {cardVotes.length} vote{cardVotes.length > 1 ? 's' : ''}</span>
+          <span className="text-xs font-medium flex items-center gap-1" style={{ color: '#3b82f6' }}>
+            <ThumbsUp size={12} /> {cardVotes.length} vote{cardVotes.length > 1 ? 's' : ''}
+          </span>
         </div>
       )}
 

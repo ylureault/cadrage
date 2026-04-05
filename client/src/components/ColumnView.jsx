@@ -98,7 +98,8 @@ export default function ColumnView({ column, phase, locked }) {
           ))}
           {/* Silent mode indicator */}
           {isSilent && (
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-orange-100 text-orange-600"
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium"
+              style={{ backgroundColor: 'rgba(245,158,11,0.15)', color: '#f59e0b' }}
               title="Mode silencieux : chaque participant ne voit que ses propres cartes">
               Silencieux
             </span>
@@ -125,9 +126,10 @@ export default function ColumnView({ column, phase, locked }) {
             <div className="rounded-btn overflow-hidden" style={{ backgroundColor: 'rgba(255,222,89,0.06)' }}>
               <button
                 onClick={() => setQuestionsOpen(!questionsOpen)}
-                className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-[rgba(255,222,89,0.1)]"
+                className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-[rgba(255,222,89,0.1)] cursor-pointer"
                 aria-expanded={questionsOpen}
-                aria-label="Questions-guides Insuffle">
+                aria-label="Questions-guides Insuffle"
+                title={questionsOpen ? 'Masquer les questions-guides' : 'Afficher les questions-guides'}>
                 <HelpCircle size={14} style={{ color: 'var(--color-accent)' }} />
                 <span className="text-label font-semibold flex-1" style={{ color: 'var(--color-text-muted)' }}>
                   Questions-guides
