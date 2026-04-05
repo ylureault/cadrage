@@ -498,6 +498,7 @@ export function createApp(db) {
     socket.on('join-space', ({ spaceId, pseudo }) => {
       try {
         if (!pseudo?.trim()) { socket.emit('error', { message: 'Pseudo requis.' }); return; }
+        if (pseudo.length > 50) { socket.emit('error', { message: 'Pseudo trop long (50 caractères max).' }); return; }
         const space = db.prepare(`SELECT id, archived FROM spaces WHERE id = ? AND deleted = 0`).get(spaceId);
         if (!space) { socket.emit('error', { message: 'Espace inexistant' }); return; }
 
@@ -718,6 +719,7 @@ export function createApp(db) {
       if (!currentSpace || !currentPseudo || !currentColor) return;
       const axFinal = db.prepare(`SELECT locked FROM axes_final WHERE space_id = ? AND axis_key = ?`).get(currentSpace, axisKey);
       if (axFinal?.locked) { socket.emit('error', { message: 'Axe verrouillé' }); return; }
+      if (position < 1 || position > 5) return;
 
       db.prepare(`INSERT INTO axes (space_id, axis_key, pseudo, color, position, explanation, updated_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
         ON CONFLICT(space_id, axis_key, pseudo) DO UPDATE SET position = excluded.position, explanation = excluded.explanation, updated_at = datetime('now')`).run(
@@ -855,6 +857,8 @@ export function createApp(db) {
       if (space?.archived) return;
       const { title, intention, block_type, duration_minutes, section_id } = data;
       if (!title?.trim() || !intention?.trim()) { socket.emit('error', { message: "Titre et intention sont obligatoires." }); return; }
+      const validTypes = ['ouverture','icebreaker','production','exploration','debriefing','decision','pause','cloture','transition','energizer'];
+      if (block_type && !validTypes.includes(block_type)) { socket.emit('error', { message: 'Type de bloc invalide.' }); return; }
       const id = generateId();
       const maxPos = db.prepare(`SELECT MAX(position) as mp FROM blocks WHERE space_id = ?`).get(currentSpace);
       const position = (maxPos?.mp ?? -1) + 1;

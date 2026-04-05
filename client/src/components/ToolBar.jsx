@@ -88,7 +88,7 @@ export default function ToolBar() {
   }
 
   return (
-    <div className="text-white no-print" style={{ backgroundColor: 'var(--color-primary)' }}>
+    <div className="text-white no-print" style={{ backgroundColor: '#0c1629' }}>
       <div className="max-w-[1600px] mx-auto px-4 py-2 flex items-center justify-between gap-2">
         {/* US-381: Logo Insuffle */}
         <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0"

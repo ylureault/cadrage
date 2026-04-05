@@ -432,7 +432,7 @@ function DerouleSummary({ blocks }) {
   const types = Object.values(byType).sort((a, b) => b.minutes - a.minutes);
 
   // US-D038: Equilibrium check
-  const hasNoPause = totalMinutes > 120 && !types.find(t => t.key === 'pause');
+  const hasNoPause = totalMinutes > 90 && !types.find(t => t.key === 'pause');
 
   return (
     <div className="rounded-card p-4 mb-6 elevation-1" style={{ backgroundColor: 'var(--color-surface)' }}>

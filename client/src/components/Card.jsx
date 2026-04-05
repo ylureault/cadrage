@@ -31,7 +31,7 @@ export default function Card({ card }) {
   const comments = state.comments.filter(c => c.card_id === card.id);
   const cardVotes = state.votes.filter(v => v.card_id === card.id);
   const myVote = cardVotes.find(v => v.pseudo === state.pseudo);
-  const isHighlighted = state.searchQuery && (card.content.toLowerCase().includes(state.searchQuery.toLowerCase()) || card.author.toLowerCase().includes(state.searchQuery.toLowerCase()));
+  const isHighlighted = state.searchQuery && ((card.content || '').toLowerCase().includes(state.searchQuery.toLowerCase()) || card.author.toLowerCase().includes(state.searchQuery.toLowerCase()));
 
   function saveEdit() {
     if (state.archived) { setEditing(false); return; }
@@ -134,7 +134,7 @@ export default function Card({ card }) {
               <button onClick={saveEdit} className="btn-primary text-xs px-2 py-1">Valider</button>
             </div>
           </div>
-        ) : card.content.startsWith('[Q] ') ? (
+        ) : (card.content || '').startsWith('[Q] ') ? (
           <>
             <div className="text-[11px] italic px-2 py-1 rounded-btn mb-1.5"
               style={{ backgroundColor: 'rgba(255,222,89,0.1)', color: 'var(--color-text-muted)' }}>

@@ -36,7 +36,8 @@ export default function SpacePage() {
 
   // Session persistence: restore pseudo from sessionStorage on mount
   const sessionKey = `insuffle-session-${spaceId}`;
-  const savedPseudo = sessionStorage.getItem(sessionKey);
+  let savedPseudo = null;
+  try { savedPseudo = sessionStorage.getItem(sessionKey); } catch (_) { /* sessionStorage unavailable */ }
   const [showPseudo, setShowPseudo] = useState(!savedPseudo);
 
   // Restore pseudo into store on mount if we have a saved session
@@ -102,11 +103,13 @@ export default function SpacePage() {
       dispatch({ type: 'SET_ARCHIVED', archived: !!archived });
 
       // Update recent spaces
-      const recent = JSON.parse(localStorage.getItem('recentSpaces') || '[]');
-      const idx = recent.findIndex(r => r.id === spaceId);
-      if (idx >= 0) recent.splice(idx, 1);
-      recent.unshift({ id: spaceId, date: new Date().toISOString(), client: state.space?.client_name || '' });
-      localStorage.setItem('recentSpaces', JSON.stringify(recent.slice(0, 20)));
+      try {
+        const recent = JSON.parse(localStorage.getItem('recentSpaces') || '[]');
+        const idx = recent.findIndex(r => r.id === spaceId);
+        if (idx >= 0) recent.splice(idx, 1);
+        recent.unshift({ id: spaceId, date: new Date().toISOString(), client: state.space?.client_name || '' });
+        localStorage.setItem('recentSpaces', JSON.stringify(recent.slice(0, 20)));
+      } catch (_) { /* localStorage unavailable */ }
     });
 
     socket.on('participants', (p) => dispatch({ type: 'SET_PARTICIPANTS', participants: p }));
@@ -186,17 +189,19 @@ export default function SpacePage() {
   // Sync space name to localStorage whenever it changes (fix "Sans nom" on landing)
   useEffect(() => {
     if (!state.space?.client_name || !spaceId) return;
-    const recent = JSON.parse(localStorage.getItem('recentSpaces') || '[]');
-    const idx = recent.findIndex(r => r.id === spaceId);
-    if (idx >= 0) {
-      recent[idx].client = state.space.client_name;
-      localStorage.setItem('recentSpaces', JSON.stringify(recent));
-    }
+    try {
+      const recent = JSON.parse(localStorage.getItem('recentSpaces') || '[]');
+      const idx = recent.findIndex(r => r.id === spaceId);
+      if (idx >= 0) {
+        recent[idx].client = state.space.client_name;
+        localStorage.setItem('recentSpaces', JSON.stringify(recent));
+      }
+    } catch (_) { /* localStorage unavailable */ }
   }, [state.space?.client_name, spaceId]);
 
   function handleJoin(pseudo) {
     dispatch({ type: 'SET_PSEUDO', pseudo, color: null });
-    sessionStorage.setItem(sessionKey, pseudo);
+    try { sessionStorage.setItem(sessionKey, pseudo); } catch (_) { /* sessionStorage unavailable */ }
     setShowPseudo(false);
   }
 

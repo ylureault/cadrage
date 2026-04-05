@@ -78,9 +78,11 @@ export default function LandingPage() {
     setCreating(true);
     try {
       const { id } = await api.createSpace();
-      const recent = JSON.parse(localStorage.getItem('recentSpaces') || '[]');
-      recent.unshift({ id, date: new Date().toISOString(), client: '' });
-      localStorage.setItem('recentSpaces', JSON.stringify(recent.slice(0, 20)));
+      try {
+        const recent = JSON.parse(localStorage.getItem('recentSpaces') || '[]');
+        recent.unshift({ id, date: new Date().toISOString(), client: '' });
+        localStorage.setItem('recentSpaces', JSON.stringify(recent.slice(0, 20)));
+      } catch (_) { /* localStorage unavailable */ }
       navigate(`/${id}`);
     } catch (e) {
       alert('Erreur lors de la création : ' + e.message);
@@ -89,7 +91,8 @@ export default function LandingPage() {
     }
   }
 
-  const recentSpaces = JSON.parse(localStorage.getItem('recentSpaces') || '[]');
+  let recentSpaces = [];
+  try { recentSpaces = JSON.parse(localStorage.getItem('recentSpaces') || '[]'); } catch (_) { /* localStorage unavailable */ }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-surface-alt)' }}>

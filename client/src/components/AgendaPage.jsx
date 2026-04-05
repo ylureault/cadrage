@@ -37,14 +37,14 @@ function formatDuration(minutes) {
 }
 
 function addMinutesToTime(time, mins) {
-  const [h, m] = time.split(':').map(Number);
-  const total = h * 60 + m + mins;
+  const [h, m] = (time || '09:00').split(':').map(Number);
+  const total = ((h || 0) * 60 + (m || 0) + (mins || 0)) % 1440;
   return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
 }
 
 function timeToMinutes(time) {
-  const [h, m] = time.split(':').map(Number);
-  return h * 60 + m;
+  const [h, m] = (time || '09:00').split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
 }
 
 function minutesToTime(mins) {
