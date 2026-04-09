@@ -89,7 +89,7 @@ export default function Card({ card }) {
       role="listitem"
       tabIndex={0}
       onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
+      onMouseLeave={() => { if (!showTags && !showEmojis) setShowActions(false); }}
       onFocus={() => setShowActions(true)}
       onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setShowActions(false); }}>
 
@@ -189,10 +189,11 @@ export default function Card({ card }) {
           <div className="relative">
             <button onClick={() => setShowEmojis(!showEmojis)} className="btn-ghost text-xs p-1" title="Réagir">😊</button>
             {showEmojis && (
-              <div className="absolute bottom-full left-0 rounded-card elevation-2 p-1 flex gap-1 z-30"
-                style={{ backgroundColor: 'var(--color-surface)' }}>
+              <div className="absolute top-full left-0 mt-1 rounded-card elevation-3 p-1 flex gap-1 z-40"
+                style={{ backgroundColor: 'var(--color-surface)' }}
+                onMouseLeave={() => setShowEmojis(false)}>
                 {EMOJIS.map(e => (
-                  <button key={e} onClick={() => handleReact(e)} className="rounded p-1 text-lg transition-colors hover:bg-[rgba(255,222,89,0.15)]">{e}</button>
+                  <button key={e} onClick={() => handleReact(e)} className="rounded p-1.5 text-lg transition-colors hover:bg-[rgba(255,222,89,0.15)] cursor-pointer">{e}</button>
                 ))}
               </div>
             )}
@@ -213,12 +214,13 @@ export default function Card({ card }) {
           {/* Tags */}
           {(isAuthor || state.isFacilitator) && (
             <div className="relative">
-              <button onClick={() => setShowTags(!showTags)} className="btn-ghost text-xs p-1"><Tag size={13} /></button>
+              <button onClick={() => setShowTags(!showTags)} className="btn-ghost text-xs p-1" title="Ajouter un tag"><Tag size={13} /></button>
               {showTags && (
-                <div className="absolute bottom-full left-0 rounded-card elevation-2 p-2 z-30 min-w-[120px]"
-                  style={{ backgroundColor: 'var(--color-surface)' }}>
+                <div className="absolute top-full left-0 mt-1 rounded-card elevation-3 p-2 z-40 min-w-[140px]"
+                  style={{ backgroundColor: 'var(--color-surface)' }}
+                  onMouseLeave={() => setShowTags(false)}>
                   {Object.keys(TAG_COLORS).map(t => (
-                    <button key={t} onClick={() => addTag(t)} className="block w-full text-left text-xs py-1 px-2 rounded transition-colors hover:bg-[rgba(255,222,89,0.1)]">{t}</button>
+                    <button key={t} onClick={() => addTag(t)} className="block w-full text-left text-body-sm py-1.5 px-3 rounded-btn transition-colors hover:bg-[rgba(255,222,89,0.1)] cursor-pointer">{t}</button>
                   ))}
                 </div>
               )}
