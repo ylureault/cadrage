@@ -390,7 +390,7 @@ export function sheetFileName(variant, space) {
 // Ouvre la page dans un nouvel onglet et lance l'impression (PDF via « Enregistrer en PDF »)
 export function printSheet(opts) {
   const html = buildSheetHtml({ ...opts, mode: 'print' });
-  const w = window.open('', '_blank');
+  const w = opts.win || window.open('', '_blank');
   if (!w) return false;
   w.document.open();
   w.document.write(html);

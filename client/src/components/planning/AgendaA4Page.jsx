@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ClipboardCopy, Download, FileCode2, FileJson, FileSpreadsheet, Printer, Upload } from 'lucide-react';
+import { AlertTriangle, Mail, ClipboardCopy, Download, FileCode2, FileJson, FileSpreadsheet, Printer, Upload } from 'lucide-react';
 import { useStore } from '../../store.jsx';
 import { usePlanning } from '../../planning/usePlanning.js';
 import { buildSheetHtml, printSheet, sheetFileName } from '../../planning/sheet.js';
@@ -9,6 +9,7 @@ import { PLANNING_COLUMNS } from '../../planning/constants.js';
 import { Segmented } from '../ui/Overlay.jsx';
 import SequenceEditor from './SequenceEditor.jsx';
 import { InsuffleNudge } from '../promo/Insuffle.jsx';
+import VersionsPanel from './VersionsPanel.jsx';
 
 // Aperçu fidèle d'une page A4 : l'iframe reçoit exactement le HTML imprimé.
 export function SheetFrame({ html, pageWidthPx, onClickSeq, onFit, minHeight = 400 }) {
@@ -91,6 +92,13 @@ export default function AgendaA4Page() {
   function doHtml() {
     downloadFile(`${sheetFileName(variant, space)}.html`, buildSheetHtml({ ...payload, variant, mode: 'editable' }), 'text/html;charset=utf-8');
     notify('HTML modifiable téléchargé');
+  }
+
+  // Le mail au client : l'objet, un mot d'accompagnement, le planning en texte. On joint le PDF à la main.
+  function doMail() {
+    const client = space.client_name ? ` · ${space.client_name}` : '';
+    const body = `Bonjour,\n\nVoici le planning de notre temps collectif. Le PDF est en pièce jointe.\n\n${toPlainText({ space, meta, days, blocks })}\nÀ votre disposition pour en parler.\n`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(`Planning${client}${meta.reference ? ` · ${meta.reference}` : ''}`)}&body=${encodeURIComponent(body.slice(0, 1800))}`;
   }
 
   async function doCopy() {
@@ -179,7 +187,8 @@ export default function AgendaA4Page() {
             <button type="button" onClick={doHtml} className="btn-ghost text-body-sm flex items-center gap-2" style={{ border: '1px solid var(--color-border)' }}><FileCode2 size={16} /> HTML modifiable</button>
             {variant === 'planning' && (
               <>
-                <button type="button" onClick={doCopy} className="btn-ghost text-body-sm flex items-center gap-2" style={{ border: '1px solid var(--color-border)' }}><ClipboardCopy size={16} /> Copier pour un mail</button>
+                <button type="button" onClick={doMail} className="btn-ghost text-body-sm flex items-center gap-2" style={{ border: '1px solid var(--color-border)' }}><Mail size={16} /> Préparer le mail au client</button>
+                <button type="button" onClick={doCopy} className="btn-ghost text-body-sm flex items-center gap-2" style={{ border: '1px solid var(--color-border)' }}><ClipboardCopy size={16} /> Copier le texte</button>
                 <button type="button" onClick={() => downloadFile(`${sheetFileName('planning', space)}.json`, JSON.stringify(toSkillJson({ space, meta, days, blocks }), null, 2), 'application/json')}
                   className="btn-ghost text-body-sm flex items-center gap-2" style={{ border: '1px solid var(--color-border)' }} title="Format de la compétence planning-temps-collectif (build.py)"><FileJson size={16} /> JSON planning Insuffle</button>
                 <button type="button" onClick={() => downloadFile(`${sheetFileName('planning', space)}.csv`, toCsv({ days, blocks }), 'text/csv;charset=utf-8')}
@@ -195,6 +204,7 @@ export default function AgendaA4Page() {
               </>
             )}
           </section>
+          <VersionsPanel />
           <InsuffleNudge id="agenda" title="Ce planning, on peut aussi l'animer." onMore={() => dispatch({ type: 'TOGGLE_INSUFFLE' })}>
             Insuffle facilite ce type de temps collectif, de la préparation au suivi.
           </InsuffleNudge>

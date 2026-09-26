@@ -1006,6 +1006,32 @@ export function createApp(db) {
       }
     }, 'apply-template'));
 
+    // Versions du planning : on fige ce qu'on a envoyé au client, on peut le revoir ou le restaurer
+    socket.on('planning:versions', () => {
+      if (!currentSpace) return;
+      const rows = db.prepare(`SELECT id, name, created_at FROM snapshots WHERE space_id = ? AND name LIKE 'planning:%' ORDER BY created_at DESC LIMIT 50`).all(currentSpace);
+      socket.emit('planning:versions', rows.map(r => ({ ...r, name: r.name.slice(9) })));
+    });
+
+    socket.on('planning:version-save', ({ name } = {}) => {
+      if (!planningGuard()) return;
+      const st = planning.state(currentSpace);
+      const label = String(name || 'Version').slice(0, 120);
+      db.prepare(`INSERT INTO snapshots (id, space_id, name, data) VALUES (?, ?, ?, ?)`).run(generateId(), currentSpace, `planning:${label}`, JSON.stringify(st));
+      logActivity(currentSpace, currentPseudo, 'save-version', label, '');
+      const rows = db.prepare(`SELECT id, name, created_at FROM snapshots WHERE space_id = ? AND name LIKE 'planning:%' ORDER BY created_at DESC LIMIT 50`).all(currentSpace);
+      io.to(currentSpace).emit('planning:versions', rows.map(r => ({ ...r, name: r.name.slice(9) })));
+    });
+
+    socket.on('planning:version-get', ({ id } = {}) => {
+      if (!currentSpace) return;
+      const row = db.prepare(`SELECT id, name, data, created_at FROM snapshots WHERE id = ? AND space_id = ? AND name LIKE 'planning:%'`).get(id, currentSpace);
+      if (!row) return;
+      let data = null;
+      try { data = JSON.parse(row.data); } catch { return; }
+      socket.emit('planning:version', { id: row.id, name: row.name.slice(9), created_at: row.created_at, data });
+    });
+
     socket.on('planning:template-save', ({ name, description }) => {
       if (!planningGuard()) return;
       const st = planning.state(currentSpace);

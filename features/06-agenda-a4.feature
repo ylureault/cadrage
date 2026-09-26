@@ -62,3 +62,13 @@ Fonctionnalité: Agenda A4 et exports
   Scénario: Le logo est toujours là
     Quel que soit le document exporté
     Alors le logo Insuffle (ou Insuffle Académie) est visible sur chaque page
+
+  Scénario: Figer la version envoyée au client
+    Quand je fige une version « V1 envoyée au client »
+    Et que je modifie ensuite le planning
+    Alors je peux revoir la V1 en PDF, telle qu'elle a été envoyée
+    Et la restaurer, l'annulation restant possible
+
+  Scénario: Préparer le mail au client
+    Quand je clique sur « Préparer le mail au client »
+    Alors ma messagerie s'ouvre avec l'objet « Planning · client · référence » et le planning en texte
