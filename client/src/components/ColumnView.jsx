@@ -123,10 +123,10 @@ export default function ColumnView({ column, phase, locked }) {
           {/* Questions-guides : TOUJOURS visibles, pliables (Priorité 2 — Tim Brown + Jony Ive)
              Les questions sont du design, pas du contenu. Elles restent comme les labels d'un formulaire. */}
           {column.questions && column.questions.length > 0 && (
-            <div className="rounded-btn overflow-hidden" style={{ backgroundColor: 'rgba(255,222,89,0.06)' }}>
+            <div className="rounded-btn overflow-hidden" style={{ backgroundColor: 'rgba(242,194,69,0.06)' }}>
               <button
                 onClick={() => setQuestionsOpen(!questionsOpen)}
-                className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-[rgba(255,222,89,0.1)] cursor-pointer"
+                className="w-full flex items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-[rgba(242,194,69,0.1)] cursor-pointer"
                 aria-expanded={questionsOpen}
                 aria-label="Questions-guides Insuffle"
                 title={questionsOpen ? 'Masquer les questions-guides' : 'Afficher les questions-guides'}>
@@ -151,7 +151,7 @@ export default function ColumnView({ column, phase, locked }) {
                         <button
                           onClick={() => handleReplyToQuestion(q)}
                           className="shrink-0 opacity-0 group-hover/q:opacity-100 focus:opacity-100 transition-opacity flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded-btn"
-                          style={{ color: 'var(--color-accent-dark)', backgroundColor: 'rgba(255,222,89,0.15)' }}
+                          style={{ color: 'var(--color-accent-dark)', backgroundColor: 'rgba(242,194,69,0.15)' }}
                           title="Créer une carte pour répondre à cette question">
                           <MessageSquarePlus size={12} /> Répondre
                         </button>
@@ -171,7 +171,7 @@ export default function ColumnView({ column, phase, locked }) {
             <div className="animate-slide-in">
               {newContent.startsWith('[Q] ') && (
                 <div className="text-[11px] font-medium px-2 py-1.5 rounded-t-btn mb-0"
-                  style={{ backgroundColor: 'rgba(255,222,89,0.12)', color: 'var(--color-text-muted)' }}>
+                  style={{ backgroundColor: 'rgba(242,194,69,0.12)', color: 'var(--color-text-muted)' }}>
                   Carte liée à une question-guide
                 </div>
               )}
@@ -224,7 +224,7 @@ export default function ColumnView({ column, phase, locked }) {
         <button onClick={() => setAdding(true)}
           className="w-full py-2.5 flex items-center justify-center gap-1.5 text-sm font-medium transition-all border-t hover:scale-[1.01]"
           style={{ color: 'var(--color-text-muted)', borderColor: 'var(--color-border)' }}
-          onMouseEnter={e => { e.currentTarget.style.color = 'var(--color-accent-dark)'; e.currentTarget.style.backgroundColor = 'rgba(255,222,89,0.06)'; }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'var(--color-accent-dark)'; e.currentTarget.style.backgroundColor = 'rgba(242,194,69,0.06)'; }}
           onMouseLeave={e => { e.currentTarget.style.color = 'var(--color-text-muted)'; e.currentTarget.style.backgroundColor = ''; }}>
           <Plus size={16} /> Ajouter une carte
         </button>

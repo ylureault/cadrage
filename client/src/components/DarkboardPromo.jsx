@@ -24,14 +24,14 @@ export default function DarkboardPromo({ spaceId, onOpenTab }) {
     <div className="no-print relative overflow-hidden"
       style={{
         background: 'linear-gradient(135deg, #0a0a16 0%, #0f1a3a 50%, #0a0a16 100%)',
-        borderTop: '1px solid rgba(255,222,89,0.15)',
-        borderBottom: '1px solid rgba(255,222,89,0.15)',
+        borderTop: '1px solid rgba(242,194,69,0.15)',
+        borderBottom: '1px solid rgba(242,194,69,0.15)',
       }}>
       {/* Subtle glow effects */}
       <div className="absolute top-0 left-1/4 w-64 h-32 rounded-full opacity-10"
         style={{ background: 'radial-gradient(circle, rgba(56,189,248,0.6) 0%, transparent 70%)' }} />
       <div className="absolute bottom-0 right-1/4 w-48 h-24 rounded-full opacity-10"
-        style={{ background: 'radial-gradient(circle, rgba(255,222,89,0.5) 0%, transparent 70%)' }} />
+        style={{ background: 'radial-gradient(circle, rgba(242,194,69,0.5) 0%, transparent 70%)' }} />
 
       <div className="relative max-w-[1400px] mx-auto px-6 py-5">
         {/* Close button */}
@@ -56,7 +56,7 @@ export default function DarkboardPromo({ spaceId, onOpenTab }) {
               <div className="flex items-center gap-2">
                 <span className="font-display font-bold text-white text-lg tracking-tight">DarkBoard</span>
                 <span className="text-xs px-1.5 py-0.5 rounded-full font-medium"
-                  style={{ backgroundColor: 'rgba(255,222,89,0.15)', color: '#ffde59' }}>
+                  style={{ backgroundColor: 'rgba(242,194,69,0.15)', color: '#f2c245' }}>
                   by Insuffle
                 </span>
               </div>

@@ -1,12 +1,12 @@
 import { useNavigate } from 'react-router-dom';
+import Logo from './brand/Logo.jsx';
 
 export default function NotFound() {
   const navigate = useNavigate();
   return (
     <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-surface-alt)' }}>
       <div className="text-center animate-fade-in">
-        <div className="w-16 h-16 rounded-card mx-auto mb-4 flex items-center justify-center font-display font-bold text-2xl"
-          style={{ backgroundColor: 'var(--color-accent)', color: '#0c1629' }}>I</div>
+        <div className="flex justify-center mb-5"><Logo height={36} color="var(--color-text)" /></div>
         <h1 className="font-display text-h2-mobile mb-2">Page introuvable</h1>
         <p className="text-body-sm mb-6" style={{ color: 'var(--color-text-muted)' }}>
           Cet espace de cadrage n'existe pas ou a été supprimé.

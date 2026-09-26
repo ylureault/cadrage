@@ -75,7 +75,7 @@ function AxisSlider({ axis, compact }) {
           {spread >= 3 && (
             <span className="flex items-center gap-1 text-label font-semibold"
               style={{ color: 'var(--color-error)' }}
-              title="Tension non résolue — une conversation est nécessaire">
+              title="Tension non résolue : une conversation est nécessaire">
               <AlertTriangle size={12} /> Divergence forte
             </span>
           )}
@@ -115,9 +115,9 @@ function AxisSlider({ axis, compact }) {
                   ${pulsePos === pos ? 'animate-pulse-axis' : ''}`}
                 style={{
                   borderColor: isMyPos ? 'var(--color-accent)' : isFinalPos ? 'var(--color-accent)' : 'var(--color-border)',
-                  backgroundColor: isMyPos ? 'var(--color-accent)' : isFinalPos ? 'rgba(255,222,89,0.3)' : 'var(--color-surface)',
+                  backgroundColor: isMyPos ? 'var(--color-accent)' : isFinalPos ? 'rgba(242,194,69,0.3)' : 'var(--color-surface)',
                   color: isMyPos ? 'var(--color-primary)' : 'var(--color-text)',
-                  ...(isMyPos ? { transform: 'scale(1.1)', boxShadow: '0 0 0 3px rgba(255,222,89,0.3)' } : {}),
+                  ...(isMyPos ? { transform: 'scale(1.1)', boxShadow: '0 0 0 3px rgba(242,194,69,0.3)' } : {}),
                 }}
                 aria-label={`Position ${pos}`}>
                 <span className="text-caption font-bold">{pos}</span>
@@ -199,7 +199,7 @@ function AxisSlider({ axis, compact }) {
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: p.color }} />
                 <span className="font-medium">{p.pseudo}</span>
                 <span style={{ color: 'var(--color-text-muted)' }}>Position {p.position}</span>
-                {p.explanation && <span className="italic" style={{ color: 'var(--color-text-muted)' }}>— {p.explanation}</span>}
+                {p.explanation && <span className="italic" style={{ color: 'var(--color-text-muted)' }}>: {p.explanation}</span>}
               </div>
             ))}
           </div>
@@ -267,7 +267,7 @@ function CadrageAlerts({ axes, axesDef, cards }) {
   );
 }
 
-/* ===== Section permanente des 8 axes — Seth Godin : "la pépite au centre, pas dans un tiroir" ===== */
+/* ===== Les 8 polarités : section permanente, au cœur du cadrage ===== */
 export default function AxesPanel() {
   const { state } = useStore();
   const [expanded, setExpanded] = useState(true);
@@ -278,7 +278,7 @@ export default function AxesPanel() {
   ).length;
 
   return (
-    <section className="max-w-[1600px] mx-auto px-4 md:px-6 py-6" aria-label="8 axes de positionnement">
+    <section className="max-w-[1600px] mx-auto px-4 md:px-6 py-6" aria-label="Les 8 polarités" data-section="polarites">
       {/* Section header */}
       <div className="flex items-center justify-between mb-4">
         <button onClick={() => setExpanded(!expanded)}
@@ -287,11 +287,11 @@ export default function AxesPanel() {
           <div>
             <h2 className="font-display text-h2-mobile md:text-h2 flex items-center gap-2"
               style={{ color: 'var(--color-text)' }}>
-              8 axes de positionnement
+              Les 8 polarités
               {expanded ? <ChevronUp size={18} className="opacity-40" /> : <ChevronDown size={18} className="opacity-40" />}
             </h2>
             <p className="text-caption" style={{ color: 'var(--color-text-muted)' }}>
-              Le cœur de la conversation sponsor / facilitateur · Méthode Insuffle
+              Régler sa posture selon l'intention. Le cœur de la conversation entre sponsor et facilitateur.
             </p>
           </div>
         </button>
@@ -321,7 +321,7 @@ export default function AxesPanel() {
 
           {/* Attribution Insuffle */}
           <p className="text-label text-center mt-4" style={{ color: 'var(--color-text-muted)' }}>
-            Les 8 axes encodent 15 ans de terrain · Méthode de cadrage Insuffle ·{' '}
+            Méthode de cadrage Insuffle ·{' '}
             <a href="https://insuffle.com" target="_blank" rel="noopener" className="hover:underline">insuffle.com</a>
           </p>
         </div>

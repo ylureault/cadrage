@@ -1,0 +1,191 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="auto" viewBox="0 0 980 720" role="img" aria-label="Carte en deux couches. Couche du dessous : cinq situations (exécuter, explorer, dénouer, traverser, stabiliser) en zones radiales depuis l'origine. Couche du dessus : trois zones chaudes emboîtées, facilitation de contenu, facilitation stratégique, facilitation de transformation.">
+    <defs>
+      <clipPath id="plot"><rect x="100" y="60" width="670" height="480"/></clipPath>
+
+      <clipPath id="belowL1"><path d="M100,355 C 300,372 530,440 770,494 L 770,545 L 100,545 Z"/></clipPath>
+      <clipPath id="aboveL1"><path d="M100,355 C 300,372 530,440 770,494 L 770,50 L 100,50 Z"/></clipPath>
+      <clipPath id="belowL2"><path d="M100,265 C 300,290 540,345 770,395 L 770,545 L 100,545 Z"/></clipPath>
+      <clipPath id="aboveL2"><path d="M100,265 C 300,290 540,345 770,395 L 770,50 L 100,50 Z"/></clipPath>
+      <clipPath id="belowL3"><path d="M100,195 C 250,150 400,132 560,140 C 660,148 716,200 770,270 L 770,545 L 100,545 Z"/></clipPath>
+
+      <linearGradient id="greenFade" gradientUnits="userSpaceOnUse" x1="0" y1="540" x2="0" y2="140">
+        <stop offset="0" stop-color="#8E2183" stop-opacity="0.015"/>
+        <stop offset="0.42" stop-color="#8E2183" stop-opacity="0.12"/>
+        <stop offset="1" stop-color="#8E2183" stop-opacity="0.36"/>
+      </linearGradient>
+      <linearGradient id="greenBar" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#8E2183" stop-opacity="0.36"/>
+        <stop offset="1" stop-color="#8E2183" stop-opacity="0.03"/>
+      </linearGradient>
+      <linearGradient id="yfade" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0%" stop-color="#8E2183" stop-opacity="0"/>
+        <stop offset="100%" stop-color="#8E2183" stop-opacity="1"/>
+      </linearGradient>
+      <filter id="soft"><feGaussianBlur stdDeviation="2.2"/></filter>
+      <pattern id="fdHatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+        <line x1="0" y1="0" x2="0" y2="8" stroke="#8E2183" stroke-width="1.7" stroke-opacity="0.34"/>
+      </pattern>
+      <pattern id="chaosHatch" width="9" height="9" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+        <rect width="9" height="9" fill="#f4f2f4"/>
+        <line x1="0" y1="0" x2="0" y2="9" stroke="#7a7a7a" stroke-width="1.4" opacity="0.5"/>
+      </pattern>
+      <marker id="head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="#7a7a7a"/>
+      </marker>
+
+      <!-- COUCHE 1 : les situations -->
+      <g id="scene">
+        <g clip-path="url(#plot)">
+          <path d="M100,540 L1300,540 L1187.6,117.4 Q 665.5 384.6 100 540 Z" fill="#f1f1f2"/>
+          <path d="M100,540 Q 665.5 384.6 1187.6 117.4 L 788.3 -279.2 Q 490 169 100 540 Z" fill="#e9e9ec"/>
+          <path d="M100,540 Q 490 169 788.3 -279.2 L 100 -460 L 100 540 Z" fill="#e2e2e6"/>
+          <path d="M100,540 Q 665.5 384.6 1187.6 117.4" fill="none" stroke="#c3c3c8" stroke-width="1.5"/>
+          <path d="M100,540 Q 490 169 788.3 -279.2" fill="none" stroke="#c3c3c8" stroke-width="1.5"/>
+          <path d="M100,195 C 250,150 400,132 560,140 C 660,148 716,200 770,270 L 770,60 L 100,60 Z" fill="url(#chaosHatch)"/>
+          <path d="M665,152 Q 645,200 640,232" fill="none" stroke="#7a7a7a" stroke-width="2" marker-end="url(#head)"/>
+          <path d="M100,540 L340,540 C 340,450 260,375 100,375 Z" fill="#f8f8f8" stroke="#c3c3c8" stroke-width="1.5"/>
+        </g>
+      </g>
+    </defs>
+    <rect x="0" y="0" width="980" height="720" fill="#ffffff"/>
+
+    <!-- cadre -->
+    <rect x="46" y="40" width="902" height="636" fill="none"
+          stroke="#8E2183" stroke-width="1.5" stroke-opacity="0.55"/>
+    <rect x="74" y="28" width="180" height="24" fill="#ffffff"/>
+    <text x="86" y="46" font-family="'IBM Plex Mono',monospace" font-size="12"
+          font-weight="600" letter-spacing="2.4" fill="#8E2183">LA FACILITATION</text>
+
+    <!-- ===== couche 1 ===== -->
+    <use id="sceneUse" href="#scene"/>
+
+    <g id="baseLabels">
+      <text x="150" y="500" font-family="'Poppins',sans-serif" font-size="15" font-weight="800" fill="#7a7a7a">Exécuter</text>
+
+      <text x="486" y="466" font-family="'Poppins',sans-serif" font-size="21" font-weight="800" fill="#333333">Explorer</text>
+      <text x="486" y="488" font-family="'Poppins',sans-serif" font-size="12" fill="#7a7a7a">Problème inconnu, collectif aligné.</text>
+
+      <text x="426" y="352" font-family="'Poppins',sans-serif" font-size="21" font-weight="800" fill="#0a0a0a">Traverser</text>
+      <text x="426" y="374" font-family="'Poppins',sans-serif" font-size="12" fill="#333333">Problème inconnu, collectif noué.</text>
+
+      <text x="132" y="212" font-family="'Poppins',sans-serif" font-size="21" font-weight="800" fill="#0a0a0a">Dénouer</text>
+      <text x="132" y="234" font-family="'Poppins',sans-serif" font-size="12" fill="#333333">Problème connu, collectif noué.</text>
+      <text x="132" y="254" font-family="'IBM Plex Mono',monospace" font-size="10" font-weight="600"
+            letter-spacing="1.2" fill="#8E2183">L'ANGLE MORT DES MODÈLES</text>
+
+      <text x="136" y="96" font-family="'Poppins',sans-serif" font-size="19" font-weight="800" fill="#0a0a0a">Stabiliser</text>
+      <text x="136" y="117" font-family="'Poppins',sans-serif" font-size="11.5" fill="#333333">Décider, puis redescendre.</text>
+    </g>
+
+    <!-- ===== voile ===== -->
+    
+
+    <!-- ===== situations rallumées ===== -->
+    
+    
+    
+    
+    
+
+    <!-- ===== COUCHE 2 : les trois facilitations, zones chaudes, toujours posées ===== -->
+    <g class="flayer">
+      <g clip-path="url(#plot)"><g clip-path="url(#belowL3)">
+        <rect x="100" y="60" width="670" height="480" fill="url(#greenFade)"/>
+      </g></g>
+
+      <g clip-path="url(#plot)">
+        <path d="M100,355 C 300,372 530,440 770,494" fill="none" stroke="#8E2183" stroke-width="2"/>
+        <path d="M100,265 C 300,290 540,345 770,395" fill="none" stroke="#8E2183" stroke-width="3"/>
+        <path d="M100,195 C 250,150 400,132 560,140 C 660,148 716,200 770,270" fill="none" stroke="#8E2183" stroke-width="4"/>
+      </g>
+
+      <text x="470" y="524" font-family="'IBM Plex Mono',monospace" font-size="11"
+            font-weight="600" letter-spacing="1.6" fill="#8E2183">FACILITATION DE CONTENU</text>
+      <text x="150" y="340" font-family="'IBM Plex Mono',monospace" font-size="11"
+            font-weight="600" letter-spacing="1.6" fill="#8E2183">FACILITATION STRATÉGIQUE</text>
+      <text x="420" y="230" font-family="'IBM Plex Mono',monospace" font-size="11"
+            font-weight="600" letter-spacing="1.6" fill="#8E2183">FACILITATION DE TRANSFORMATION</text>
+    </g>
+
+    <!-- ===== COUCHE 3 : Futur Désiré, activable ===== -->
+    
+
+    <!-- ===== facilitations rallumées : le domaine entier, emboîté ===== -->
+    
+    
+    
+
+    <!-- ===== axes ===== -->
+    <rect x="94" y="60" width="6" height="480" fill="url(#yfade)" filter="url(#soft)"/>
+    <text x="68" y="300" transform="rotate(-90 68 300)" text-anchor="middle"
+          font-family="'IBM Plex Mono',monospace" font-size="13" letter-spacing="2"
+          fill="#8E2183">COMPLEXITÉ DU COLLECTIF →</text>
+    <text x="88" y="80" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#7a7a7a">noué</text>
+    <text x="88" y="538" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#7a7a7a">aligné</text>
+
+    <line x1="100" y1="540" x2="775" y2="540" stroke="#0a0a0a" stroke-width="2"/>
+    <g stroke="#0a0a0a" stroke-width="1.5" opacity="0.55">
+      <line x1="184" y1="540" x2="184" y2="548"/><line x1="268" y1="540" x2="268" y2="548"/>
+      <line x1="352" y1="540" x2="352" y2="548"/><line x1="436" y1="540" x2="436" y2="548"/>
+      <line x1="520" y1="540" x2="520" y2="548"/><line x1="604" y1="540" x2="604" y2="548"/>
+      <line x1="688" y1="540" x2="688" y2="548"/>
+    </g>
+    <text x="112" y="566" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#7a7a7a">connu</text>
+    <text x="765" y="566" text-anchor="end" font-family="'IBM Plex Mono',monospace" font-size="10" fill="#7a7a7a">inconnu</text>
+    <text x="435" y="600" text-anchor="middle" font-family="'IBM Plex Mono',monospace"
+          font-size="13" letter-spacing="2" fill="#0a0a0a">COMPLEXITÉ DU PROBLÈME →</text>
+
+    <path d="M112,626 L112,634 L758,634 L758,626" fill="none" stroke="#7a7a7a" stroke-width="1.5"/>
+    <text x="435" y="654" text-anchor="middle" font-family="'Poppins',sans-serif" font-size="12" fill="#7a7a7a">Cynefin et Stacey ne lisent que cette ligne</text>
+
+    <!-- ===== clé de droite ===== -->
+    <g class="fkey">
+    <text x="790" y="90" font-family="'IBM Plex Mono',monospace" font-size="10.5"
+          font-weight="600" letter-spacing="1.2" fill="#8E2183">LES 3 FACILITATIONS</text>
+
+    <rect x="790" y="104" width="15" height="76" fill="#e2e2e6"/>
+    <rect x="790" y="104" width="15" height="76" fill="url(#greenBar)"
+          stroke="#8E2183" stroke-width="1" stroke-opacity="0.45"/>
+
+    <g class="chip" data-f="transformation">
+      <line x1="805" y1="114" x2="815" y2="114" stroke="#8E2183" stroke-width="2.5"/>
+      <text x="822" y="118" font-family="'Poppins',sans-serif" font-size="11.5" fill="#333333">transformation</text>
+      
+    </g>
+    <g class="chip" data-f="strategique">
+      <line x1="805" y1="142" x2="815" y2="142" stroke="#8E2183" stroke-width="2"/>
+      <text x="822" y="146" font-family="'Poppins',sans-serif" font-size="11.5" fill="#333333">stratégique</text>
+      
+    </g>
+    <g class="chip" data-f="contenu">
+      <line x1="805" y1="170" x2="815" y2="170" stroke="#8E2183" stroke-width="1.5"/>
+      <text x="822" y="174" font-family="'Poppins',sans-serif" font-size="11.5" fill="#333333">contenu</text>
+      
+    </g>
+
+    <path d="M790,200 L940,200" stroke="#dddddd" stroke-width="1.5"/>
+    <text x="790" y="222" font-family="'IBM Plex Mono',monospace" font-size="9.5" letter-spacing="1" fill="#7a7a7a">LE VIOLET MONTE EN</text>
+    <text x="790" y="236" font-family="'IBM Plex Mono',monospace" font-size="9.5" letter-spacing="1" fill="#7a7a7a">CONTINU. PAS DE</text>
+    <text x="790" y="250" font-family="'IBM Plex Mono',monospace" font-size="9.5" letter-spacing="1" fill="#7a7a7a">MARCHE, PAS DE SEUIL.</text>
+    <text x="790" y="272" font-family="'IBM Plex Mono',monospace" font-size="9.5" letter-spacing="1" fill="#7a7a7a">LES TRAITS DISENT</text>
+    <text x="790" y="286" font-family="'IBM Plex Mono',monospace" font-size="9.5" letter-spacing="1" fill="#7a7a7a">OÙ LE NOM CHANGE,</text>
+    <text x="790" y="300" font-family="'IBM Plex Mono',monospace" font-size="9.5" letter-spacing="1" fill="#7a7a7a">PAS LE TRAVAIL.</text>
+    <text x="790" y="322" font-family="'IBM Plex Mono',monospace" font-size="9.5" letter-spacing="1" fill="#8E2183">TROIS DOMAINES</text>
+    <text x="790" y="336" font-family="'IBM Plex Mono',monospace" font-size="9.5" letter-spacing="1" fill="#8E2183">EMBOÎTÉS.</text>
+    </g>
+
+    <g class="sitkey">
+    <path d="M790,344 L940,344" stroke="#dddddd" stroke-width="1.5"/>
+    <text x="790" y="366" font-family="'IBM Plex Mono',monospace" font-size="10.5"
+          font-weight="600" letter-spacing="1.2" fill="#8E2183">LA CARTE</text>
+    <text x="790" y="388" font-family="'IBM Plex Mono',monospace" font-size="9.5" letter-spacing="1" fill="#7a7a7a">CINQ SITUATIONS,</text>
+    <text x="790" y="402" font-family="'IBM Plex Mono',monospace" font-size="9.5" letter-spacing="1" fill="#7a7a7a">EN FOND GRIS.</text>
+    <text x="790" y="424" font-family="'IBM Plex Mono',monospace" font-size="9.5" letter-spacing="1" fill="#7a7a7a">CHAQUE ZONE =</text>
+    <text x="790" y="438" font-family="'IBM Plex Mono',monospace" font-size="9.5" letter-spacing="1" fill="#7a7a7a">UNE SITUATION.</text>
+    </g>
+
+    
+
+    <!-- ===== zones cliquables : la couche situation ===== -->
+    
+  </svg>

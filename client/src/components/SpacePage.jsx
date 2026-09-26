@@ -19,8 +19,11 @@ import CommandPalette from './CommandPalette.jsx';
 import DarkboardPromo from './DarkboardPromo.jsx';
 import DarkboardTab from './DarkboardTab.jsx';
 import RecapTab from './RecapTab.jsx';
-import DeroulePage from './DeroulePage.jsx';
-import AgendaPage from './AgendaPage.jsx';
+import ConceptionPage from './planning/ConceptionPage.jsx';
+import AgendaA4Page from './planning/AgendaA4Page.jsx';
+import SuccessPage, { VoteCard } from './success/SuccessPage.jsx';
+import ReperesDrawer from './ReperesDrawer.jsx';
+import Logo from './brand/Logo.jsx';
 
 export default function SpacePage() {
   const { spaceId } = useParams();
@@ -29,10 +32,18 @@ export default function SpacePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
-  const [showDarkboard, setShowDarkboard] = useState(false);
-  const [showRecap, setShowRecap] = useState(false);
-  const [showDeroule, setShowDeroule] = useState(false);
-  const [showAgenda, setShowAgenda] = useState(false);
+  // Vue active : 'phase' (le canvas de cadrage) | 'conception' | 'agenda' | 'succes' | 'recap' | 'darkboard'
+  const VIEWS = ['phase', 'conception', 'agenda', 'succes', 'recap', 'darkboard'];
+  const [view, setViewState] = useState(() => {
+    const h = (typeof window !== 'undefined' && window.location.hash.slice(1)) || '';
+    return VIEWS.includes(h) ? h : 'phase';
+  });
+  const setView = useCallback((v) => {
+    setViewState(v);
+    try { window.history.replaceState(null, '', v === 'phase' ? window.location.pathname : `#${v}`); } catch (_) { /* navigation indisponible */ }
+    window.scrollTo({ top: 0 });
+  }, []);
+  const [hideVote, setHideVote] = useState({});
 
   // Session persistence: restore pseudo from sessionStorage on mount
   const sessionKey = `insuffle-session-${spaceId}`;
@@ -67,6 +78,10 @@ export default function SpacePage() {
       case 'activity': dispatch({ type: 'TOGGLE_ACTIVITY' }); break;
       case 'facilitator': socket.emit('set-facilitator', { pseudo: state.pseudo, add: true }); break;
       case 'help': setShowCommandPalette(true); break;
+      case 'conception': setView('conception'); break;
+      case 'agenda': setView('agenda'); break;
+      case 'succes': setView('succes'); break;
+      case 'reperes': dispatch({ type: 'TOGGLE_REPERES' }); break;
     }
   }
 
@@ -147,42 +162,30 @@ export default function SpacePage() {
     socket.on('welcome-message-updated', ({ message }) => dispatch({ type: 'SET_WELCOME_MESSAGE', message }));
     socket.on('setting-updated', ({ key, value }) => dispatch({ type: 'UPDATE_SETTING', key, value }));
 
-    // Déroulé — blocs
-    socket.on('block-created', (block) => dispatch({ type: 'ADD_BLOCK', block }));
-    socket.on('block-updated', (block) => dispatch({ type: 'UPDATE_BLOCK', block }));
-    socket.on('block-deleted', ({ blockId }) => dispatch({ type: 'DELETE_BLOCK', blockId }));
-    socket.on('blocks-reordered', ({ orderedIds }) => dispatch({ type: 'REORDER_BLOCKS', orderedIds }));
+    // Planning et succès : l'état complet arrive à chaque modification
+    socket.on('planning-sync', (d) => dispatch({ type: 'PLANNING_SYNC', ...d }));
+    socket.on('success-sync', (d) => dispatch({ type: 'SUCCESS_SYNC', success: d }));
     socket.on('block-comment-added', (comment) => dispatch({ type: 'ADD_BLOCK_COMMENT', comment }));
-
-    // Sections
-    socket.on('section-created', (section) => dispatch({ type: 'ADD_SECTION', section }));
-    socket.on('section-updated', (section) => dispatch({ type: 'UPDATE_SECTION', section }));
-    socket.on('section-deleted', ({ sectionId }) => dispatch({ type: 'DELETE_SECTION', sectionId }));
-    socket.on('sections-reordered', ({ orderedIds }) => dispatch({ type: 'REORDER_SECTIONS', orderedIds }));
-    socket.on('deroulement-loaded', ({ blocks, sections }) => {
-      dispatch({ type: 'SET_BLOCKS', blocks });
-    });
-
-    // Agenda
-    socket.on('agenda-day-created', (day) => dispatch({ type: 'ADD_AGENDA_DAY', day }));
-    socket.on('agenda-day-updated', (day) => dispatch({ type: 'UPDATE_AGENDA_DAY', day }));
-    socket.on('agenda-day-deleted', ({ dayId }) => dispatch({ type: 'DELETE_AGENDA_DAY', dayId }));
-    socket.on('agenda-slot-created', (slot) => dispatch({ type: 'ADD_AGENDA_SLOT', slot }));
-    socket.on('agenda-slot-updated', (slot) => dispatch({ type: 'UPDATE_AGENDA_SLOT', slot }));
-    socket.on('agenda-slot-deleted', ({ slotId }) => dispatch({ type: 'DELETE_AGENDA_SLOT', slotId }));
-    socket.on('agenda-slots-reordered', ({ dayId, orderedIds }) => dispatch({ type: 'REORDER_AGENDA_SLOTS', orderedIds }));
-    socket.on('agenda-auto-scheduled', ({ dayId, slots }) => dispatch({ type: 'SET_AGENDA_SLOTS', dayId, slots }));
 
     socket.on('notification', ({ message }) => dispatch({ type: 'ADD_NOTIFICATION', notification: { message, type: 'info' } }));
     socket.on('activity-notification', (data) => dispatch({ type: 'ADD_NOTIFICATION', notification: { ...data, type: 'activity' } }));
     socket.on('error', ({ message }) => dispatch({ type: 'ADD_NOTIFICATION', notification: { message, type: 'error' } }));
 
     socket.on('disconnect', () => dispatch({ type: 'SET_OFFLINE', offline: true }));
-    socket.on('connect', () => dispatch({ type: 'SET_OFFLINE', offline: false }));
+    socket.on('connect', () => {
+      dispatch({ type: 'SET_OFFLINE', offline: false });
+      // Reconnexion : on rejoint à nouveau la salle et on recharge l'état (rien n'est perdu entre-temps)
+      if (socket.__joinedOnce) {
+        socket.emit('join-space', { spaceId, pseudo: state.pseudo });
+        api.getSpace(spaceId).then(d => dispatch({ type: 'LOAD_SPACE', data: d })).catch(() => {});
+      }
+      socket.__joinedOnce = true;
+    });
 
     return () => {
       socket.off();
       socket.disconnect();
+      socket.__joinedOnce = false;
     };
   }, [state.pseudo, spaceId, dispatch]);
 
@@ -209,11 +212,10 @@ export default function SpacePage() {
   /* US-393: Loading screen avec animation Insuffle */
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0c1629' }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#141e37' }}>
         <div className="text-center animate-fade-in">
-          <div className="w-14 h-14 rounded-card mx-auto mb-4 flex items-center justify-center font-display font-bold text-2xl animate-pulse-glow"
-            style={{ backgroundColor: '#ffde59', color: '#0c1629' }}>I</div>
-          <div className="w-8 h-8 mx-auto mb-3 border-2 border-white/20 border-t-[#ffde59] rounded-full animate-spin" />
+          <div className="mx-auto mb-5 flex justify-center"><Logo height={44} color="#F2C245" /></div>
+          <div className="w-8 h-8 mx-auto mb-3 border-2 border-white/20 border-t-[#f2c245] rounded-full animate-spin" />
           <p className="text-body-sm text-white/60">Chargement de votre cadrage...</p>
         </div>
       </div>
@@ -225,8 +227,7 @@ export default function SpacePage() {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--color-surface-alt)' }}>
         <div className="text-center animate-scale-in">
-          <div className="w-16 h-16 rounded-card mx-auto mb-4 flex items-center justify-center font-display font-bold text-2xl"
-            style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>I</div>
+          <div className="mx-auto mb-5 flex justify-center"><Logo height={40} color="var(--color-text)" /></div>
           <h1 className="font-display text-h2-mobile mb-2">Espace introuvable</h1>
           <p className="text-body-sm mb-6" style={{ color: 'var(--color-text-muted)' }}>{error}</p>
           <button onClick={() => navigate('/')} className="btn-primary">Créer un nouveau cadrage</button>
@@ -249,7 +250,7 @@ export default function SpacePage() {
       {state.offline && (
         <div className="px-4 py-2 text-center text-body-sm font-medium" role="alert"
           style={{ backgroundColor: 'var(--color-warning)', color: 'var(--color-primary)' }}>
-          Connexion perdue — vos modifications seront synchronisées au retour
+          Connexion perdue. Vos modifications seront synchronisées au retour.
         </div>
       )}
 
@@ -257,7 +258,7 @@ export default function SpacePage() {
       {!!state.archived && (
         <div className="px-4 py-2 text-center text-body-sm font-medium" role="status"
           style={{ backgroundColor: 'var(--color-text-muted)', color: 'white' }}>
-          Cadrage archivé — lecture seule
+          Cadrage archivé : lecture seule
         </div>
       )}
 
@@ -273,110 +274,34 @@ export default function SpacePage() {
       {/* Participants */}
       <ParticipantsBar />
 
-      {/* US-422: Phase tabs */}
+      {/* Onglets : le cadrage (4 phases), puis la conception, l'agenda, le succès */}
       <div className="border-b sticky top-0 z-20 no-print" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
-        role="tablist" aria-label="Phases du cadrage">
-        <div className="max-w-[1600px] mx-auto flex overflow-x-auto">
+        role="tablist" aria-label="Espaces du cadrage">
+        <div className="max-w-[1600px] mx-auto flex overflow-x-auto items-stretch">
+          <span className="hidden md:flex items-center pl-4 pr-2 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>Cadrer</span>
           {state.phases.map(phase => {
             const ps = state.phaseStates.find(p => p.phase === phase.key);
             if (ps?.hidden && !state.isFacilitator) return null;
-            const isActive = state.activePhase === phase.key && !showDarkboard && !showRecap && !showDeroule && !showAgenda;
+            const isActive = view === 'phase' && state.activePhase === phase.key;
             const cardCount = state.cards.filter(c => c.phase === phase.key).length;
             return (
-              <button key={phase.key}
-                role="tab"
-                aria-selected={isActive}
-                aria-controls={`phase-${phase.key}`}
-                onClick={() => { setShowDarkboard(false); setShowRecap(false); setShowDeroule(false); setShowAgenda(false); dispatch({ type: 'SET_ACTIVE_PHASE', phase: phase.key }); }}
-                className={`flex items-center gap-2 px-5 py-3 text-body-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200
-                  ${isActive ? '' : 'border-transparent hover:border-[var(--color-border)]'}
-                  ${ps?.hidden ? 'opacity-40' : ''}`}
-                style={{
-                  borderBottomColor: isActive ? 'var(--color-accent)' : undefined,
-                  color: isActive ? 'var(--color-text)' : 'var(--color-text-muted)',
-                }}>
+              <Tab key={phase.key} active={isActive} dim={ps?.hidden}
+                onClick={() => { setView('phase'); dispatch({ type: 'SET_ACTIVE_PHASE', phase: phase.key }); }}
+                badge={cardCount > 0 ? cardCount : null}>
                 {ps?.locked ? '🔒 ' : null}{phase.name}
-                {cardCount > 0 ? (
-                  <span className="text-label px-1.5 py-0.5 rounded-full"
-                    style={{ backgroundColor: isActive ? 'rgba(255,222,89,0.2)' : 'var(--color-surface-alt)', color: isActive ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
-                    {cardCount}
-                  </span>
-                ) : null}
-              </button>
+              </Tab>
             );
           })}
-
-          {/* Onglet DÉROULÉ (US-D001) */}
-          <button
-            role="tab"
-            aria-selected={showDeroule}
-            onClick={() => { setShowDeroule(true); setShowAgenda(false); setShowDarkboard(false); setShowRecap(false); }}
-            className={`flex items-center gap-2 px-5 py-3 text-body-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200
-              ${showDeroule ? '' : 'border-transparent hover:border-[var(--color-border)]'}`}
-            style={{
-              borderBottomColor: showDeroule ? 'var(--color-accent)' : undefined,
-              color: showDeroule ? 'var(--color-text)' : 'var(--color-text-muted)',
-            }}>
-            DÉROULÉ
-            {state.blocks.length > 0 && (
-              <span className="text-label px-1.5 py-0.5 rounded-full"
-                style={{ backgroundColor: showDeroule ? 'rgba(255,222,89,0.2)' : 'var(--color-surface-alt)', color: showDeroule ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
-                {state.blocks.length}
-              </span>
-            )}
-          </button>
-
-          {/* Onglet AGENDA (US-A001) */}
-          <button
-            role="tab"
-            aria-selected={showAgenda}
-            onClick={() => { setShowAgenda(true); setShowDeroule(false); setShowDarkboard(false); setShowRecap(false); }}
-            className={`flex items-center gap-2 px-5 py-3 text-body-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200
-              ${showAgenda ? '' : 'border-transparent hover:border-[var(--color-border)]'}`}
-            style={{
-              borderBottomColor: showAgenda ? 'var(--color-accent)' : undefined,
-              color: showAgenda ? 'var(--color-text)' : 'var(--color-text-muted)',
-            }}>
-            AGENDA
-            {state.agendaDays.length > 0 && (
-              <span className="text-label px-1.5 py-0.5 rounded-full"
-                style={{ backgroundColor: showAgenda ? 'rgba(255,222,89,0.2)' : 'var(--color-surface-alt)', color: showAgenda ? 'var(--color-primary)' : 'var(--color-text-muted)' }}>
-                {(() => { const total = state.agendaSlots.reduce((a, s) => a + (s.duration_minutes || 0), 0); const h = Math.floor(total / 60); const m = total % 60; return h > 0 ? `${h}h${m > 0 ? String(m).padStart(2, '0') : ''}` : `${m}min`; })()}
-              </span>
-            )}
-          </button>
-
-          {/* Onglet Fiche Récap */}
-          <button
-            role="tab"
-            aria-selected={showRecap && !showDarkboard}
-            onClick={() => { setShowRecap(true); setShowDarkboard(false); setShowDeroule(false); setShowAgenda(false); }}
-            className={`flex items-center gap-2 px-5 py-3 text-body-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200 ml-auto
-              ${showRecap && !showDarkboard ? '' : 'border-transparent hover:border-[var(--color-border)]'}`}
-            style={{
-              borderBottomColor: showRecap && !showDarkboard ? 'var(--color-accent)' : undefined,
-              color: showRecap && !showDarkboard ? 'var(--color-text)' : 'var(--color-text-muted)',
-            }}>
-            Fiche Récap
-          </button>
-
-          {/* Onglet DarkBoard — atelier collaboratif */}
-          <button
-            role="tab"
-            aria-selected={showDarkboard}
-            onClick={() => { setShowDarkboard(true); setShowRecap(false); setShowDeroule(false); setShowAgenda(false); }}
-            className={`flex items-center gap-2 px-5 py-3 text-body-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200
-              ${showDarkboard ? '' : 'border-transparent hover:border-[var(--color-border)]'}`}
-            style={{
-              borderBottomColor: showDarkboard ? '#38bdf8' : undefined,
-              color: showDarkboard ? 'var(--color-text)' : 'var(--color-text-muted)',
-            }}>
-            <span className="w-4 h-4 rounded flex items-center justify-center text-[10px] font-bold"
-              style={{ background: showDarkboard ? 'linear-gradient(135deg, #38bdf8, #6366f1)' : 'var(--color-surface-alt)', color: showDarkboard ? 'white' : 'var(--color-text-muted)' }}>
-              D
-            </span>
-            Atelier
-          </button>
+          <span className="w-px my-2.5 mx-1 shrink-0" style={{ backgroundColor: 'var(--color-border)' }} />
+          <span className="hidden md:flex items-center pl-2 pr-2 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>Concevoir</span>
+          <Tab active={view === 'conception'} onClick={() => setView('conception')} badge={state.blocks.length || null}>CONCEPTION</Tab>
+          <Tab active={view === 'agenda'} onClick={() => setView('agenda')}
+            badge={state.agendaDays.length ? `${state.agendaDays.length} j` : null}>AGENDA A4</Tab>
+          <Tab active={view === 'succes'} onClick={() => setView('succes')}
+            badge={state.success?.votesOpen?.length ? 'vote' : (state.success?.criteria?.length || null)}>SUCCÈS</Tab>
+          <span className="flex-1" />
+          <Tab active={view === 'recap'} onClick={() => setView('recap')}>Fiche récap</Tab>
+          <Tab active={view === 'darkboard'} onClick={() => setView('darkboard')} accent="#38bdf8">Atelier</Tab>
         </div>
       </div>
 
@@ -385,26 +310,26 @@ export default function SpacePage() {
         <div className="progress-bar-fill" style={{ width: `${Math.round((state.phases.reduce((acc, p) => acc + (state.cards.some(c => c.phase === p.key) ? 1 : 0), 0) / Math.max(state.phases.length, 1)) * 100)}%` }} />
       </div>
 
-      {/* Canvas */}
-      <main className="flex-1 overflow-auto" role="main" aria-label="Canvas de cadrage">
-        {showDarkboard ? (
+      <main className="flex-1 overflow-auto" role="main" aria-label="Cadrage">
+        {view === 'darkboard' ? (
           <DarkboardTab spaceId={spaceId} />
-        ) : showRecap ? (
+        ) : view === 'recap' ? (
           <RecapTab />
-        ) : showDeroule ? (
-          <DeroulePage />
-        ) : showAgenda ? (
-          <AgendaPage />
+        ) : view === 'conception' ? (
+          <ConceptionPage onOpenAgenda={() => setView('agenda')} />
+        ) : view === 'agenda' ? (
+          <AgendaA4Page />
+        ) : view === 'succes' ? (
+          <SuccessPage />
         ) : (
           <>
             {state.phases.map(phase => (
               state.activePhase === phase.key && <PhaseView key={phase.key} phase={phase} />
             ))}
 
-            {/* DarkBoard promo — outil complémentaire */}
-            <DarkboardPromo spaceId={spaceId} onOpenTab={() => { setShowDarkboard(true); setShowRecap(false); }} />
+            <DarkboardPromo spaceId={spaceId} onOpenTab={() => setView('darkboard')} />
 
-            {/* 8 axes — section permanente en bas du canvas */}
+            {/* Les 8 polarités, en bas du canvas */}
             <div className="border-t" style={{ borderColor: 'var(--color-border)' }}>
               <AxesPanel />
             </div>
@@ -412,10 +337,19 @@ export default function SpacePage() {
         )}
       </main>
 
+      {/* Vote ouvert : chaque participant le voit, où qu'il soit */}
+      {view !== 'succes' && (state.success?.votesOpen || []).filter(k => !hideVote[k] && !state.success.votes.some(v => v.kind === k && v.pseudo === state.pseudo)).slice(0, 1).map(k => (
+        <div key={k} className="fixed bottom-4 left-4 z-50 w-[340px] max-w-[calc(100vw-2rem)] rounded-card p-4 elevation-3 animate-slide-up no-print" style={{ backgroundColor: 'var(--color-surface)', border: '2px solid var(--color-accent)' }}>
+          <button type="button" className="absolute top-2 right-2 text-caption opacity-50 hover:opacity-100" onClick={() => setHideVote(h => ({ ...h, [k]: true }))} aria-label="Masquer">✕</button>
+          <VoteCard kind={k} compact />
+        </div>
+      ))}
+
       {/* Side panels (axes removed from here — now inline) */}
       {state.showActivity && <ActivityPanel />}
       {state.showStats && <StatsPanel />}
-      {state.showExport && <ExportPanel />}
+      {state.showExport && <ExportPanel onNavigate={setView} />}
+      {state.showReperes && <ReperesDrawer onClose={() => dispatch({ type: 'TOGGLE_REPERES' })} />}
 
       {/* Spotlight overlay */}
       {state.spotlight && <SpotlightOverlay />}
@@ -428,19 +362,34 @@ export default function SpacePage() {
       {/* Notifications */}
       <Notifications />
 
-      {/* US-381, US-459: Footer */}
-      <footer className="border-t py-2 px-4 text-center no-print" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
-        <div className="flex items-center justify-center gap-2 text-label" style={{ color: 'var(--color-text-muted)' }}>
-          <span>Propulsé par</span>
-          <span className="font-semibold" style={{ color: 'var(--color-text)' }}>Insuffle</span>
+      <footer className="border-t py-2.5 px-4 no-print" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+        <div className="max-w-[1600px] mx-auto flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-label" style={{ color: 'var(--color-text-muted)' }}>
+          <a href="https://insuffle.com" target="_blank" rel="noopener" aria-label="Insuffle" className="flex items-center"><Logo height={16} color="var(--color-text)" /></a>
+          <span>Cadrage de temps collectif</span>
           <span>·</span>
           <a href="https://insuffle.com" target="_blank" rel="noopener" className="hover:underline">insuffle.com</a>
           <span>·</span>
-          <a href="https://insuffle.com" target="_blank" rel="noopener" className="hover:underline" style={{ color: 'var(--color-academie)' }}>Insuffle Académie</a>
+          <a href="https://insuffle-academie.com" target="_blank" rel="noopener" className="hover:underline" style={{ color: 'var(--color-academie)' }}>Insuffle Académie</a>
           <span>·</span>
-          <span>v1.2.0</span>
+          <span>v2.0</span>
         </div>
       </footer>
     </div>
+  );
+}
+
+function Tab({ active, onClick, children, badge, dim, accent }) {
+  return (
+    <button role="tab" aria-selected={active} onClick={onClick}
+      className={`flex items-center gap-2 px-4 py-3 text-body-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200 ${active ? '' : 'border-transparent hover:border-[var(--color-border)]'} ${dim ? 'opacity-40' : ''}`}
+      style={{ borderBottomColor: active ? (accent || 'var(--color-accent)') : undefined, color: active ? 'var(--color-text)' : 'var(--color-text-muted)' }}>
+      {children}
+      {badge != null && (
+        <span className="text-label px-1.5 py-0.5 rounded-full"
+          style={{ backgroundColor: active ? 'rgba(242,194,69,0.25)' : 'var(--color-surface-alt)', color: active ? 'var(--color-text)' : 'var(--color-text-muted)' }}>
+          {badge}
+        </span>
+      )}
+    </button>
   );
 }

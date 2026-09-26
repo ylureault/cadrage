@@ -12,8 +12,8 @@ export default function TimerDisplay({ timer, isFacilitator }) {
       role="timer"
       aria-label={`${mins} minutes ${secs} secondes restantes`}
       style={{
-        backgroundColor: isUrgent ? '#ef4444' : '#ffde59',
-        color: isUrgent ? 'white' : '#0c1629',
+        backgroundColor: isUrgent ? '#ef4444' : '#f2c245',
+        color: isUrgent ? 'white' : '#141e37',
         ...(isUrgent ? { animation: 'pulse 1s ease-in-out infinite' } : {}),
       }}>
       <span className="tabular-nums">

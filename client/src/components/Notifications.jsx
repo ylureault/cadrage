@@ -49,12 +49,12 @@ function ActivityToast({ n, dispatch }) {
       {/* Action buttons */}
       <div className="flex items-center gap-1.5 ml-9">
         <button onClick={handleReact}
-          className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-btn transition-colors hover:bg-[rgba(255,222,89,0.15)]"
+          className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-btn transition-colors hover:bg-[rgba(242,194,69,0.15)]"
           style={{ color: 'var(--color-text-muted)' }}>
           <ThumbsUp size={12} /> J'aime
         </button>
         <button onClick={handleView}
-          className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-btn transition-colors hover:bg-[rgba(255,222,89,0.15)]"
+          className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-btn transition-colors hover:bg-[rgba(242,194,69,0.15)]"
           style={{ color: 'var(--color-text-muted)' }}>
           <Eye size={12} /> Voir
         </button>

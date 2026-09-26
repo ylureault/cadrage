@@ -83,7 +83,7 @@ export default function Card({ card }) {
         borderLeftColor: card.author_color,
         backgroundColor: 'var(--color-surface)',
         ...(isSpotlight ? { ringColor: 'var(--color-accent)' } : {}),
-        ...(isHighlighted ? { ringColor: 'var(--color-accent)', backgroundColor: 'rgba(255,222,89,0.05)' } : {}),
+        ...(isHighlighted ? { ringColor: 'var(--color-accent)', backgroundColor: 'rgba(242,194,69,0.05)' } : {}),
         ...(card.marked_discuss ? { ringColor: 'var(--color-warning)' } : {}),
       }}
       role="listitem"
@@ -137,7 +137,7 @@ export default function Card({ card }) {
         ) : (card.content || '').startsWith('[Q] ') ? (
           <>
             <div className="text-[11px] italic px-2 py-1 rounded-btn mb-1.5"
-              style={{ backgroundColor: 'rgba(255,222,89,0.1)', color: 'var(--color-text-muted)' }}>
+              style={{ backgroundColor: 'rgba(242,194,69,0.1)', color: 'var(--color-text-muted)' }}>
               <HelpCircle size={10} className="inline mr-1" style={{ color: 'var(--color-accent)' }} />
               {card.content.slice(4).split('\n\n')[0]}
             </div>
@@ -157,7 +157,7 @@ export default function Card({ card }) {
             <button key={emoji} onClick={() => handleReact(emoji)}
               className="text-xs px-1.5 py-0.5 rounded-full border cursor-pointer transition-all"
               style={{
-                backgroundColor: users.includes(state.pseudo) ? 'rgba(255,222,89,0.2)' : 'var(--color-surface-alt)',
+                backgroundColor: users.includes(state.pseudo) ? 'rgba(242,194,69,0.2)' : 'var(--color-surface-alt)',
                 borderColor: users.includes(state.pseudo) ? 'var(--color-accent)' : 'var(--color-border)'
               }}
               title={users.join(', ')}>
@@ -193,7 +193,7 @@ export default function Card({ card }) {
                 style={{ backgroundColor: 'var(--color-surface)' }}
                 onMouseLeave={() => setShowEmojis(false)}>
                 {EMOJIS.map(e => (
-                  <button key={e} onClick={() => handleReact(e)} className="rounded p-1.5 text-lg transition-colors hover:bg-[rgba(255,222,89,0.15)] cursor-pointer">{e}</button>
+                  <button key={e} onClick={() => handleReact(e)} className="rounded p-1.5 text-lg transition-colors hover:bg-[rgba(242,194,69,0.15)] cursor-pointer">{e}</button>
                 ))}
               </div>
             )}
@@ -220,7 +220,7 @@ export default function Card({ card }) {
                   style={{ backgroundColor: 'var(--color-surface)' }}
                   onMouseLeave={() => setShowTags(false)}>
                   {Object.keys(TAG_COLORS).map(t => (
-                    <button key={t} onClick={() => addTag(t)} className="block w-full text-left text-body-sm py-1.5 px-3 rounded-btn transition-colors hover:bg-[rgba(255,222,89,0.1)] cursor-pointer">{t}</button>
+                    <button key={t} onClick={() => addTag(t)} className="block w-full text-left text-body-sm py-1.5 px-3 rounded-btn transition-colors hover:bg-[rgba(242,194,69,0.1)] cursor-pointer">{t}</button>
                   ))}
                 </div>
               )}

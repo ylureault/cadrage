@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store.jsx';
 import socket from '../socket.js';
+import Logo from './brand/Logo.jsx';
 import {
   Search, Sliders, Activity, BarChart3, Download, Sun, Moon,
   Lock, Unlock, Eye, EyeOff, Timer, Star, MessageSquare, Copy,
-  QrCode, Link2, Archive, ArchiveRestore, Settings, X, Columns
+  QrCode, Archive, ArchiveRestore, Settings, X, Columns, Compass
 } from 'lucide-react';
 
 function ColumnHider() {
@@ -88,14 +89,13 @@ export default function ToolBar() {
   }
 
   return (
-    <div className="text-white no-print" style={{ backgroundColor: '#0c1629' }}>
+    <div className="text-white no-print" style={{ backgroundColor: '#141e37' }}>
       <div className="max-w-[1600px] mx-auto px-4 py-2 flex items-center justify-between gap-2">
         {/* US-381: Logo Insuffle */}
         <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0"
           aria-label="Retour à l'accueil Insuffle">
-          <div className="w-7 h-7 rounded-btn flex items-center justify-center font-display font-bold text-sm"
-            style={{ backgroundColor: 'var(--color-accent)', color: 'var(--color-primary)' }}>I</div>
-          <span className="font-display font-bold text-sm hidden sm:block">Insuffle <span style={{ color: 'var(--color-accent)' }}>Cadrage Live</span></span>
+          <Logo height={22} color="#F2C245" academie={state.planning?.charte === 'academie'} />
+          <span className="font-display font-semibold text-sm hidden sm:block pl-2 ml-1 border-l border-white/20">Cadrage</span>
         </button>
 
         {/* Tools */}
@@ -112,7 +112,7 @@ export default function ToolBar() {
               />
               {state.searchQuery && (
                 <span className="text-body-sm font-medium px-2 py-0.5 rounded-full"
-                  style={{ backgroundColor: 'rgba(255,222,89,0.2)', color: 'var(--color-accent)' }}>
+                  style={{ backgroundColor: 'rgba(242,194,69,0.2)', color: 'var(--color-accent)' }}>
                   {state.cards.filter(c => {
                     const q = state.searchQuery.toLowerCase();
                     return c.content.toLowerCase().includes(q) || c.author.toLowerCase().includes(q);
@@ -131,15 +131,20 @@ export default function ToolBar() {
           )}
 
           <button onClick={() => {
-              const axesEl = document.querySelector('[aria-label="8 axes de positionnement"]');
+              const axesEl = document.querySelector('[data-section="polarites"]');
               if (axesEl) {
                 axesEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
               } else {
-                dispatch({ type: 'ADD_NOTIFICATION', notification: { message: 'Retournez sur un onglet phase pour voir les 8 axes', type: 'info' } });
+                dispatch({ type: 'ADD_NOTIFICATION', notification: { message: 'Retournez sur un onglet du cadrage pour voir les 8 polarités', type: 'info' } });
               }
             }}
-            className="p-1.5 hover:bg-white/10 rounded" title="8 axes de positionnement — cliquer pour y aller">
+            className="p-1.5 hover:bg-white/10 rounded" title="Les 8 polarités">
             <Sliders size={18} />
+          </button>
+
+          <button onClick={() => dispatch({ type: 'TOGGLE_REPERES' })}
+            className={`px-2 py-1.5 hover:bg-white/10 rounded flex items-center gap-1.5 ${state.showReperes ? 'bg-white/20' : ''}`} title="Repères Insuffle : boussole 4C, questions génératives, double diamant">
+            <Compass size={18} /> <span className="text-xs font-semibold hidden md:inline">Repères</span>
           </button>
 
           <button onClick={() => dispatch({ type: 'TOGGLE_ACTIVITY' })}
@@ -192,7 +197,7 @@ export default function ToolBar() {
       {/* US-406: Facilitator toolbar */}
       {state.isFacilitator && showFacilitatorTools && (
         <div className="px-4 py-2 flex flex-wrap items-center gap-3 text-sm animate-slide-in"
-          style={{ backgroundColor: 'rgba(255,222,89,0.1)' }}>
+          style={{ backgroundColor: 'rgba(242,194,69,0.1)' }}>
           <span className="font-semibold text-label uppercase" style={{ color: 'var(--color-accent)' }}>Facilitateur</span>
 
           {/* Phase controls */}

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Users, Sliders, FileText } from 'lucide-react';
+import Logo from './brand/Logo.jsx';
 
 /* Tim Brown : "Le sponsor comprend en 10 secondes ce qu'il doit faire."
    L'acte 1 — contextualiser avant de demander un pseudo. */
@@ -30,19 +31,18 @@ export default function PseudoModal({ onJoin, spaceName, welcomeMessage, facilit
 
   return (
     <div className={`min-h-screen flex items-center justify-center transition-all duration-300 ${mounted ? 'backdrop-blur-sm' : ''}`}
-      style={{ backgroundColor: '#0c1629' }}>
+      style={{ backgroundColor: '#141e37' }}>
 
       <div className={`rounded-modal w-full max-w-lg mx-4 transition-all duration-250 elevation-3 overflow-hidden ${mounted ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}
         style={{ backgroundColor: 'var(--color-surface)' }}
         role="dialog" aria-modal="true" aria-label="Rejoindre le cadrage">
 
-        {/* Header avec contexte — Tim Brown : Acte 1 */}
+        {/* Header avec contexte */}
         <div className="p-8 pb-0 text-center">
-          <div className="w-14 h-14 rounded-card mx-auto mb-4 flex items-center justify-center font-display font-bold text-2xl"
-            style={{ backgroundColor: 'var(--color-accent)', color: '#0c1629' }}>I</div>
+          <div className="flex justify-center mb-5"><Logo height={34} color="var(--color-text)" /></div>
 
           <h1 className="font-display text-h2-mobile md:text-h2 mb-2">
-            {spaceName ? spaceName : 'Insuffle Cadrage Live'}
+            {spaceName ? spaceName : 'Cadrage de temps collectif'}
           </h1>
 
           {/* Contextualisation pour le sponsor */}
@@ -52,7 +52,7 @@ export default function PseudoModal({ onJoin, spaceName, welcomeMessage, facilit
               : 'Préparez votre temps collectif en direct.'}
           </p>
 
-          {/* Ce qu'on va faire — 3 points clairs */}
+          {/* Ce qu'on va faire : 3 points clairs */}
           <div className="flex items-center justify-center gap-6 mt-5 mb-2 text-left">
             <div className="flex items-center gap-2">
               <Users size={16} style={{ color: 'var(--color-accent)' }} strokeWidth={1.5} />

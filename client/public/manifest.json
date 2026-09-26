@@ -1,12 +1,14 @@
 {
-  "name": "Insuffle Cadrage Live",
-  "short_name": "Insuffle Cadrage",
-  "description": "Outil de cadrage collaboratif pour facilitateurs",
+  "name": "Insuffle · Cadrage de temps collectif",
+  "short_name": "Cadrage",
+  "description": "Cadrer, concevoir, envoyer, mesurer : l'outil d'Insuffle et d'Insuffle Académie",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0c1629",
-  "theme_color": "#0c1629",
+  "background_color": "#141E37",
+  "theme_color": "#141E37",
   "icons": [
-    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
   ]
 }

@@ -1,20 +1,34 @@
 import { useState } from 'react';
 import { useStore } from '../store.jsx';
 import { api } from '../api.js';
-import { X, FileText, Copy, Download, Printer, ExternalLink, Layers, Table } from 'lucide-react';
+import { X, FileText, Copy, Download, Printer, ExternalLink, Layers, Table, CalendarRange, ClipboardList, Target } from 'lucide-react';
+import { printSheet } from '../planning/sheet.js';
+import { toPlainText, toCsv, successToCsv } from '../planning/exporters.js';
+import { computeDay, dayLabel, hm, fmtDur, sortByPos } from '../planning/utils.js';
 
-export default function ExportPanel() {
+async function loadImage(url) {
+  const res = await fetch(url);
+  const blob = await res.blob();
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result);
+    r.onerror = reject;
+    r.readAsDataURL(blob);
+  });
+}
+
+export default function ExportPanel({ onNavigate }) {
   const { state, dispatch } = useStore();
   const [snapshotName, setSnapshotName] = useState('');
   const [exporting, setExporting] = useState(false);
 
   function exportText() {
-    let text = `CADRAGE DE TEMPS COLLECTIF — INSUFFLE\n`;
+    let text = `CADRAGE DE TEMPS COLLECTIF · INSUFFLE\n`;
     text += `========================================\n\n`;
-    text += `Client: ${state.space?.client_name || '—'}\n`;
-    text += `Sponsor: ${state.space?.sponsor || '—'}\n`;
-    text += `Facilitateur: ${state.space?.facilitator || '—'}\n`;
-    text += `Date: ${state.space?.session_date || '—'}\n\n`;
+    text += `Client: ${state.space?.client_name || 'à préciser'}\n`;
+    text += `Sponsor: ${state.space?.sponsor || 'à préciser'}\n`;
+    text += `Facilitateur: ${state.space?.facilitator || 'à préciser'}\n`;
+    text += `Date: ${state.space?.session_date || 'à préciser'}\n\n`;
 
     for (const phase of state.phases) {
       text += `\n${'═'.repeat(50)}\n`;
@@ -36,66 +50,34 @@ export default function ExportPanel() {
     }
 
     text += `\n${'═'.repeat(50)}\n`;
-    text += `  8 AXES DE POSITIONNEMENT\n`;
+    text += `  LES 8 POLARITÉS\n`;
     text += `${'═'.repeat(50)}\n\n`;
     for (const axis of state.axesDef) {
       const positions = state.axes.filter(a => a.axis_key === axis.key && a.position != null);
       const finalPos = state.axesFinal.find(a => a.axis_key === axis.key);
       const allPos = positions.map(p => p.position);
-      const avg = allPos.length > 0 ? (allPos.reduce((a, b) => a + b, 0) / allPos.length).toFixed(1) : '—';
+      const avg = allPos.length > 0 ? (allPos.reduce((a, b) => a + b, 0) / allPos.length).toFixed(1) : 'n/a';
       const spread = allPos.length > 1 ? Math.max(...allPos) - Math.min(...allPos) : 0;
       const status = spread >= 3 ? '⚠ DIVERGENCE FORTE' : spread >= 2 ? '△ Écart modéré' : allPos.length > 0 ? '✓ Aligné' : '';
       text += `${axis.left} ←→ ${axis.right}  |  Moy: ${avg}  |  ${status}`;
       if (finalPos?.position) text += `  |  Position finale: ${finalPos.position}`;
       text += '\n';
       for (const p of positions) {
-        text += `  ${p.pseudo}: ${p.position}${p.explanation ? ` — ${p.explanation}` : ''}\n`;
+        text += `  ${p.pseudo}: ${p.position}${p.explanation ? ` : ${p.explanation}` : ''}\n`;
       }
       text += '\n';
     }
 
-    // Déroulé
-    const txtBlocks = [...(state.blocks || [])].sort((a, b) => a.position - b.position);
-    if (txtBlocks.length > 0) {
+    // Le déroulé conçu
+    if ((state.agendaDays || []).length > 0) {
       text += `\n${'═'.repeat(50)}\n`;
-      text += `  DÉROULÉ DE L'ATELIER\n`;
+      text += `  LE DÉROULÉ\n`;
       text += `${'═'.repeat(50)}\n\n`;
-      let cumMin = 0;
-      for (const b of txtBlocks) {
-        cumMin += b.duration_minutes || 0;
-        text += `  [${(b.block_type || '').toUpperCase()}] ${b.title || ''}  —  ${b.duration_minutes || 0} min (cumul: ${Math.floor(cumMin / 60)}h${String(cumMin % 60).padStart(2, '0')})\n`;
-        if (b.intention) text += `    Intention: ${b.intention}\n`;
-        if (b.format && b.format !== 'pleniere') text += `    Format: ${b.format}${b.format_detail ? ' (' + b.format_detail + ')' : ''}\n`;
-        if (b.material) text += `    Matériel: ${b.material}\n`;
-        if (b.deliverable) text += `    Livrable: ${b.deliverable}\n`;
-        text += '\n';
-      }
-      text += `  Total: ${txtBlocks.length} blocs · ${Math.floor(cumMin / 60)}h${String(cumMin % 60).padStart(2, '0')}\n`;
-    }
-
-    // Agenda
-    const txtDays = (state.agendaDays || []).sort((a, b) => a.position - b.position);
-    const txtSlots = state.agendaSlots || [];
-    if (txtDays.length > 0) {
-      text += `\n${'═'.repeat(50)}\n`;
-      text += `  AGENDA\n`;
-      text += `${'═'.repeat(50)}\n\n`;
-      for (const day of txtDays) {
-        text += `── Jour ${day.day_number}${day.date ? ' — ' + day.date : ''} (${day.start_time} — ${day.end_time}) ──\n`;
-        const daySlots = txtSlots.filter(s => s.day_id === day.id).sort((a, b) => a.position - b.position);
-        for (const slot of daySlots) {
-          const block = txtBlocks.find(b => b.id === slot.block_id);
-          const [sh, sm] = (slot.start_time || '09:00').split(':').map(Number);
-          const endTotal = sh * 60 + sm + (slot.duration_minutes || 0);
-          const endTime = `${String(Math.floor(endTotal / 60)).padStart(2, '0')}:${String(endTotal % 60).padStart(2, '0')}`;
-          text += `  ${slot.start_time} — ${endTime}  ${block ? block.title : (slot.title || slot.slot_type)} (${slot.duration_minutes} min)\n`;
-        }
-        text += '\n';
-      }
+      text += toPlainText({ space: state.space, meta: state.planning || {}, days: state.agendaDays, blocks: state.blocks });
     }
 
     text += `\n────────────────────────────────────────\n`;
-    text += `Cadrage réalisé avec Insuffle Cadrage Live\n`;
+    text += `Cadrage réalisé avec le cadrage Insuffle\n`;
     text += `insuffle.com | Méthode de cadrage Insuffle\n`;
 
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
@@ -114,8 +96,8 @@ export default function ExportPanel() {
       const { jsPDF } = await import('jspdf');
       const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
       const W = 297, H = 210;
-      const navy = [12, 22, 41];
-      const gold = [255, 222, 89];
+      const navy = [20, 30, 55];
+      const gold = [242, 194, 69];
       const white = [255, 255, 255];
       const muted = [107, 114, 128];
       const surface = [248, 249, 252];
@@ -126,8 +108,11 @@ export default function ExportPanel() {
       function footer(doc) {
         doc.setFontSize(7);
         doc.setTextColor(...muted);
-        doc.text('Cadrage réalisé avec Insuffle Cadrage Live | insuffle.com | Méthode de cadrage Insuffle', W / 2, H - 5, { align: 'center' });
+        doc.text('Cadrage Insuffle · insuffle.com · Méthode de cadrage Insuffle', W / 2, H - 5, { align: 'center' });
       }
+
+      let logoYellow = null;
+      try { logoYellow = await loadImage('/brand/logo-yellow.png'); } catch { /* logo indisponible : texte en secours */ }
 
       function pageHeader(doc, title, color) {
         doc.setFillColor(...navy);
@@ -139,10 +124,9 @@ export default function ExportPanel() {
         doc.setFontSize(13);
         doc.setFont('helvetica', 'bold');
         doc.text(title, 12, 11);
-        // Logo right
-        doc.setTextColor(...gold);
-        doc.setFontSize(9);
-        doc.text('INSUFFLE', W - 10, 11, { align: 'right' });
+        // Logo à droite
+        if (logoYellow) doc.addImage(logoYellow, 'PNG', W - 34, 3.5, 24, 12);
+        else { doc.setTextColor(...gold); doc.setFontSize(9); doc.text('INSUFFLE', W - 10, 11, { align: 'right' }); }
       }
 
       // ===== PAGE 1: Couverture =====
@@ -152,9 +136,10 @@ export default function ExportPanel() {
       doc.setFillColor(...gold);
       doc.rect(W / 2 - 30, 50, 60, 2, 'F');
       // Title
+      if (logoYellow) doc.addImage(logoYellow, 'PNG', W / 2 - 30, 14, 60, 30);
       doc.setTextColor(...gold);
-      doc.setFontSize(14);
-      doc.text('INSUFFLE CADRAGE LIVE', W / 2, 42, { align: 'center' });
+      doc.setFontSize(11);
+      doc.text('CADRAGE DE TEMPS COLLECTIF', W / 2, 47, { align: 'center' });
       doc.setTextColor(...white);
       doc.setFontSize(28);
       doc.setFont('helvetica', 'bold');
@@ -180,7 +165,7 @@ export default function ExportPanel() {
       // Footer
       doc.setFontSize(8);
       doc.setTextColor(100, 100, 120);
-      doc.text('Méthode de cadrage Insuffle | insuffle.com', W / 2, H - 15, { align: 'center' });
+      doc.text('Méthode de cadrage Insuffle · insuffle.com', W / 2, H - 15, { align: 'center' });
 
       // ===== PAGES PHASES =====
       const phaseColors = {
@@ -281,7 +266,7 @@ export default function ExportPanel() {
 
       // ===== PAGE 8 AXES =====
       doc.addPage();
-      pageHeader(doc, '8 AXES DE POSITIONNEMENT — Méthode Insuffle');
+      pageHeader(doc, 'LES 8 POLARITÉS · Méthode Insuffle');
 
       let axY = 24;
       const axW = (W - 30) / 2;
@@ -290,7 +275,7 @@ export default function ExportPanel() {
         const axis = state.axesDef[i];
         const col = i % 2;
         if (i > 0 && i % 2 === 0) axY += 22;
-        if (axY > H - 30) { doc.addPage(); pageHeader(doc, '8 AXES (suite)'); axY = 24; }
+        if (axY > H - 30) { doc.addPage(); pageHeader(doc, 'LES 8 POLARITÉS (suite)'); axY = 24; }
 
         const ax = 10 + col * (axW + 10);
         const positions = state.axes.filter(a => a.axis_key === axis.key && a.position != null);
@@ -385,155 +370,45 @@ export default function ExportPanel() {
 
       footer(doc);
 
-      // ===== PAGE DÉROULÉ =====
-      const blocks = [...(state.blocks || [])].sort((a, b) => a.position - b.position);
-      const dSections = [...(state.sections || [])].sort((a, b) => a.position - b.position);
-      const blockTypeColors = {
-        ouverture: [34, 197, 94], icebreaker: [245, 158, 11], production: [59, 130, 246],
-        exploration: [139, 92, 246], debriefing: [236, 72, 153], decision: [239, 68, 68],
-        pause: [107, 114, 128], cloture: [20, 184, 166], transition: [163, 163, 163], energizer: [249, 115, 22],
-      };
-      const blockTypeLabels = {
-        ouverture: 'Ouverture', icebreaker: 'Icebreaker', production: 'Production',
-        exploration: 'Exploration', debriefing: 'Débriefing', decision: 'Décision',
-        pause: 'Pause', cloture: 'Clôture', transition: 'Transition', energizer: 'Energizer',
-      };
-      if (blocks.length > 0) {
+      // ===== PAGE DÉROULÉ (le détail A4 se fait depuis l'onglet Agenda A4) =====
+      const pDays = sortByPos(state.agendaDays || []);
+      if (pDays.length > 0) {
         doc.addPage();
-        pageHeader(doc, 'DÉROULÉ DE L\'ATELIER');
-        let by = 24;
-        let cumMin = 0;
-        const secMap = {};
-        dSections.forEach(s => { secMap[s.id] = s; });
-        let lastSec = null;
-
-        for (const block of blocks) {
-          if (by > H - 30) { doc.addPage(); pageHeader(doc, 'DÉROULÉ (suite)'); by = 24; }
-
-          // Section header
-          if (block.section_id && block.section_id !== lastSec) {
-            lastSec = block.section_id;
-            const sec = secMap[block.section_id];
-            if (sec) {
-              doc.setFontSize(10);
-              doc.setFont('helvetica', 'bold');
-              doc.setTextColor(...navy);
-              doc.text(sec.title, 12, by + 4);
-              by += 8;
-            }
-          }
-
-          cumMin += block.duration_minutes || 0;
-          const tc = blockTypeColors[block.block_type] || muted;
-
-          // Block row
-          doc.setFillColor(...surface);
-          doc.roundedRect(10, by, W - 20, 14, 1.5, 1.5, 'F');
-          // Left accent
-          doc.setFillColor(...tc);
-          doc.rect(10, by, 2, 14, 'F');
-
-          // Type badge
-          doc.setFillColor(...tc);
-          doc.roundedRect(15, by + 2, 28, 5, 1, 1, 'F');
-          doc.setFontSize(6);
-          doc.setFont('helvetica', 'bold');
-          doc.setTextColor(...white);
-          doc.text(blockTypeLabels[block.block_type] || block.block_type, 16, by + 5.5, { maxWidth: 26 });
-
-          // Title
-          doc.setFontSize(9);
-          doc.setFont('helvetica', 'bold');
-          doc.setTextColor(...navy);
-          doc.text(block.title || '', 46, by + 5.5, { maxWidth: 140 });
-
-          // Duration
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(8);
-          doc.setTextColor(...muted);
-          doc.text(`${block.duration_minutes || 0} min`, W - 55, by + 5.5);
-          doc.text(`${Math.floor(cumMin / 60)}h${String(cumMin % 60).padStart(2, '0')}`, W - 30, by + 5.5);
-
-          // Intention
-          if (block.intention) {
-            doc.setFontSize(7);
-            doc.setFont('helvetica', 'italic');
-            doc.setTextColor(...muted);
-            const intLines = doc.splitTextToSize(block.intention, W - 60);
-            doc.text(intLines[0], 15, by + 11, { maxWidth: W - 60 });
-          }
-
-          by += 17;
+        pageHeader(doc, 'LE DÉROULÉ');
+        let y = 26;
+        if (state.planning?.question) {
+          doc.setFontSize(12); doc.setFont('helvetica', 'bold'); doc.setTextColor(...navy);
+          const ql = doc.splitTextToSize(state.planning.question, W - 24);
+          doc.text(ql, 12, y); y += ql.length * 5.5 + 1;
         }
-
-        // Duration summary
-        if (by > H - 20) { doc.addPage(); pageHeader(doc, 'DÉROULÉ (suite)'); by = 24; }
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...navy);
-        doc.text(`Total : ${blocks.length} blocs · ${Math.floor(cumMin / 60)}h${String(cumMin % 60).padStart(2, '0')}`, 12, by + 4);
-        footer(doc);
-      }
-
-      // ===== PAGE AGENDA =====
-      const agendaDays = (state.agendaDays || []).sort((a, b) => a.position - b.position);
-      const agendaSlots = state.agendaSlots || [];
-      if (agendaDays.length > 0) {
-        doc.addPage();
-        pageHeader(doc, 'AGENDA');
-        let ay = 24;
-
-        for (const day of agendaDays) {
-          if (ay > H - 30) { doc.addPage(); pageHeader(doc, 'AGENDA (suite)'); ay = 24; }
-          const daySlots = agendaSlots.filter(s => s.day_id === day.id).sort((a, b) => a.position - b.position);
-
-          // Day header
-          doc.setFillColor(...navy);
-          doc.roundedRect(10, ay, W - 20, 8, 2, 2, 'F');
-          doc.setFontSize(10);
-          doc.setFont('helvetica', 'bold');
-          doc.setTextColor(...white);
-          let dayLabel = `Jour ${day.day_number}`;
-          if (day.date) {
-            try { dayLabel += ` — ${new Date(day.date + 'T00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}`; } catch { dayLabel += ` — ${day.date}`; }
-          }
-          doc.text(dayLabel, 14, ay + 5.5);
-          doc.setFontSize(8);
-          doc.setFont('helvetica', 'normal');
-          doc.text(`${day.start_time} — ${day.end_time}`, W - 50, ay + 5.5);
-          ay += 12;
-
-          for (const slot of daySlots) {
-            if (ay > H - 20) { doc.addPage(); pageHeader(doc, 'AGENDA (suite)'); ay = 24; }
-            const block = blocks.find(b => b.id === slot.block_id);
-            const [sh, sm] = (slot.start_time || '09:00').split(':').map(Number);
-            const endTotal = sh * 60 + sm + (slot.duration_minutes || 0);
-            const endTime = `${String(Math.floor(endTotal / 60)).padStart(2, '0')}:${String(endTotal % 60).padStart(2, '0')}`;
-
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(...muted);
-            doc.text(`${slot.start_time} — ${endTime}`, 14, ay + 3.5);
-
-            if (block) {
-              const tc = blockTypeColors[block.block_type] || muted;
-              doc.setFillColor(...tc);
-              doc.circle(55, ay + 2.5, 1.5, 'F');
-              doc.setTextColor(...navy);
-              doc.setFont('helvetica', 'bold');
-              doc.text(block.title || '', 60, ay + 3.5, { maxWidth: 150 });
-            } else {
-              doc.setTextColor(...muted);
-              doc.text(slot.title || slot.slot_type || '', 60, ay + 3.5);
-            }
-
-            doc.setFont('helvetica', 'normal');
-            doc.setTextColor(...muted);
-            doc.text(`${slot.duration_minutes} min`, W - 30, ay + 3.5);
-            ay += 7;
-          }
-          ay += 5;
+        if (state.planning?.intention) {
+          doc.setFontSize(8.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(...muted);
+          const il = doc.splitTextToSize(`Intention : ${state.planning.intention}`, W - 24);
+          doc.text(il, 12, y); y += il.length * 4 + 3;
         }
+        pDays.forEach((day, di) => {
+          const c = computeDay(day, state.blocks);
+          if (y > H - 30) { doc.addPage(); pageHeader(doc, 'LE DÉROULÉ (suite)'); y = 24; }
+          doc.setFillColor(...navy); doc.roundedRect(10, y, W - 20, 7, 1.5, 1.5, 'F');
+          doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(...white);
+          doc.text(`${dayLabel(day, di)}${day.date ? ` · ${day.date}` : ''}`, 13, y + 4.8);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`${hm(c.start)} à ${hm(Math.max(c.end, c.plannedEnd))} · ${fmtDur(c.planned)}`, W - 13, y + 4.8, { align: 'right' });
+          y += 10;
+          for (const sq of c.seqs) {
+            if (y > H - 18) { doc.addPage(); pageHeader(doc, 'LE DÉROULÉ (suite)'); y = 24; }
+            const kindColor = sq.kind === 'apport' ? gold : sq.kind === 'pause' ? [200, 200, 205] : navy;
+            doc.setFillColor(...kindColor); doc.rect(10, y - 3, 1.5, 6, 'F');
+            doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(...navy);
+            doc.text(hm(sq.start), 14, y);
+            doc.text(sq.title || '', 30, y, { maxWidth: 95 });
+            doc.setFont('helvetica', 'normal'); doc.setTextColor(...muted);
+            doc.text(`${sq.duration_minutes} min`, 128, y);
+            if (sq.intention) doc.text(doc.splitTextToSize(sq.intention, 140)[0], 145, y);
+            y += 6.5;
+          }
+          y += 3;
+        });
         footer(doc);
       }
 
@@ -578,7 +453,7 @@ export default function ExportPanel() {
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...navy);
-      doc.text('Points d\'attention sur les 8 axes', 10, sy);
+      doc.text('Points d\'attention sur les 8 polarités', 10, sy);
       sy += 8;
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
@@ -595,14 +470,14 @@ export default function ExportPanel() {
             doc.text(spread >= 3 ? '/!\\' : '/!\\', 15, sy);
             doc.setFont('helvetica', 'normal');
             doc.setTextColor(...navy);
-            doc.text(`${axis.left} / ${axis.right} — ${spread >= 3 ? 'Divergence forte' : 'Écart modéré'} (écart de ${spread})`, 22, sy);
+            doc.text(`${axis.left} / ${axis.right} : ${spread >= 3 ? 'Divergence forte' : 'Écart modéré'} (écart de ${spread})`, 22, sy);
             sy += 7;
           }
         }
       }
       if (!hasAlerts) {
         doc.setTextColor(...success);
-        doc.text('OK - Alignement satisfaisant sur l\'ensemble des axes', 15, sy);
+        doc.text('Alignement satisfaisant sur l\'ensemble des polarités', 15, sy);
       }
 
       footer(doc);
@@ -666,47 +541,14 @@ export default function ExportPanel() {
       }
     }
 
-    // Déroulé sheet
-    const csvBlocks = [...(state.blocks || [])].sort((a, b) => a.position - b.position);
-    if (csvBlocks.length > 0) {
+    // Déroulé et succès
+    if ((state.agendaDays || []).length > 0) {
       rows.push('');
-      rows.push(['Bloc', 'Type', 'Durée (min)', 'Intention', 'Format', 'Matériel', 'Livrable', 'Description'].join(sep));
-      for (const b of csvBlocks) {
-        rows.push([
-          `"${(b.title || '').replace(/"/g, '""')}"`,
-          b.block_type || '',
-          b.duration_minutes || 0,
-          `"${(b.intention || '').replace(/"/g, '""')}"`,
-          b.format || '',
-          `"${(b.material || '').replace(/"/g, '""')}"`,
-          `"${(b.deliverable || '').replace(/"/g, '""')}"`,
-          `"${(b.description || '').replace(/"/g, '""')}"`,
-        ].join(sep));
-      }
+      rows.push(...toCsv({ days: state.agendaDays, blocks: state.blocks }).replace('\uFEFF', '').split('\n'));
     }
-
-    // Agenda sheet
-    const csvDays = (state.agendaDays || []).sort((a, b) => a.position - b.position);
-    const csvSlots = state.agendaSlots || [];
-    if (csvDays.length > 0) {
+    if ((state.success?.criteria || []).length || (state.success?.actions || []).length) {
       rows.push('');
-      rows.push(['Jour', 'Date', 'Début', 'Fin', 'Bloc', 'Type créneau', 'Heure début', 'Durée (min)'].join(sep));
-      for (const day of csvDays) {
-        const daySlots = csvSlots.filter(s => s.day_id === day.id).sort((a, b) => a.position - b.position);
-        for (const slot of daySlots) {
-          const block = csvBlocks.find(b => b.id === slot.block_id);
-          rows.push([
-            `Jour ${day.day_number}`,
-            day.date || '',
-            day.start_time,
-            day.end_time,
-            block ? `"${(block.title || '').replace(/"/g, '""')}"` : (slot.title || ''),
-            slot.slot_type,
-            slot.start_time,
-            slot.duration_minutes,
-          ].join(sep));
-        }
-      }
+      rows.push(...successToCsv(state.success).replace('\uFEFF', '').split('\n'));
     }
 
     const csv = BOM + rows.join('\n');
@@ -764,12 +606,32 @@ export default function ExportPanel() {
           aria-label="Fermer"><X size={20} /></button>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <h3 className="text-label font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Documents A4 Insuffle</h3>
+        {[
+          { v: 'planning', label: 'Planning client', icon: CalendarRange, hint: 'Une page A4 par jour, prête à envoyer' },
+          { v: 'animateur', label: 'Fiche animateur', icon: ClipboardList, hint: 'Consignes, matériel, rôles. Interne' },
+          { v: 'succes', label: 'Mesure du succès', icon: Target, hint: 'Critères, avant / après, ROTI, la suite' },
+        ].map(d => (
+          <button key={d.v} onClick={() => printSheet({ variant: d.v, space: state.space, meta: state.planning || {}, days: state.agendaDays, blocks: state.blocks, success: state.success })}
+            className="w-full text-left rounded-btn px-3 py-2 flex items-center gap-3 hover:elevation-1 transition-shadow" style={{ border: '1px solid var(--color-border)' }}>
+            <d.icon size={18} style={{ color: 'var(--color-accent-dark)' }} />
+            <span className="flex-1"><span className="block text-body-sm font-semibold">{d.label}</span><span className="block text-caption" style={{ color: 'var(--color-text-muted)' }}>{d.hint}</span></span>
+            <Printer size={15} style={{ color: 'var(--color-text-muted)' }} />
+          </button>
+        ))}
+        {onNavigate && (
+          <button onClick={() => { dispatch({ type: 'TOGGLE_EXPORT' }); onNavigate('agenda'); }} className="text-caption hover:underline" style={{ color: 'var(--color-text-muted)' }}>
+            Plus d'options (HTML modifiable, JSON, CSV) dans l'onglet Agenda A4
+          </button>
+        )}
+        <hr style={{ borderColor: 'var(--color-border)' }} />
+        <h3 className="text-label font-semibold uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>Le cadrage complet</h3>
         {/* PDF Export */}
         <button onClick={exportPDF} disabled={exporting} className="w-full btn-primary flex items-center justify-center gap-2">
           <Download size={18} /> {exporting ? 'Génération du PDF...' : 'Exporter en PDF'}
         </button>
         <p className="text-label" style={{ color: 'var(--color-text-muted)' }}>
-          Inclut les 4 phases, cartes, 8 axes, déroulé et agenda
+          Les 4 phases, les cartes, les 8 polarités et le déroulé
         </p>
 
         {/* Text Export */}

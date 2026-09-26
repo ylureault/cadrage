@@ -6,13 +6,13 @@ export default {
     extend: {
       colors: {
         // Design System Premium Insuffle (US-362)
-        primary: '#0c1629',
-        accent: '#ffde59',
-        'accent-dark': '#e6c840',
+        primary: '#141e37',
+        accent: '#f2c245',
+        'accent-dark': '#a67c00',
         surface: '#ffffff',
         'surface-alt': '#f8f9fc',
         border: '#e2e5eb',
-        'text-primary': '#0c1629',
+        'text-primary': '#141e37',
         'text-muted': '#6b7280',
         success: '#10b981',
         warning: '#f59e0b',
@@ -20,12 +20,12 @@ export default {
         academie: '#8E2183',
         // Legacy aliases
         insuffle: {
-          dark: '#0c1629',
+          dark: '#141e37',
           blue: '#1e3a5f',
-          gold: '#ffde59',
-          'gold-dark': '#e6c840',
+          gold: '#f2c245',
+          'gold-dark': '#a67c00',
           light: '#f8f9fc',
-          text: '#0c1629',
+          text: '#141e37',
           muted: '#6b7280',
         }
       },
@@ -92,8 +92,8 @@ export default {
           '100%': { backgroundPosition: '200% 0' },
         },
         'pulse-glow': {
-          '0%, 100%': { boxShadow: '0 0 0 0 rgba(255,222,89,0)' },
-          '50%': { boxShadow: '0 0 0 6px rgba(255,222,89,0.1)' },
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(242,194,69,0)' },
+          '50%': { boxShadow: '0 0 0 6px rgba(242,194,69,0.1)' },
         },
         'check-draw': {
           from: { strokeDashoffset: '100' },

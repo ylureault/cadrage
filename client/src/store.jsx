@@ -28,12 +28,17 @@ const initialState = {
   participants: [],
   facilitators: [],
 
-  // Déroulé & Agenda
+  // Planning (conception + agenda A4)
+  planning: {},
   blocks: [],
   blockComments: [],
-  sections: [],
   agendaDays: [],
-  agendaSlots: [],
+  planningHistory: [],
+  planningFuture: [],
+  sheetOverflow: [],
+
+  // Mesure du succès
+  success: { criteria: [], actions: [], votes: [], review: [], votesOpen: [], scaleQuestion: '' },
 
   // Canvas structure
   phases: [],
@@ -50,6 +55,7 @@ const initialState = {
   showActivity: false,
   showStats: false,
   showExport: false,
+  showReperes: false,
   darkMode: getInitialDarkMode(),
   isFacilitator: false,
   archived: false,
@@ -59,6 +65,12 @@ const initialState = {
   pendingCards: [],
   hiddenColumns: [],
 };
+
+function pickHeader(p) {
+  const out = {};
+  for (const k of ['client_name', 'sponsor', 'facilitator', 'session_date', 'session_date_end']) if (p[k] !== undefined) out[k] = p[k];
+  return out;
+}
 
 function reducer(state, action) {
   switch (action.type) {
@@ -80,11 +92,11 @@ function reducer(state, action) {
         axesFinal: d.axesFinal,
         phaseStates: d.phaseStates,
         votes: d.votes,
+        planning: d.planning || {},
         blocks: d.blocks || [],
         blockComments: d.blockComments || [],
-        sections: d.sections || [],
         agendaDays: d.agendaDays || [],
-        agendaSlots: d.agendaSlots || [],
+        success: d.success || initialState.success,
         facilitators: d.space.facilitator_ids || [],
         archived: !!d.space.archived,
         welcomeMessage: d.space.welcome_message || '',
@@ -150,67 +162,37 @@ function reducer(state, action) {
       };
     }
 
-    // Blocks (Déroulé)
-    case 'ADD_BLOCK': return { ...state, blocks: [...state.blocks, action.block] };
-    case 'UPDATE_BLOCK': return {
+    // Planning : l'état complet arrive du serveur à chaque modification
+    case 'PLANNING_SYNC': return {
       ...state,
-      blocks: state.blocks.map(b => b.id === action.block.id ? action.block : b)
+      planning: action.planning || state.planning,
+      agendaDays: action.agendaDays || state.agendaDays,
+      blocks: action.blocks || state.blocks,
+      space: state.space && action.planning ? { ...state.space, ...pickHeader(action.planning) } : state.space,
     };
-    case 'DELETE_BLOCK': return {
+    case 'PUSH_PLANNING_HISTORY': return {
       ...state,
-      blocks: state.blocks.filter(b => b.id !== action.blockId),
-      agendaSlots: state.agendaSlots.filter(s => s.block_id !== action.blockId)
+      planningHistory: [...state.planningHistory.slice(-29), action.snapshot],
+      planningFuture: [],
     };
-    case 'REORDER_BLOCKS': {
-      const orderMap = {};
-      action.orderedIds.forEach((id, i) => { orderMap[id] = i; });
-      return { ...state, blocks: [...state.blocks].sort((a, b) => (orderMap[a.id] ?? a.position) - (orderMap[b.id] ?? b.position)) };
-    }
-    case 'SET_BLOCKS': return { ...state, blocks: action.blocks };
+    case 'POP_PLANNING_HISTORY': return {
+      ...state,
+      planningHistory: state.planningHistory.slice(0, -1),
+      planningFuture: [...state.planningFuture, action.current],
+    };
+    case 'POP_PLANNING_FUTURE': return {
+      ...state,
+      planningFuture: state.planningFuture.slice(0, -1),
+      planningHistory: [...state.planningHistory, action.current],
+    };
 
     // Block comments
     case 'ADD_BLOCK_COMMENT': return { ...state, blockComments: [...state.blockComments, action.comment] };
 
-    // Sections
-    case 'ADD_SECTION': return { ...state, sections: [...state.sections, action.section] };
-    case 'UPDATE_SECTION': return {
-      ...state,
-      sections: state.sections.map(s => s.id === action.section.id ? action.section : s)
-    };
-    case 'DELETE_SECTION': return {
-      ...state,
-      sections: state.sections.filter(s => s.id !== action.sectionId),
-      blocks: state.blocks.map(b => b.section_id === action.sectionId ? { ...b, section_id: null } : b)
-    };
-    case 'REORDER_SECTIONS': {
-      const orderMap = {};
-      action.orderedIds.forEach((id, i) => { orderMap[id] = i; });
-      return { ...state, sections: [...state.sections].sort((a, b) => (orderMap[a.id] ?? a.position) - (orderMap[b.id] ?? b.position)) };
-    }
+    case 'SET_SHEET_OVERFLOW': return { ...state, sheetOverflow: action.ids };
 
-    // Agenda
-    case 'ADD_AGENDA_DAY': return { ...state, agendaDays: [...state.agendaDays, action.day] };
-    case 'UPDATE_AGENDA_DAY': return {
-      ...state,
-      agendaDays: state.agendaDays.map(d => d.id === action.day.id ? action.day : d)
-    };
-    case 'DELETE_AGENDA_DAY': return {
-      ...state,
-      agendaDays: state.agendaDays.filter(d => d.id !== action.dayId),
-      agendaSlots: state.agendaSlots.filter(s => s.day_id !== action.dayId)
-    };
-    case 'ADD_AGENDA_SLOT': return { ...state, agendaSlots: [...state.agendaSlots, action.slot] };
-    case 'UPDATE_AGENDA_SLOT': return {
-      ...state,
-      agendaSlots: state.agendaSlots.map(s => s.id === action.slot.id ? action.slot : s)
-    };
-    case 'DELETE_AGENDA_SLOT': return { ...state, agendaSlots: state.agendaSlots.filter(s => s.id !== action.slotId) };
-    case 'SET_AGENDA_SLOTS': return { ...state, agendaSlots: action.slots.concat(state.agendaSlots.filter(s => s.day_id !== action.dayId)) };
-    case 'REORDER_AGENDA_SLOTS': {
-      const orderMap = {};
-      action.orderedIds.forEach((id, i) => { orderMap[id] = i; });
-      return { ...state, agendaSlots: [...state.agendaSlots].sort((a, b) => (orderMap[a.id] ?? a.position) - (orderMap[b.id] ?? b.position)) };
-    }
+    // Succès
+    case 'SUCCESS_SYNC': return { ...state, success: action.success };
 
     // Phase states
     case 'UPDATE_PHASE_STATE': return {
@@ -250,6 +232,7 @@ function reducer(state, action) {
     case 'TOGGLE_ACTIVITY': return { ...state, showActivity: !state.showActivity };
     case 'TOGGLE_STATS': return { ...state, showStats: !state.showStats };
     case 'TOGGLE_EXPORT': return { ...state, showExport: !state.showExport };
+    case 'TOGGLE_REPERES': return { ...state, showReperes: !state.showReperes };
     case 'TOGGLE_DARK': return { ...state, darkMode: !state.darkMode };
     case 'SET_SPACE_ARCHIVED': return { ...state, archived: action.archived };
     case 'SET_WELCOME_MESSAGE': return { ...state, welcomeMessage: action.message };

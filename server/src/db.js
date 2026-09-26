@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { mkdirSync } from 'fs';
+import { SYSTEM_TEMPLATES } from './templates.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -249,114 +250,259 @@ function initSchema(d) {
     d.exec(`ALTER TABLE spaces ADD COLUMN hidden_columns TEXT DEFAULT '[]'`);
   }
 
-  // Seed system templates for Déroulé (US-D023)
-  seedSystemTemplates(d);
+  // Planning v2 : fiche du temps collectif (question-titre, intention, charte...)
+  addColumns(d, 'spaces', {
+    question: `TEXT DEFAULT ''`,
+    intention: `TEXT DEFAULT ''`,
+    charte: `TEXT DEFAULT 'insuffle'`,
+    lieu: `TEXT DEFAULT ''`,
+    participants: `TEXT DEFAULT ''`,
+    accueil: `TEXT DEFAULT ''`,
+    reference: `TEXT DEFAULT ''`,
+    footer_note: `TEXT DEFAULT ''`,
+    event_type: `TEXT DEFAULT ''`,
+    situation: `TEXT DEFAULT ''`,
+    slot_minutes: `INTEGER DEFAULT 15`,
+    planning_columns: `TEXT DEFAULT '["sequence","intention","format","production"]'`,
+    orientation: `TEXT DEFAULT 'auto'`,
+  });
+  addColumns(d, 'agenda_days', {
+    label: `TEXT DEFAULT ''`,
+    encadre: `TEXT DEFAULT ''`,
+  });
+  addColumns(d, 'blocks', {
+    day_id: `TEXT`,
+    kind: `TEXT DEFAULT 'collectif'`,
+    production: `TEXT DEFAULT ''`,
+    method_key: `TEXT DEFAULT ''`,
+    roles: `TEXT DEFAULT ''`,
+    facilitator_notes: `TEXT DEFAULT ''`,
+  });
+  addColumns(d, 'blocks', { diamond: `TEXT DEFAULT ''` });
+  addColumns(d, 'spaces', {
+    scale_question: `TEXT DEFAULT ''`,
+    votes_open: `TEXT DEFAULT '[]'`,
+  });
 
-  // Seed demo board
+  // Mesure du succès : critères, suite (actions), votes du groupe, regard du facilitateur
+  d.exec(`
+  CREATE TABLE IF NOT EXISTS success_criteria (
+    id TEXT PRIMARY KEY,
+    space_id TEXT NOT NULL,
+    statement TEXT NOT NULL DEFAULT '',
+    indicator TEXT DEFAULT '',
+    horizon TEXT DEFAULT 'fin',
+    target TEXT DEFAULT '',
+    status TEXT DEFAULT 'a_mesurer',
+    result_note TEXT DEFAULT '',
+    position INTEGER DEFAULT 0,
+    created_by TEXT DEFAULT '',
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (space_id) REFERENCES spaces(id)
+  );
+  CREATE TABLE IF NOT EXISTS success_actions (
+    id TEXT PRIMARY KEY,
+    space_id TEXT NOT NULL,
+    what TEXT NOT NULL DEFAULT '',
+    who TEXT DEFAULT '',
+    horizon TEXT DEFAULT '72h',
+    due_date TEXT DEFAULT '',
+    status TEXT DEFAULT 'a_faire',
+    note TEXT DEFAULT '',
+    position INTEGER DEFAULT 0,
+    created_by TEXT DEFAULT '',
+    updated_at TEXT DEFAULT (datetime('now')),
+    FOREIGN KEY (space_id) REFERENCES spaces(id)
+  );
+  CREATE TABLE IF NOT EXISTS success_votes (
+    space_id TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    pseudo TEXT NOT NULL,
+    value INTEGER NOT NULL,
+    comment TEXT DEFAULT '',
+    updated_at TEXT DEFAULT (datetime('now')),
+    PRIMARY KEY (space_id, kind, pseudo),
+    FOREIGN KEY (space_id) REFERENCES spaces(id)
+  );
+  CREATE TABLE IF NOT EXISTS facilitator_review (
+    space_id TEXT NOT NULL,
+    criterion TEXT NOT NULL,
+    score INTEGER DEFAULT 0,
+    note TEXT DEFAULT '',
+    PRIMARY KEY (space_id, criterion),
+    FOREIGN KEY (space_id) REFERENCES spaces(id)
+  );
+  CREATE INDEX IF NOT EXISTS idx_success_criteria_space ON success_criteria(space_id);
+  CREATE INDEX IF NOT EXISTS idx_success_actions_space ON success_actions(space_id);
+  `);
+
+  d.exec(`CREATE TABLE IF NOT EXISTS migrations (key TEXT PRIMARY KEY, applied_at TEXT DEFAULT (datetime('now')))`);
+
+  // Seed demo board (v1 data, migrated just after)
   seedDemoBoard(d);
+
+  runOnce(d, 'planning-v2', () => migrateAgendaToPlanning(d));
+  runOnce(d, 'templates-v2', () => {
+    d.prepare(`DELETE FROM deroulement_templates WHERE is_system = 1`).run();
+  });
+  runOnce(d, 'demo-v2', () => upgradeDemo(d));
+  runOnce(d, 'demo-v3', () => polishDemo(d));
+
+  seedSystemTemplates(d);
+}
+
+function addColumns(d, table, defs) {
+  const existing = d.prepare(`PRAGMA table_info(${table})`).all().map(c => c.name);
+  for (const [name, def] of Object.entries(defs)) {
+    if (!existing.includes(name)) d.exec(`ALTER TABLE ${table} ADD COLUMN ${name} ${def}`);
+  }
+}
+
+function runOnce(d, key, fn) {
+  if (d.prepare(`SELECT key FROM migrations WHERE key = ?`).get(key)) return;
+  d.transaction(() => {
+    fn();
+    d.prepare(`INSERT INTO migrations (key) VALUES (?)`).run(key);
+  })();
+}
+
+const LEGACY_FORMATS = {
+  pleniere: 'Plénière', binomes: 'Binômes', trinomes: 'Trinômes',
+  'sous-groupes': 'Sous-groupes', individuel: 'Individuel',
+};
+
+// Agenda v1 (créneaux séparés des blocs) -> planning v2 (les séquences vivent dans les jours)
+export function migrateAgendaToPlanning(d) {
+  let n = 0;
+  const newId = () => `mig${Date.now().toString(36)}${(n++).toString(36)}`;
+
+  const blocks = d.prepare(`SELECT id, block_type, format, format_detail FROM blocks`).all();
+  const upd = d.prepare(`UPDATE blocks SET format = ?, kind = ? WHERE id = ?`);
+  for (const b of blocks) {
+    const base = LEGACY_FORMATS[b.format] ?? b.format ?? '';
+    const format = b.format_detail ? (base && base !== 'Sous-groupes' ? `${base}, ${b.format_detail}` : b.format_detail) : base;
+    upd.run(format, b.block_type === 'pause' ? 'pause' : 'collectif', b.id);
+  }
+
+  const days = d.prepare(`SELECT * FROM agenda_days ORDER BY space_id, position`).all();
+  const slotsOf = d.prepare(`SELECT * FROM agenda_slots WHERE day_id = ? ORDER BY position`);
+  const place = d.prepare(`UPDATE blocks SET day_id = ?, position = ?, duration_minutes = ? WHERE id = ? AND day_id IS NULL`);
+  const insertPause = d.prepare(`INSERT INTO blocks (id, space_id, day_id, title, intention, block_type, kind, duration_minutes, position) VALUES (?, ?, ?, ?, '', 'pause', 'pause', ?, ?)`);
+  for (const day of days) {
+    let pos = 0;
+    for (const slot of slotsOf.all(day.id)) {
+      if (slot.block_id) {
+        const r = place.run(day.id, pos, slot.duration_minutes, slot.block_id);
+        if (r.changes) pos++;
+      } else {
+        insertPause.run(newId(), day.space_id, day.id, slot.title || (slot.slot_type === 'buffer' ? 'Marge' : 'Pause'), slot.duration_minutes, pos++);
+      }
+    }
+    d.prepare(`UPDATE agenda_days SET label = ? WHERE id = ? AND (label IS NULL OR label = '')`).run(`Jour ${day.day_number}`, day.id);
+  }
+}
+
+function upgradeDemo(d) {
+  const DEMO_ID = '6AG_demo';
+  if (!d.prepare(`SELECT id FROM spaces WHERE id = ?`).get(DEMO_ID)) return;
+  d.prepare(`UPDATE spaces SET question = ?, intention = ?, lieu = ?, participants = ?, accueil = ?, reference = ?, event_type = ?, situation = ?, facilitator = ? WHERE id = ?`).run(
+    'Qui voulons-nous être à 45, sans perdre ce qui nous a fait tenir à 5 ?',
+    'Que chacun reparte avec une charte culture co-écrite et une action qu\'il porte lui-même dans les 90 jours.',
+    'Lieu à confirmer',
+    '12',
+    'café d\'accueil dès 8h45',
+    'Séminaire de lancement · 2 jours',
+    'seminaire',
+    'traverser',
+    'Yoan Lureault, Insuffle',
+    DEMO_ID
+  );
+  const fix = d.prepare(`UPDATE blocks SET kind = ?, production = ? WHERE id = ?`);
+  const plan = {
+    'demo-blk-0': ['collectif', ''], 'demo-blk-1': ['collectif', ''],
+    'demo-blk-2': ['collectif', 'Carte des forces et irritants'], 'demo-blk-4': ['collectif', '5 thèmes prioritaires'],
+    'demo-blk-7': ['collectif', 'Récits du futur'], 'demo-blk-8': ['collectif', '5 principes candidats'],
+    'demo-blk-11': ['apport', ''], 'demo-blk-12': ['collectif', 'Charte en comportements'],
+    'demo-blk-14': ['collectif', 'Charte validée'], 'demo-blk-16': ['collectif', 'Plan 90 jours sur une page'],
+    'demo-blk-17': ['collectif', 'Une action par personne'],
+  };
+  for (const [id, [kind, prod]] of Object.entries(plan)) fix.run(kind, prod, id);
+
+  // Durées recalées sur la grille du quart d'heure, horaires 9h00 → 17h30 / 9h00 → 16h00
+  const dur = {
+    'demo-blk-0': 15, 'demo-blk-1': 30, 'demo-blk-2': 60, 'demo-blk-3': 15, 'demo-blk-4': 45, 'demo-blk-5': 75,
+    'demo-blk-6': 15, 'demo-blk-7': 75, 'demo-blk-8': 45, 'demo-blk-9': 30,
+    'demo-blk-10': 15, 'demo-blk-11': 15, 'demo-blk-12': 90, 'demo-blk-13': 15, 'demo-blk-14': 45, 'demo-blk-15': 60,
+    'demo-blk-16': 60, 'demo-blk-17': 30, 'demo-blk-18': 30,
+  };
+  const setDur = d.prepare(`UPDATE blocks SET duration_minutes = ? WHERE id = ?`);
+  for (const [id, m] of Object.entries(dur)) setDur.run(m, id);
+  d.prepare(`UPDATE agenda_days SET end_time = '16:00' WHERE id = 'demo-day-1'`).run();
+  d.prepare(`UPDATE agenda_days SET end_time = '15:00' WHERE id = 'demo-day-2'`).run();
+  d.prepare(`INSERT INTO blocks (id, space_id, day_id, title, intention, block_type, kind, duration_minutes, position) VALUES ('demo-blk-19', ?, 'demo-day-1', 'Pause', '', 'pause', 'pause', 15, 7)`).run(DEMO_ID);
+  // Réordonne le jour 1 : pause entre la vision et la galerie
+  const order1 = ['demo-blk-0', 'demo-blk-1', 'demo-blk-2', 'demo-blk-3', 'demo-blk-4', 'demo-blk-5', 'demo-blk-6', 'demo-blk-7', 'demo-blk-19', 'demo-blk-8', 'demo-blk-9'];
+  order1.forEach((id, i) => d.prepare(`UPDATE blocks SET position = ?, day_id = 'demo-day-1' WHERE id = ?`).run(i, id));
+  d.prepare(`UPDATE blocks SET title = 'Clôture du jour 1' WHERE id = 'demo-blk-9'`).run();
+  d.prepare(`UPDATE agenda_days SET encadre = ? WHERE id = 'demo-day-2'`).run(JSON.stringify({
+    titre: 'Les 5 principes en chantier',
+    items: [
+      { label: '1.', texte: 'Principe issu de la galerie du jour 1, à confirmer.' },
+      { label: '2.', texte: 'Principe issu de la galerie du jour 1, à confirmer.' },
+      { label: '3.', texte: 'Principe issu de la galerie du jour 1, à confirmer.' },
+    ],
+  }));
+}
+
+// Démo : zéro tiret long, textes courts pour tenir dans la grille A4, succès renseigné
+function polishDemo(d) {
+  const DEMO_ID = '6AG_demo';
+  if (!d.prepare(`SELECT id FROM spaces WHERE id = ?`).get(DEMO_ID)) return;
+  d.prepare(`UPDATE spaces SET client_name = 'NovaPulse', reference = 'Séminaire de lancement · 2 jours', orientation = 'paysage', footer_note = 'Démo Insuffle. Cas fictif, pour explorer l''outil.' WHERE id = ?`).run(DEMO_ID);
+  const seq = {
+    'demo-blk-0': ['Ouverture', 'Oser parler vrai.', 'Mot de Camille.'],
+    'demo-blk-1': ['Ma première semaine ici', 'Relier anciens et nouveaux par un récit.', 'Binômes anciens / nouveaux.'],
+    'demo-blk-2': ['Forces et irritants', 'Voir ce qui fait tenir la boîte et ce qui coince, sans filtre.', 'Sous-groupes de 4 mélangés.'],
+    'demo-blk-4': ['Restitution et convergence', 'Choisir les 5 thèmes qui comptent.', 'Plénière, vote par gommettes.'],
+    'demo-blk-6': ['Rencontres éclair', 'Relancer l\'énergie.', 'Binômes successifs.'],
+    'demo-blk-7': ['NovaPulse dans 3 ans', 'Raconter au passé la boîte qui a réussi sa croissance.', 'Groupes de 3, récit au passé.'],
+    'demo-blk-8': ['Galerie des récits', 'Faire émerger les 5 non-négociables.', 'Récits au mur, lecture libre.'],
+    'demo-blk-9': ['Clôture du jour 1', 'Poser un mot sur la journée.', 'Un mot chacun.'],
+    'demo-blk-10': ['Réveil', 'Se remettre en mouvement.', 'Debout.'],
+    'demo-blk-11': ['Le cap du jour 2', 'Viser l\'action.', 'Apport court.'],
+    'demo-blk-12': ['La charte en comportements', 'Traduire chaque principe en gestes observables.', '5 sous-groupes, un par principe.'],
+    'demo-blk-14': ['Pitch et validation', 'Valider ensemble la charte finale.', '5 min par principe, puis consentement.'],
+    'demo-blk-16': ['Plan 90 jours', 'Passer de la charte aux actions pilotées.', 'Un pilote, un objectif, des ressources.'],
+    'demo-blk-17': ['Mon engagement', 'Chacun porte une action, publiquement.', 'Carte lue à un binôme témoin.'],
+    'demo-blk-18': ['Le cercle des fiertés', 'Repartir avec l\'énergie du travail fait.', 'Cercle debout, un mot chacun.'],
+  };
+  const upd = d.prepare(`UPDATE blocks SET title = ?, intention = ?, format = ? WHERE id = ?`);
+  for (const [id, [t, i, f]] of Object.entries(seq)) upd.run(t, i, f, id);
+  d.prepare(`UPDATE blocks SET title = 'Pause café' WHERE id IN ('demo-blk-3', 'demo-blk-13')`).run();
+  d.prepare(`UPDATE blocks SET intention = '', format = '' WHERE space_id = ? AND kind = 'pause'`).run(DEMO_ID);
+
+  const crit = d.prepare(`INSERT INTO success_criteria (id, space_id, statement, indicator, horizon, target, status, result_note, position, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Yoan Lureault')`);
+  crit.run('demo-crit-1', DEMO_ID, 'Chaque participant repart avec une action qu\'il porte lui-même.', 'Cartes d\'engagement signées et lues à un binôme.', 'fin', '12 sur 12', 'atteint', '12 cartes lues en clôture.', 0);
+  crit.run('demo-crit-2', DEMO_ID, 'La charte tient en 5 principes, écrits en comportements observables.', 'Charte validée par consentement, sans objection.', 'fin', '5 principes', 'partiel', '4 principes validés, le 5e à retravailler.', 1);
+  crit.run('demo-crit-3', DEMO_ID, 'Les rituels d\'équipe sont installés.', 'Nombre de rituels tenus trois semaines de suite.', 'j90', '3 rituels', 'a_mesurer', '', 2);
+  const act = d.prepare(`INSERT INTO success_actions (id, space_id, what, who, horizon, due_date, status, position, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Yoan Lureault')`);
+  act.run('demo-act-1', DEMO_ID, 'Envoyer la synthèse et la charte à toute l\'entreprise.', 'Camille', '72h', '2026-04-19', 'fait', 0);
+  act.run('demo-act-2', DEMO_ID, 'Retravailler le 5e principe avec deux volontaires.', 'Sarah', '2sem', '2026-04-30', 'en_cours', 1);
+  act.run('demo-act-3', DEMO_ID, 'Point de suivi du plan 90 jours.', 'Yoan', 'j90', '2026-07-15', 'a_faire', 2);
+  const vote = d.prepare(`INSERT OR IGNORE INTO success_votes (space_id, kind, pseudo, value) VALUES (?, ?, ?, ?)`);
+  [['avant', [3, 4, 2, 5]], ['apres', [7, 8, 6, 8]], ['roti', [4, 5, 4, 4]]].forEach(([k, vals]) => {
+    ['Yoan Lureault', 'Camille Lefèvre', 'Thomas Nguyen', 'Sarah Ben Ali'].forEach((who, i) => vote.run(DEMO_ID, k, who, vals[i]));
+  });
+  d.prepare(`UPDATE spaces SET scale_question = 'Sur notre culture à 45, où en est le groupe ?' WHERE id = ?`).run(DEMO_ID);
 }
 
 function seedSystemTemplates(d) {
-  const existing = d.prepare(`SELECT COUNT(*) as c FROM deroulement_templates WHERE is_system = 1`).get();
-  if (existing.c > 0) return; // Already seeded
-
-  const templates = [
-    {
-      id: 'tpl-seminaire-codir',
-      name: 'Séminaire CODIR — 1 journée',
-      description: 'Format classique pour un comité de direction : diagnostic, co-construction, plan d\'action.',
-      data: {
-        sections: [
-          { id: 'sec-matin', title: 'Matin', position: 0 },
-          { id: 'sec-aprem', title: 'Après-midi', position: 1 },
-        ],
-        blocks: [
-          { title: 'Ouverture et cadrage', intention: 'Poser le cadre de la journée, clarifier les règles du jeu et créer un espace de confiance', block_type: 'ouverture', duration_minutes: 20, format: 'pleniere', section_id: 'sec-matin', position: 0 },
-          { title: 'Tour de table d\'inclusion', intention: 'Permettre à chacun de se rendre présent et d\'exprimer son état d\'esprit', block_type: 'icebreaker', duration_minutes: 25, format: 'pleniere', section_id: 'sec-matin', position: 1 },
-          { title: 'Diagnostic partagé', intention: 'Aligner la perception de la situation actuelle et identifier les points de convergence et de divergence', block_type: 'exploration', duration_minutes: 60, format: 'sous-groupes', format_detail: 'Sous-groupes de 4', section_id: 'sec-matin', position: 2 },
-          { title: 'Pause café', intention: 'Respiration et échanges informels', block_type: 'pause', duration_minutes: 15, section_id: 'sec-matin', position: 3 },
-          { title: 'Restitution et convergence', intention: 'Synthétiser les diagnostics et définir les priorités', block_type: 'debriefing', duration_minutes: 30, format: 'pleniere', section_id: 'sec-matin', position: 4 },
-          { title: 'Déjeuner', intention: 'Pause et connexions informelles', block_type: 'pause', duration_minutes: 75, section_id: 'sec-matin', position: 5 },
-          { title: 'World Café — pistes de solutions', intention: 'Explorer collectivement les solutions possibles sur chaque priorité', block_type: 'production', duration_minutes: 60, format: 'sous-groupes', format_detail: 'Tables tournantes de 5', material: 'Grandes nappes papier, feutres de couleur', section_id: 'sec-aprem', position: 6 },
-          { title: 'Pause', intention: 'Respiration', block_type: 'pause', duration_minutes: 15, section_id: 'sec-aprem', position: 7 },
-          { title: 'Plan d\'action', intention: 'Transformer les idées en engagements concrets avec des responsables et des échéances', block_type: 'decision', duration_minutes: 45, format: 'pleniere', deliverable: 'Plan d\'action avec responsables et échéances', section_id: 'sec-aprem', position: 8 },
-          { title: 'Tour de clôture', intention: 'Permettre à chacun de partager un mot sur la journée et repartir avec de l\'énergie', block_type: 'cloture', duration_minutes: 15, format: 'pleniere', section_id: 'sec-aprem', position: 9 },
-        ]
-      }
-    },
-    {
-      id: 'tpl-futur-desire',
-      name: 'Atelier Futur Désiré — demi-journée',
-      description: 'Méthode Insuffle pour projeter le groupe dans un futur positif et en tirer des actions.',
-      data: {
-        sections: [],
-        blocks: [
-          { title: 'Accueil et météo intérieure', intention: 'Se rendre présent et se connecter au groupe', block_type: 'ouverture', duration_minutes: 15, format: 'pleniere', position: 0 },
-          { title: 'Icebreaker — « Le journal du futur »', intention: 'Réchauffer l\'imaginaire et ouvrir à la projection', block_type: 'icebreaker', duration_minutes: 15, format: 'binomes', material: 'Feuilles A4, feutres', position: 1 },
-          { title: 'Projection — « Dans 3 ans, tout a réussi »', intention: 'Visualiser collectivement le futur désiré et le rendre tangible', block_type: 'exploration', duration_minutes: 45, format: 'sous-groupes', format_detail: 'Sous-groupes de 4', material: 'Post-its, paperboard', position: 2 },
-          { title: 'Pause', intention: 'Respiration', block_type: 'pause', duration_minutes: 15, position: 3 },
-          { title: 'Galerie et vote', intention: 'Partager les visions, repérer les convergences et voter sur les priorités', block_type: 'production', duration_minutes: 30, format: 'pleniere', material: 'Gommettes de vote', position: 4 },
-          { title: 'Plan de premiers pas', intention: 'Transformer la vision en actions concrètes à court terme', block_type: 'decision', duration_minutes: 30, format: 'pleniere', deliverable: 'Liste de 5 premières actions', position: 5 },
-          { title: 'Clôture en un mot', intention: 'Ancrer l\'énergie et permettre un temps de parole final', block_type: 'cloture', duration_minutes: 10, format: 'pleniere', position: 6 },
-        ]
-      }
-    },
-    {
-      id: 'tpl-retro-equipe',
-      name: 'Rétrospective d\'équipe — 2h',
-      description: 'Format de rétrospective pour faire le bilan et s\'améliorer en équipe.',
-      data: {
-        sections: [],
-        blocks: [
-          { title: 'Check-in', intention: 'Prendre la température de l\'équipe et créer les conditions de la parole', block_type: 'ouverture', duration_minutes: 10, format: 'pleniere', position: 0 },
-          { title: 'Collecte — Ce qui a bien fonctionné / Ce qui peut s\'améliorer', intention: 'Recueillir toutes les perceptions sans filtre', block_type: 'exploration', duration_minutes: 20, format: 'individuel', material: 'Post-its, feutres', position: 1 },
-          { title: 'Regroupement et échanges', intention: 'Comprendre les tendances et créer un diagnostic partagé', block_type: 'debriefing', duration_minutes: 25, format: 'pleniere', position: 2 },
-          { title: 'Pause', intention: 'Respiration', block_type: 'pause', duration_minutes: 10, position: 3 },
-          { title: 'Brainstorming solutions', intention: 'Générer des idées d\'amélioration sur les thèmes prioritaires', block_type: 'production', duration_minutes: 25, format: 'trinomes', position: 4 },
-          { title: 'Vote et engagement', intention: 'Sélectionner les 3 actions prioritaires et s\'engager collectivement', block_type: 'decision', duration_minutes: 20, format: 'pleniere', deliverable: '3 actions d\'amélioration avec responsables', position: 5 },
-          { title: 'Check-out', intention: 'Fermer le temps collectif avec gratitude', block_type: 'cloture', duration_minutes: 10, format: 'pleniere', position: 6 },
-        ]
-      }
-    },
-    {
-      id: 'tpl-seminaire-2j',
-      name: 'Séminaire transformation — 2 jours',
-      description: 'Format séminaire long avec diagnostic, vision, co-construction et plan d\'action.',
-      data: {
-        sections: [
-          { id: 'sec-j1-matin', title: 'Jour 1 — Matin', position: 0 },
-          { id: 'sec-j1-aprem', title: 'Jour 1 — Après-midi', position: 1 },
-          { id: 'sec-j2-matin', title: 'Jour 2 — Matin', position: 2 },
-          { id: 'sec-j2-aprem', title: 'Jour 2 — Après-midi', position: 3 },
-        ],
-        blocks: [
-          { title: 'Ouverture du séminaire', intention: 'Installer le cadre, présenter les enjeux et la feuille de route des 2 jours', block_type: 'ouverture', duration_minutes: 30, section_id: 'sec-j1-matin', position: 0 },
-          { title: 'Icebreaker — « La ligne du temps »', intention: 'Reconnecter les équipes à l\'histoire collective', block_type: 'icebreaker', duration_minutes: 30, format: 'pleniere', material: 'Fresque chronologique, post-its', section_id: 'sec-j1-matin', position: 1 },
-          { title: 'Diagnostic — Forces et faiblesses', intention: 'Cartographier l\'état des lieux avec lucidité et bienveillance', block_type: 'exploration', duration_minutes: 60, format: 'sous-groupes', format_detail: 'Sous-groupes mixtes de 5', section_id: 'sec-j1-matin', position: 2 },
-          { title: 'Déjeuner', intention: 'Connexions informelles', block_type: 'pause', duration_minutes: 75, section_id: 'sec-j1-matin', position: 3 },
-          { title: 'Vision — « Dans 5 ans, nous sommes… »', intention: 'Projeter le groupe dans un futur commun inspirant', block_type: 'exploration', duration_minutes: 60, format: 'sous-groupes', format_detail: 'Sous-groupes de 4', section_id: 'sec-j1-aprem', position: 4 },
-          { title: 'Pause', intention: 'Respiration', block_type: 'pause', duration_minutes: 15, section_id: 'sec-j1-aprem', position: 5 },
-          { title: 'Galerie des visions', intention: 'Croiser les perspectives et identifier les fils rouges', block_type: 'debriefing', duration_minutes: 45, format: 'pleniere', section_id: 'sec-j1-aprem', position: 6 },
-          { title: 'Clôture Jour 1', intention: 'Prendre du recul sur la journée et poser les bases du Jour 2', block_type: 'cloture', duration_minutes: 15, section_id: 'sec-j1-aprem', position: 7 },
-          { title: 'Réveil corporel', intention: 'Remettre le corps et l\'esprit en mouvement', block_type: 'energizer', duration_minutes: 15, section_id: 'sec-j2-matin', position: 8 },
-          { title: 'Synthèse Jour 1 et cap du Jour 2', intention: 'Rappeler les apprentissages et orienter l\'énergie vers l\'action', block_type: 'ouverture', duration_minutes: 20, section_id: 'sec-j2-matin', position: 9 },
-          { title: 'Ateliers de co-construction', intention: 'Transformer les constats en projets concrets', block_type: 'production', duration_minutes: 75, format: 'sous-groupes', format_detail: 'Sous-groupes thématiques', material: 'Templates A0, feutres, post-its', section_id: 'sec-j2-matin', position: 10 },
-          { title: 'Déjeuner', intention: 'Connexions', block_type: 'pause', duration_minutes: 75, section_id: 'sec-j2-matin', position: 11 },
-          { title: 'Pitchs des projets', intention: 'Présenter les travaux et recueillir les feedbacks', block_type: 'debriefing', duration_minutes: 45, format: 'pleniere', section_id: 'sec-j2-aprem', position: 12 },
-          { title: 'Pause', intention: 'Respiration', block_type: 'pause', duration_minutes: 15, section_id: 'sec-j2-aprem', position: 13 },
-          { title: 'Vote et priorisation', intention: 'Décider collectivement des chantiers prioritaires', block_type: 'decision', duration_minutes: 30, format: 'pleniere', deliverable: 'Top 5 des chantiers avec sponsors', section_id: 'sec-j2-aprem', position: 14 },
-          { title: 'Engagements individuels', intention: 'Chacun s\'engage sur une contribution personnelle', block_type: 'production', duration_minutes: 20, format: 'individuel', section_id: 'sec-j2-aprem', position: 15 },
-          { title: 'Clôture du séminaire', intention: 'Célébrer le travail accompli et repartir avec de l\'énergie', block_type: 'cloture', duration_minutes: 20, format: 'pleniere', section_id: 'sec-j2-aprem', position: 16 },
-        ]
-      }
-    },
-  ];
-
-  const stmt = d.prepare(`INSERT OR IGNORE INTO deroulement_templates (id, name, description, is_system, data, created_by) VALUES (?, ?, ?, 1, ?, 'Insuffle')`);
-  for (const t of templates) {
-    stmt.run(t.id, t.name, t.description, JSON.stringify(t.data));
+  const stmt = d.prepare(`INSERT OR REPLACE INTO deroulement_templates (id, name, description, is_system, data, created_by) VALUES (?, ?, ?, 1, ?, 'Insuffle')`);
+  for (const t of SYSTEM_TEMPLATES) {
+    stmt.run(t.id, t.name, t.description, JSON.stringify({ version: 2, ...t.data }));
   }
 }
+
 
 function seedDemoBoard(d) {
   const DEMO_ID = '6AG_demo';

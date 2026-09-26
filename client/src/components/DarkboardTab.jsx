@@ -126,7 +126,7 @@ export default function DarkboardTab({ spaceId }) {
       <div className="flex-1 flex flex-col" style={{ minHeight: 0 }}>
         <iframe
           src={embedUrl}
-          title="DarkBoard — Tableau collaboratif"
+          title="DarkBoard, tableau collaboratif"
           className="w-full border-0"
           style={{ flex: 1, height: fullscreen ? 'calc(100vh - 48px)' : 'calc(100vh - 160px)', minHeight: '400px' }}
           allow="clipboard-write"

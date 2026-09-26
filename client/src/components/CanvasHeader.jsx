@@ -21,7 +21,7 @@ function HeaderField({ label, field, value, locked, type = 'text' }) {
   if (locked) return (
     <div className="flex-1 min-w-[150px]">
       <label className="text-label uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>{label}</label>
-      <p className="text-body-sm font-medium truncate">{value || '—'}</p>
+      <p className="text-body-sm font-medium truncate">{value || '·'}</p>
     </div>
   );
 
@@ -64,7 +64,7 @@ export default function CanvasHeader() {
   // Format date display
   let dateDisplay = '';
   if (dateStart && dateEnd) {
-    dateDisplay = `${formatDate(dateStart)} — ${formatDate(dateEnd)}`;
+    dateDisplay = `du ${formatDate(dateStart)} au ${formatDate(dateEnd)}`;
   } else if (dateStart) {
     dateDisplay = formatDate(dateStart);
   }
