@@ -48,12 +48,14 @@ describe('moteur de recommandation Insuffle', () => {
     expect(pick(st, 'conception').id).toBe('grand-groupe');
     expect(pick(st, 'conception', { memory: { dismissed: {}, views: { 'grand-groupe': 10 } } }).id).toBe('distanciel');
   });
+  it('on ne relit pas sur l\'agenda le message qu\'on vient de lire en conception', () => {
+    const st = base({ situation: 'denouer' }, { agendaDays: [{ id: 'a' }, { id: 'b' }] });
+    expect(pick(st, 'agenda').id).toBe('situation');
+    expect(pick(st, 'agenda', { memory: { dismissed: {}, views: {}, last: { id: 'situation', placement: 'conception' } } }).id).toBe('multi-jours');
+  });
   it('le participant ne voit que son message, le facilitateur jamais', () => {
     expect(pick(base({}, { isFacilitator: false, facilitators: ['Yoan'] }), 'participant').id).toBe('participant');
     expect(pick(base({}, { facilitators: ['Yoan'] }), 'participant')).toBeNull();
-  });
-  it('la démo reste sobre', () => {
-    expect(pick(base({ event_type: 'codir' }, { spaceId: '6AG_demo' }), 'conception').id).toBe('animer');
   });
   it('les liens portent les UTM', () => {
     const p = pick(base({ event_type: 'codir' }), 'agenda');

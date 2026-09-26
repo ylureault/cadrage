@@ -50,10 +50,6 @@ Fonctionnalité: Recommandations Insuffle et Insuffle Académie
     Alors il lit que l'atelier a été préparé avec l'outil gratuit d'Insuffle
     Et peut découvrir Insuffle Académie ou créer son propre cadrage
 
-  Scénario: La démo reste sobre
-    Quand j'explore la démo
-    Alors un seul message doux apparaît
-
   Scénario: Aucun prix, rien d'inventé
     Alors aucun message n'affiche de prix ni de tiret cadratin
     Et les liens portent la source « cadrage » pour mesurer ce qui marche

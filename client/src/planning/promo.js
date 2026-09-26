@@ -71,7 +71,6 @@ export function promoSignals(state, now = Date.now()) {
     actions: (state?.success?.actions || []).length,
     actionsSansPorteur: (state?.success?.actions || []).filter(a => !String(a.who || '').trim()).length,
     facilitator: !!state?.isFacilitator || (state?.facilitators || []).length === 0,
-    demo: String(state?.spaceId || '').startsWith('6AG_demo') || space.plan === 'demo-copy',
   };
 }
 
@@ -238,10 +237,11 @@ export function readMemory() {
 }
 function writeMemory(m) { try { localStorage.setItem(STORE_KEY, JSON.stringify(m)); } catch { /* stockage indisponible */ } }
 
-export function rememberView(id) {
+export function rememberView(id, placement) {
   const m = readMemory();
   m.views = m.views || {};
   m.views[id] = (m.views[id] || 0) + 1;
+  m.last = { id, placement };
   writeMemory(m);
 }
 export function rememberDismiss(id, now = Date.now()) {
@@ -255,11 +255,6 @@ export function rememberDismiss(id, now = Date.now()) {
 // exclude : les messages déjà affichés ailleurs sur l'écran (on ne répète pas).
 export function pickPromo(state, placement, { memory = readMemory(), exclude = [], now = Date.now() } = {}) {
   const s = promoSignals(state, now);
-  if (s.demo && placement !== 'participant') {
-    // Dans la démo, on montre l'outil, pas la vente : un seul message doux
-    const p = PROMOS.find(x => x.id === 'animer');
-    return p.placements.includes(placement) ? render(p, s, placement) : null;
-  }
   const ranked = PROMOS
     .filter(p => p.placements.includes(placement) && !exclude.includes(p.id))
     .filter(p => !(memory.dismissed?.[p.id] && now - memory.dismissed[p.id] < DISMISS_MS))
@@ -268,6 +263,7 @@ export function pickPromo(state, placement, { memory = readMemory(), exclude = [
       if (!score) return null;
       const views = memory.views?.[p.id] || 0;
       if (views >= MAX_VIEWS) score -= 25; // lassitude : on laisse la place à un autre
+      if (memory.last?.id === p.id && memory.last.placement !== placement) score -= 30; // on vient de le lire ailleurs
       return { p, score };
     })
     .filter(Boolean)

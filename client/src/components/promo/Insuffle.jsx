@@ -104,7 +104,7 @@ export function SmartPromo({ placement, exclude, className = '' }) {
     [placement, state.spaceId, state.isFacilitator, state.planning?.event_type, state.planning?.situation, state.planning?.charte, state.planning?.participants,
       state.agendaDays?.length, state.blocks?.length, state.space?.session_date, state.success?.review, state.success?.votes?.length, state.success?.actions?.length, closed]);
   const seen = useRef(null);
-  useEffect(() => { if (promo && seen.current !== promo.id) { seen.current = promo.id; rememberView(promo.id); } }, [promo]);
+  useEffect(() => { if (promo && seen.current !== promo.id) { seen.current = promo.id; rememberView(promo.id, placement); } }, [promo]);
   useEffect(() => {
     if (!promo) return undefined;
     ON_SCREEN.add(promo.id);
@@ -161,7 +161,7 @@ export function PromoMoment() {
       const p = pickPromo(stateRef.current, 'moment', { exclude: [...ON_SCREEN] });
       if (!p) return;
       try { localStorage.setItem(key, String(Date.now())); } catch { /* stockage indisponible */ }
-      rememberView(p.id);
+      rememberView(p.id, 'moment');
       setTimeout(() => setPromo({ ...p, moment: e.detail || '' }), 1200);
     };
     window.addEventListener('insuffle:moment', onMoment);
