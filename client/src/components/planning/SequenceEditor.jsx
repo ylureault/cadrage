@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, BookOpen, Copy, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { AlertTriangle, BookOpen, Copy, Eye, EyeOff, MessageSquare, Send, Trash2 } from 'lucide-react';
+import socket from '../../socket.js';
+import { Avatar } from '../../live/Avatars.jsx';
 import { useStore } from '../../store.jsx';
 import { usePlanning } from '../../planning/usePlanning.js';
 import { KINDS, BLOCK_TYPES, DIAMOND } from '../../planning/constants.js';
@@ -214,6 +216,56 @@ export default function SequenceEditor({ seqId, onClose }) {
           </>
         )}
       </form>
+      <SequenceComments seqId={seq.id} />
     </Drawer>
   );
+}
+
+// Les échanges sur une séquence : le sponsor, le co-facilitateur et vous, en direct
+function SequenceComments({ seqId }) {
+  const { state } = useStore();
+  const [text, setText] = useState('');
+  const comments = (state.blockComments || []).filter(c => c.block_id === seqId);
+  function send(e) {
+    e.preventDefault();
+    if (!text.trim() || state.archived) return;
+    socket.emit('add-block-comment', { blockId: seqId, content: text.trim() });
+    setText('');
+  }
+  return (
+    <section className="mt-6 pt-5 border-t" style={{ borderColor: 'var(--color-border)' }}>
+      <p className="flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider mb-3" style={{ color: 'var(--color-text-muted)' }}>
+        <MessageSquare size={14} /> Échanges {comments.length > 0 && <span className="px-1.5 rounded-full" style={{ backgroundColor: 'var(--color-surface-alt)' }}>{comments.length}</span>}
+      </p>
+      <div className="grid gap-3 mb-3">
+        {comments.length === 0 && <p className="text-caption" style={{ color: 'var(--color-text-muted)' }}>Une question, une réserve, une idée sur cette séquence ? Tout le monde la verra en direct.</p>}
+        {comments.map(c => (
+          <div key={c.id} className="flex gap-2.5 animate-fade-in">
+            <Avatar p={{ pseudo: c.author, color: c.author_color }} size={26} ring={false} />
+            <div className="min-w-0 rounded-2xl rounded-tl-md px-3 py-2" style={{ backgroundColor: 'var(--color-surface-alt)' }}>
+              <p className="text-[12px] font-semibold">{c.author} <span className="font-normal" style={{ color: 'var(--color-text-muted)' }}>{formatAgo(c.created_at)}</span></p>
+              <p className="text-body-sm whitespace-pre-wrap break-words">{c.content}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+      {!state.archived && (
+        <form onSubmit={send} className="flex gap-2">
+          <input className="input-field flex-1" value={text} onChange={e => setText(e.target.value)} maxLength={1000} placeholder="Écrire aux autres…" aria-label="Commentaire" />
+          <button type="submit" className="btn-secondary !h-[38px] !px-3" disabled={!text.trim()} aria-label="Envoyer"><Send size={15} /></button>
+        </form>
+      )}
+    </section>
+  );
+}
+
+function formatAgo(iso) {
+  if (!iso) return '';
+  const d = new Date(iso.includes('T') ? iso : `${iso.replace(' ', 'T')}Z`);
+  const min = Math.round((Date.now() - d.getTime()) / 60000);
+  if (!Number.isFinite(min)) return '';
+  if (min < 1) return 'à l\'instant';
+  if (min < 60) return `il y a ${min} min`;
+  if (min < 1440) return `il y a ${Math.round(min / 60)} h`;
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }

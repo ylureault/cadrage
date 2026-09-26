@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store.jsx';
 import { api } from '../api.js';
@@ -51,6 +51,8 @@ export default function SpacePage() {
     window.scrollTo({ top: 0 });
   }, []);
   const [hideVote, setHideVote] = useState({});
+  const pseudoRef = useRef(state.pseudo);
+  pseudoRef.current = state.pseudo;
   useEffect(() => { updatePresence({ view, target: null, field: null }); }, [view]);
   useEffect(() => {
     const onView = (e) => VIEWS.includes(e.detail) && setView(e.detail);
@@ -180,7 +182,12 @@ export default function SpacePage() {
     // Planning et succès : l'état complet arrive à chaque modification
     socket.on('planning-sync', (d) => dispatch({ type: 'PLANNING_SYNC', ...d }));
     socket.on('success-sync', (d) => dispatch({ type: 'SUCCESS_SYNC', success: d }));
-    socket.on('block-comment-added', (comment) => dispatch({ type: 'ADD_BLOCK_COMMENT', comment }));
+    socket.on('block-comment-added', (comment) => {
+      dispatch({ type: 'ADD_BLOCK_COMMENT', comment });
+      if (comment.author !== pseudoRef.current) {
+        dispatch({ type: 'ADD_NOTIFICATION', notification: { type: 'activity', author: comment.author, color: comment.author_color, message: 'a commenté une séquence', preview: comment.content } });
+      }
+    });
     socket.on('stage', (stage) => dispatch({ type: 'SET_STAGE', stage }));
 
     socket.on('notification', ({ message }) => dispatch({ type: 'ADD_NOTIFICATION', notification: { message, type: 'info' } }));

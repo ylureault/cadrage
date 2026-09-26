@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle, ArrowDown, ArrowUp, BookOpen, CalendarPlus, CheckCircle2, ChevronDown, ChevronRight, Coffee,
-  CalendarDays, Copy, Edit3, FileText, GripVertical, Info, LayoutTemplate, Lightbulb, Minus, Play, Plus, Redo2, Trash2, Undo2, Utensils, Wand2,
+  CalendarDays, Copy, Edit3, FileText, MessageSquare, GripVertical, Info, LayoutTemplate, Lightbulb, Minus, Play, Plus, Redo2, Trash2, Undo2, Utensils, Wand2,
 } from 'lucide-react';
 import { useStore } from '../../store.jsx';
 import socket from '../../socket.js';
@@ -31,6 +31,7 @@ function SequenceRow({ seq, index, onEdit, onDropAt, dayId, isFirst, isLast, hig
   const step = 15;
   const here = (state.participants || []).filter(p => p.target === seq.id && p.pseudo !== state.pseudo);
   const flashColor = state.liveFlash?.ids?.[seq.id];
+  const nComments = (state.blockComments || []).filter(c => c.block_id === seq.id).length;
 
   // Rejoue l'illumination à chaque modification venue d'un autre participant
   useEffect(() => {
@@ -95,6 +96,7 @@ function SequenceRow({ seq, index, onEdit, onDropAt, dayId, isFirst, isLast, hig
               {seq.diamond && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={{ backgroundColor: `${DIAMOND[seq.diamond]?.color}22`, color: DIAMOND[seq.diamond]?.color }} title={DIAMOND[seq.diamond]?.hint}>{DIAMOND[seq.diamond]?.label}</span>}
               {bt && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md flex items-center gap-1" style={{ backgroundColor: 'var(--color-surface-alt)', color: 'var(--color-text-muted)' }}><span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: bt.color }} />{bt.label}</span>}
               {seq.attention_flag && <AlertTriangle size={13} style={{ color: 'var(--color-warning)' }} aria-label="Point d'attention" />}
+              {nComments > 0 && <span className="inline-flex items-center gap-1 text-[11px] font-semibold" style={{ color: 'var(--color-text-muted)' }} title={`${nComments} échange${nComments > 1 ? 's' : ''}`}><MessageSquare size={12} /> {nComments}</span>}
               {here.length > 0 && <HereBadge people={here} />}
             </span>
             {seq.intention

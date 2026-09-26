@@ -222,3 +222,33 @@ describe('jauge de préparation', () => {
     expect(full.pct).toBe(100);
   });
 });
+
+import { suggestMethods, polariteValue } from '../planning/suggestions.js';
+
+describe('suggestions tirées du cadrage', () => {
+  it('la position finale prime sur la moyenne du groupe', () => {
+    const axes = [{ axis_key: 'decider_murir', position: 5 }, { axis_key: 'decider_murir', position: 4 }];
+    expect(polariteValue('decider_murir', axes, [])).toBe(4.5);
+    expect(polariteValue('decider_murir', axes, [{ axis_key: 'decider_murir', position: 1 }])).toBe(1);
+  });
+
+  it('côté « Décider » : la décision par consentement arrive en tête, avec sa raison', () => {
+    const s = suggestMethods({ axesFinal: [{ axis_key: 'decider_murir', position: 1 }], situation: 'traverser' });
+    expect(s[0].method.key).toBe('consentement');
+    expect(s[0].raisons).toEqual(['Côté « Décider »', 'Situation « Traverser » : décider, puis transformer']);
+  });
+
+  it('une polarité au milieu ne suggère rien', () => {
+    expect(suggestMethods({ axesFinal: [{ axis_key: 'produire_explorer', position: 3 }] })).toEqual([]);
+  });
+
+  it('toutes les méthodes suggérées existent dans la bibliothèque', () => {
+    const all = suggestMethods({
+      axesFinal: ['decider_murir', 'agir_cap', 'cadre_autonomie', 'produire_explorer', 'contenu_processus', 'recul_action', 'ouvert_cible', 'serieux_ludique'].map(k => ({ axis_key: k, position: 1 })),
+    }).concat(suggestMethods({
+      axesFinal: ['decider_murir', 'agir_cap', 'cadre_autonomie', 'produire_explorer', 'contenu_processus', 'recul_action', 'ouvert_cible', 'serieux_ludique'].map(k => ({ axis_key: k, position: 5 })),
+    }));
+    expect(all.length).toBeGreaterThan(20);
+    for (const x of all) expect(x.method).toBeTruthy();
+  });
+});

@@ -65,3 +65,5 @@ Le système est recettable si et seulement si :
 | Agenda A4 et exports (planning client, fiche animateur, PDF, HTML modifiable, JSON planning Insuffle) | [06-agenda-a4](../features/06-agenda-a4.feature) |
 | Mesure du succès (critères, Avant / Après, ROTI, la suite, J+15 / J+90, regard du facilitateur) | [10-succes](../features/10-succes.feature) |
 | Repères Insuffle (Boussole 4C, carte de la complexité, questions génératives, double diamant) | [11-reperes](../features/11-reperes.feature) |
+| Le direct et le mode salle (présence, curseurs, commentaires, projection, étape suivie par les téléphones) | [12-direct-et-salle](../features/12-direct-et-salle.feature) |
+| Préparation guidée (premiers pas, jauge, méthodes suggérées) | [13-preparation](../features/13-preparation.feature) |

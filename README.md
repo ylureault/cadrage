@@ -81,6 +81,8 @@ Cet outil, c'est la méthode de cadrage qu'Insuffle utilise sur le terrain, mise
 - Jours et séquences (collectif, apport, pause), horaires calculés, glisser-déposer, banc des séquences en réserve
 - Ce qui part au client (intention, format, ce qui en sort) séparé des coulisses (consignes, matériel, rôles, points d'attention)
 - Bibliothèque de 43 méthodes (1-2-4-Tous, World Café, forum ouvert, TRIZ, pré-mortem, troïka, décision par consentement…), filtrable « compatible visio »
+- Méthodes suggérées par le cadrage : les 8 polarités et la situation du collectif proposent les méthodes adaptées, avec leur raison
+- Échanges sur chaque séquence, en direct
 - 7 modèles Insuffle qui tombent juste au quart d'heure (séminaire demi-journée, CODIR 2 jours, lancement de projet, décision, rétro, formation Académie, visio)
 - Contrôles : question-titre, dépassement, trous, grille de 15 min, tirets longs, 2 h sans pause, équilibre actif / apport, double diamant
 - Annuler / rétablir, mode Jour J
@@ -100,7 +102,7 @@ Cet outil, c'est la méthode de cadrage qu'Insuffle utilise sur le terrain, mise
 - Présence : qui est là, sur quel onglet, sur quelle séquence
 - Curseurs partagés, « X écrit », illumination des modifications, fil d'activité
 - Mode salle projeté, étape suivie par les téléphones, QR code
-- Jauge « Prêt à X % » : les 9 points d'un temps collectif prêt
+- Jauge « Prêt à X % » : les 9 points d'un temps collectif prêt ; premiers pas sur un cadrage vide
 
 </details>
 

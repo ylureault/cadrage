@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { Monitor, Plus, Search } from 'lucide-react';
+import { Monitor, Plus, Search, Sparkles } from 'lucide-react';
+import { suggestMethods } from '../../planning/suggestions.js';
 import { useStore } from '../../store.jsx';
 import { usePlanning } from '../../planning/usePlanning.js';
 import { METHODS, METHOD_CATEGORIES, methodToSequence } from '../../planning/methods.js';
@@ -22,6 +23,10 @@ export default function MethodLibrary({ onClose, targetDayId = undefined }) {
       && (!distanciel || m.distanciel)
       && (!needle || [m.name, m.intention, m.format, m.consignes].join(' ').toLowerCase().includes(needle)));
   }, [cat, q, distanciel]);
+
+  const suggestions = useMemo(() => suggestMethods({ axes: state.axes, axesFinal: state.axesFinal, situation: state.planning?.situation })
+    .filter(x => !distanciel || x.method.distanciel).slice(0, 6), [state.axes, state.axesFinal, state.planning?.situation, distanciel]);
+  const showSuggestions = !q.trim() && !cat && suggestions.length > 0;
 
   function add(m) {
     actions.addSequence(dayId || null, null, methodToSequence(m));
@@ -56,6 +61,25 @@ export default function MethodLibrary({ onClose, targetDayId = undefined }) {
             style={{ backgroundColor: cat === c.key ? 'var(--color-primary)' : 'var(--color-surface-alt)', color: cat === c.key ? 'var(--color-surface)' : 'var(--color-text-muted)' }}>{c.label}</button>
         ))}
       </div>
+      {showSuggestions && (
+        <section className="mb-6 rounded-2xl p-4" style={{ backgroundColor: 'var(--color-accent-soft)' }}>
+          <p className="flex items-center gap-1.5 text-[12px] font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--color-accent-dark)' }}><Sparkles size={14} /> Suggéré par votre cadrage</p>
+          <p className="text-caption mb-3" style={{ color: 'var(--color-text-muted)' }}>Tiré des 8 polarités et de la situation du collectif. Une piste, pas un verdict.</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {suggestions.map(({ method: m, raisons }) => (
+              <div key={m.key} className="rounded-xl p-3 flex flex-col gap-1.5" style={{ backgroundColor: 'var(--color-surface)', boxShadow: 'var(--shadow-1)' }}>
+                <div className="flex items-start justify-between gap-2">
+                  <span className="font-semibold text-body-sm leading-snug">{m.name}</span>
+                  <span className="text-caption font-semibold shrink-0" style={{ color: 'var(--color-text-muted)' }}>{fmtDur(m.duration)}</span>
+                </div>
+                <div className="flex flex-wrap gap-1">{raisons.map(r => <span key={r} className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={{ backgroundColor: 'var(--color-surface-alt)', color: 'var(--color-text-muted)' }}>{r}</span>)}</div>
+                {m.intention && <p className="text-caption" style={{ color: 'var(--color-text-muted)' }}>{m.intention}</p>}
+                <button onClick={() => add(m)} disabled={actions.archived} className="btn-outline !h-8 text-[12px] self-start mt-auto"><Plus size={13} /> Ajouter</button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {list.map(m => (
           <article key={m.key} className="rounded-card p-3.5 flex flex-col gap-1.5 transition-shadow hover:elevation-2"
