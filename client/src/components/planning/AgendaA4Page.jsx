@@ -8,7 +8,7 @@ import { analyzePlanning, dayLabel, downloadFile, pageOrientation, sortByPos } f
 import { PLANNING_COLUMNS } from '../../planning/constants.js';
 import { Segmented } from '../ui/Overlay.jsx';
 import SequenceEditor from './SequenceEditor.jsx';
-import { InsuffleNudge } from '../promo/Insuffle.jsx';
+import { SmartPromo, promoMoment } from '../promo/Insuffle.jsx';
 import VersionsPanel from './VersionsPanel.jsx';
 
 // Aperçu fidèle d'une page A4 : l'iframe reçoit exactement le HTML imprimé.
@@ -87,11 +87,13 @@ export default function AgendaA4Page() {
 
   function doPrint() {
     if (!printSheet({ ...payload, variant })) notify('Autorisez les fenêtres pop-up pour imprimer.', 'error');
+    else promoMoment('print');
   }
 
   function doHtml() {
     downloadFile(`${sheetFileName(variant, space)}.html`, buildSheetHtml({ ...payload, variant, mode: 'editable' }), 'text/html;charset=utf-8');
     notify('HTML modifiable téléchargé');
+    promoMoment('export');
   }
 
   // Le mail au client : l'objet, un mot d'accompagnement, le planning en texte. On joint le PDF à la main.
@@ -99,6 +101,7 @@ export default function AgendaA4Page() {
     const client = space.client_name ? ` · ${space.client_name}` : '';
     const body = `Bonjour,\n\nVoici le planning de notre temps collectif. Le PDF est en pièce jointe.\n\n${toPlainText({ space, meta, days, blocks })}\nÀ votre disposition pour en parler.\n`;
     window.location.href = `mailto:?subject=${encodeURIComponent(`Planning${client}${meta.reference ? ` · ${meta.reference}` : ''}`)}&body=${encodeURIComponent(body.slice(0, 1800))}`;
+    promoMoment('mail');
   }
 
   async function doCopy() {
@@ -205,9 +208,7 @@ export default function AgendaA4Page() {
             )}
           </section>
           <VersionsPanel />
-          <InsuffleNudge id="agenda" title="Ce planning, on peut aussi l'animer." onMore={() => dispatch({ type: 'TOGGLE_INSUFFLE' })}>
-            Insuffle facilite ce type de temps collectif, de la préparation au suivi.
-          </InsuffleNudge>
+          <SmartPromo placement="agenda" />
         </aside>
 
         <div className="min-w-0 grid grid-cols-[minmax(0,1fr)] gap-3">

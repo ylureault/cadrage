@@ -8,7 +8,7 @@ import { successToCsv } from '../../planning/exporters.js';
 import { downloadFile, formatDate, sortByPos } from '../../planning/utils.js';
 import { AutoField } from '../ui/Overlay.jsx';
 import { VoteCard } from './VoteCard.jsx';
-import { InsuffleNudge } from '../promo/Insuffle.jsx';
+import { SmartPromo, promoMoment } from '../promo/Insuffle.jsx';
 
 const f1 = (x) => (x == null ? '·' : x.toFixed(1).replace('.', ','));
 
@@ -87,7 +87,7 @@ export default function SuccessPage() {
 
   const saveCriterion = (id, fields) => socket.emit('success:criterion', { id, fields });
   const saveAction = (id, fields) => socket.emit('success:action', { id, fields });
-  const setOpen = (kind, open) => socket.emit('success:votes-open', { kinds: open ? [...new Set([...S.votesOpen, kind])] : S.votesOpen.filter(k => k !== kind) });
+  const setOpen = (kind, open) => { if (!open && kind !== 'avant') promoMoment('vote'); return socket.emit('success:votes-open', { kinds: open ? [...new Set([...S.votesOpen, kind])] : S.votesOpen.filter(k => k !== kind) }); };
 
   const payload = { space: state.space, meta: state.planning, days: state.agendaDays, blocks: state.blocks, success: S };
 
@@ -119,7 +119,7 @@ export default function SuccessPage() {
             onClick={() => downloadFile(`${sheetFileName('succes', state.space)}.csv`, successToCsv(S), 'text/csv;charset=utf-8')}><Download size={15} /> CSV</button>
           <button type="button" className="btn-ghost text-body-sm flex items-center gap-1.5" style={{ border: '1px solid var(--color-border)' }}
             onClick={() => downloadFile(`${sheetFileName('succes', state.space)}.html`, buildSheetHtml({ ...payload, variant: 'succes', mode: 'editable' }), 'text/html;charset=utf-8')}><Eye size={15} /> HTML</button>
-          <button type="button" className="btn-primary text-body-sm flex items-center gap-1.5" onClick={() => printSheet({ ...payload, variant: 'succes' })}><Printer size={15} /> PDF</button>
+          <button type="button" className="btn-primary text-body-sm flex items-center gap-1.5" onClick={() => { printSheet({ ...payload, variant: 'succes' }); promoMoment('print'); }}><Printer size={15} /> PDF</button>
         </div>
       </header>
 
@@ -353,9 +353,7 @@ export default function SuccessPage() {
           </div>
         </section>
       )}
-      <InsuffleNudge id="suivi" title="Le succès se joue après le séminaire." cta="Parler du suivi" onMore={() => dispatch({ type: 'TOGGLE_INSUFFLE' })}>
-        Insuffle porte le suivi à J+15 et J+90, et accompagne les transformations dans la durée avec le cycle Futur Désiré® : Observer, Désirer, Concevoir, Transformer.
-      </InsuffleNudge>
+      <SmartPromo placement="succes" />
     </div>
   );
 }

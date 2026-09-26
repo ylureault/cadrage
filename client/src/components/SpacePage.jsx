@@ -27,6 +27,8 @@ import { VoteCard } from './success/VoteCard.jsx';
 const SuccessPage = lazy(() => import('./success/SuccessPage.jsx'));
 const ReperesDrawer = lazy(() => import('./ReperesDrawer.jsx'));
 const InsuffleDrawer = lazy(() => import('./promo/Insuffle.jsx').then(m => ({ default: m.InsuffleDrawer })));
+const PromoMoment = lazy(() => import('./promo/Insuffle.jsx').then(m => ({ default: m.PromoMoment })));
+const SmartPromo = lazy(() => import('./promo/Insuffle.jsx').then(m => ({ default: m.SmartPromo })));
 import { StageFollower } from './salle/StageFollower.jsx';
 const SallePage = lazy(() => import('./salle/SallePage.jsx'));
 import FirstSteps from './FirstSteps.jsx';
@@ -399,6 +401,13 @@ export default function SpacePage() {
         <CommandPalette onClose={() => setShowCommandPalette(false)} onAction={handleCommandAction} />
       )}
 
+      <PromoMoment />
+      {/* Un participant qui a voté l'après ou le ROTI : on lui dit d'où vient l'atelier */}
+      {!state.isFacilitator && !state.showSalle && (state.success?.votes || []).some(v => v.pseudo === state.pseudo && (v.kind === 'apres' || v.kind === 'roti')) && (
+        <div className="fixed bottom-20 md:bottom-4 left-4 z-40 w-[340px] max-w-[calc(100vw-2rem)] elevation-3 rounded-card animate-slide-up" style={{ backgroundColor: 'var(--color-surface)' }}>
+          <SmartPromo placement="participant" />
+        </div>
+      )}
       <LiveTicker onOpen={() => setView('conception')} />
       <StageFollower />
       {state.showSalle && <SallePage />}

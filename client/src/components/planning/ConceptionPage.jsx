@@ -14,8 +14,7 @@ import SequenceEditor from './SequenceEditor.jsx';
 import MethodLibrary from './MethodLibrary.jsx';
 import TemplatesModal from './TemplatesModal.jsx';
 import { HereBadge } from '../../live/Avatars.jsx';
-import { InsuffleNudge } from '../promo/Insuffle.jsx';
-import { RELAIS_SITUATION } from '../../planning/insuffle.js';
+import { SmartPromo } from '../promo/Insuffle.jsx';
 
 const DRAG_TYPE = 'application/x-insuffle-seq';
 
@@ -557,15 +556,7 @@ export default function ConceptionPage({ onOpenAgenda }) {
         <aside className="grid gap-4 lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-80px)] lg:overflow-y-auto pb-2">
           <ChecksPanel analysis={analysis} onFixDashes={fixDashes} onEdit={setEditId} />
           <Bench blocks={blocks} onEdit={setEditId} />
-          {RELAIS_SITUATION[state.planning?.situation] ? (
-            <InsuffleNudge id={`situation-${state.planning.situation}`} title="Un regard extérieur pour ce collectif ?" onMore={() => dispatch({ type: 'TOGGLE_INSUFFLE' })}>
-              {RELAIS_SITUATION[state.planning.situation]}
-            </InsuffleNudge>
-          ) : (
-            <InsuffleNudge id="concevoir" title="Et si on l'animait avec vous ?" onMore={() => dispatch({ type: 'TOGGLE_INSUFFLE' })}>
-              Insuffle conçoit et facilite séminaires, CODIR et ateliers, partout en France. Le facilitateur n'a pas d'enjeu politique interne : c'est ce qui libère la parole.
-            </InsuffleNudge>
-          )}
+          <SmartPromo placement="conception" />
         </aside>
       </div>
 

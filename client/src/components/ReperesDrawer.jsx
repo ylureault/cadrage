@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Copy } from 'lucide-react';
 import { useStore } from '../store.jsx';
 import { Drawer } from './ui/Overlay.jsx';
-import { InsuffleNudge } from './promo/Insuffle.jsx';
+import { SmartPromo } from './promo/Insuffle.jsx';
 import {
   BOUSSOLE_4C, CONVICTIONS, DECISION_MODES, DIAMOND, FACILITATION_TYPES, QUESTIONS_GENERATIVES, SIGNATURE, SITUATIONS, TROIS_P,
 } from '../planning/constants.js';
@@ -140,9 +140,7 @@ export default function ReperesDrawer({ onClose }) {
         </>
       )}
       <div className="mt-6">
-        <InsuffleNudge id="reperes-formation" academie title="Ces repères, on les pratique en formation." cta="Voir la formation">
-          Facilitation & Intelligence Collective, 3 jours, Insuffle Académie. 80 % pratique. Certifiée Qualiopi, finançable OPCO.
-        </InsuffleNudge>
+        <SmartPromo placement="reperes" />
       </div>
     </Drawer>
   );

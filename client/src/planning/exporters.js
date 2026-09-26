@@ -96,6 +96,7 @@ export function toPlainText({ space, meta, days, blocks }) {
     }
   });
   t += `\n${meta.charte === 'academie' ? 'Insuffle Académie' : 'Insuffle'}\n`;
+  t += 'Préparé avec l\'outil de cadrage offert par Insuffle : https://cadrage.insuffle.com\n';
   return t;
 }
 
