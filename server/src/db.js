@@ -279,6 +279,7 @@ function initSchema(d) {
     facilitator_notes: `TEXT DEFAULT ''`,
   });
   addColumns(d, 'blocks', { diamond: `TEXT DEFAULT ''` });
+  addColumns(d, 'spaces', { facilitator_keys: `TEXT DEFAULT '{}'` });
   addColumns(d, 'spaces', {
     scale_question: `TEXT DEFAULT ''`,
     votes_open: `TEXT DEFAULT '[]'`,

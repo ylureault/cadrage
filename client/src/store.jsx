@@ -104,15 +104,17 @@ function reducer(state, action) {
         facilitators: d.space.facilitator_ids || [],
         archived: !!d.space.archived,
         welcomeMessage: d.space.welcome_message || '',
-        isFacilitator: (d.space.facilitator_ids || []).includes(state.pseudo),
+        isFacilitator: (d.space.facilitator_ids || []).includes(state.pseudo) && state.adminVerified !== false,
         hiddenColumns: d.space.hidden_columns || [],
       };
     }
 
     case 'SET_PARTICIPANTS': return { ...state, participants: action.participants };
     case 'SET_FACILITATORS': {
-      return { ...state, facilitators: action.facilitators, isFacilitator: action.facilitators.includes(state.pseudo) };
+      return { ...state, facilitators: action.facilitators, isFacilitator: action.facilitators.includes(state.pseudo) && state.adminVerified !== false };
     }
+    // Le serveur dit si CE navigateur a vraiment les droits (clé de facilitateur vérifiée)
+    case 'ADMIN_STATUS': return { ...state, adminVerified: !!action.facilitator, isFacilitator: !!action.facilitator };
 
     // Header
     case 'UPDATE_HEADER': return {

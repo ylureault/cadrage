@@ -136,3 +136,39 @@ describe('messages malformés', () => {
     expect((await created).agendaDays).toHaveLength(1);
   });
 });
+
+describe('clé de facilitateur', () => {
+  function connectWith(spaceId, pseudo, key) {
+    const c = ioc(url, { transports: ['websocket'], forceNew: true });
+    clients.push(c);
+    return new Promise((resolve) => {
+      const out = { c, admin: null };
+      c.on('admin-status', ({ facilitator }) => { out.admin = facilitator; resolve(out); });
+      c.emit('join-space', { spaceId, pseudo, key });
+    });
+  }
+
+  it('prendre le prénom du facilitateur ne donne aucun droit', async () => {
+    const id = await newSpace();
+    const yoan = await connect(id, 'Yoan');
+    const gotKey = next(yoan, 'facilitator-key');
+    yoan.emit('set-facilitator', { pseudo: 'Yoan', add: true });
+    const { key } = await gotKey;
+    expect(typeof key).toBe('string');
+
+    const imposteur = await connectWith(id, 'Yoan');
+    expect(imposteur.admin).toBe(false);
+    imposteur.c.emit('update-header', { field: 'client_name', value: 'Usurpé' });
+    imposteur.c.emit('success:votes-open', { kinds: ['avant'] });
+    await new Promise(r => setTimeout(r, 150));
+    const sp = await (await fetch(`${url}/api/spaces/${id}`)).json();
+    expect(sp.space.client_name).not.toBe('Usurpé');
+    expect(sp.success.votesOpen).toEqual([]);
+
+    const vrai = await connectWith(id, 'Yoan', key);
+    expect(vrai.admin).toBe(true);
+    const opened = next(vrai.c, 'success-sync');
+    vrai.c.emit('success:votes-open', { kinds: ['avant'] });
+    expect((await opened).votesOpen).toEqual(['avant']);
+  });
+});

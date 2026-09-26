@@ -8,4 +8,5 @@ Vous avez trouvé une faille ? Merci de **ne pas** ouvrir d'issue publique.
 
 - Il n'y a pas de compte. **Le lien d'un cadrage donne accès à ce cadrage** : le partager, c'est donner accès. Les identifiants sont longs et aléatoires.
 - Le premier participant qui se déclare facilitateur administre le cadrage (verrouillage des phases, timer, votes, archivage). Tant qu'aucun facilitateur n'est désigné, tout participant peut administrer.
+- Chaque facilitateur reçoit une **clé** gardée dans son navigateur ; le serveur n'en conserve que l'empreinte. Prendre le prénom d'un facilitateur ne donne donc aucun droit. Changer de navigateur demande qu'un autre facilitateur vous désigne à nouveau.
 - Un cadrage archivé est en lecture seule, côté serveur.

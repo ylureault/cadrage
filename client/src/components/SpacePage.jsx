@@ -32,6 +32,11 @@ const SallePage = lazy(() => import('./salle/SallePage.jsx'));
 import FirstSteps from './FirstSteps.jsx';
 import Logo from './brand/Logo.jsx';
 
+// La clé de facilitateur de ce navigateur pour ce cadrage (remise par le serveur)
+function readKey(spaceId, pseudo) {
+  try { return localStorage.getItem(`insuffle-fkey-${spaceId}-${pseudo}`) || undefined; } catch { return undefined; }
+}
+
 export default function SpacePage() {
   const { spaceId } = useParams();
   const navigate = useNavigate();
@@ -126,7 +131,7 @@ export default function SpacePage() {
     if (!state.pseudo || !spaceId) return;
 
     socket.connect();
-    socket.emit('join-space', { spaceId, pseudo: state.pseudo });
+    socket.emit('join-space', { spaceId, pseudo: state.pseudo, key: readKey(spaceId, state.pseudo) });
 
     socket.on('joined', ({ pseudo, color, archived }) => {
       resendPresence();
@@ -146,6 +151,8 @@ export default function SpacePage() {
 
     socket.on('participants', (p) => dispatch({ type: 'SET_PARTICIPANTS', participants: p }));
     socket.on('facilitators-updated', (f) => dispatch({ type: 'SET_FACILITATORS', facilitators: f }));
+    socket.on('facilitator-key', ({ spaceId: sid, pseudo, key }) => { try { localStorage.setItem(`insuffle-fkey-${sid}-${pseudo}`, key); } catch { /* stockage indisponible */ } });
+    socket.on('admin-status', ({ facilitator }) => dispatch({ type: 'ADMIN_STATUS', facilitator }));
     socket.on('header-updated', ({ field, value }) => dispatch({ type: 'UPDATE_HEADER', field, value }));
 
     socket.on('card-created', (card) => dispatch({ type: 'ADD_CARD', card }));
@@ -199,7 +206,7 @@ export default function SpacePage() {
       dispatch({ type: 'SET_OFFLINE', offline: false });
       // Reconnexion : on rejoint à nouveau la salle et on recharge l'état (rien n'est perdu entre-temps)
       if (socket.__joinedOnce) {
-        socket.emit('join-space', { spaceId, pseudo: state.pseudo });
+        socket.emit('join-space', { spaceId, pseudo: state.pseudo, key: readKey(spaceId, state.pseudo) });
         api.getSpace(spaceId).then(d => dispatch({ type: 'LOAD_SPACE', data: d })).catch(() => {});
       }
       socket.__joinedOnce = true;

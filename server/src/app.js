@@ -4,6 +4,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import compression from 'compression';
 import { nanoid } from 'nanoid';
+import { createHash, randomBytes } from 'crypto';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
@@ -79,6 +80,20 @@ export function createApp(db) {
   function isFacilitator(spaceId, pseudo) {
     const space = db.prepare(`SELECT facilitator_ids FROM spaces WHERE id = ?`).get(spaceId);
     return (JSON.parse(space?.facilitator_ids || '[]')).includes(pseudo);
+  }
+
+  // Clés de facilitateur : un secret remis au navigateur du facilitateur, dont on ne garde que l'empreinte.
+  // Sans elle, prendre le prénom d'un facilitateur ne donne aucun droit.
+  const hashKey = (k) => createHash('sha256').update(String(k)).digest('hex');
+  function facilitatorKeys(spaceId) {
+    try { return JSON.parse(db.prepare(`SELECT facilitator_keys FROM spaces WHERE id = ?`).get(spaceId)?.facilitator_keys || '{}'); } catch { return {}; }
+  }
+  function issueKey(spaceId, pseudo) {
+    const key = randomBytes(18).toString('base64url');
+    const keys = facilitatorKeys(spaceId);
+    keys[pseudo] = hashKey(key);
+    db.prepare(`UPDATE spaces SET facilitator_keys = ? WHERE id = ?`).run(JSON.stringify(keys), spaceId);
+    return key;
   }
 
   // Tant qu'aucun facilitateur n'est désigné, tout le monde peut administrer (sinon l'en-tête était perdu).
@@ -591,7 +606,30 @@ export function createApp(db) {
     let currentPseudo = null;
     let currentColor = null;
 
-    socket.on('join-space', ({ spaceId, pseudo }) => {
+    // Droits vérifiés pour CE navigateur : facilitateur désigné ET porteur de sa clé
+    const adminHere = (spaceId, pseudo) => {
+      const space = db.prepare(`SELECT facilitator_ids FROM spaces WHERE id = ?`).get(spaceId);
+      const ids = JSON.parse(space?.facilitator_ids || '[]');
+      if (ids.length === 0) return true;
+      if (!ids.includes(pseudo)) return false;
+      return !facilitatorKeys(spaceId)[pseudo] || socket.data.keyOk === true;
+    };
+    // eslint-disable-next-line no-shadow
+    const canAdmin = adminHere;
+    // eslint-disable-next-line no-shadow
+    const isFacilitator = (spaceId, pseudo) => {
+      const ids = JSON.parse(db.prepare(`SELECT facilitator_ids FROM spaces WHERE id = ?`).get(spaceId)?.facilitator_ids || '[]');
+      return ids.includes(pseudo) && adminHere(spaceId, pseudo);
+    };
+    const sendAdminStatus = (sock) => {
+      const p = spaceParticipants.get(currentSpace)?.get(sock.id);
+      if (!p) return;
+      const ids = JSON.parse(db.prepare(`SELECT facilitator_ids FROM spaces WHERE id = ?`).get(currentSpace)?.facilitator_ids || '[]');
+      const keys = facilitatorKeys(currentSpace);
+      sock.emit('admin-status', { facilitator: ids.includes(p.pseudo) && (!keys[p.pseudo] || sock.data.keyOk === true) });
+    };
+
+    socket.on('join-space', ({ spaceId, pseudo, key }) => {
       try {
         if (!pseudo?.trim()) { socket.emit('error', { message: 'Pseudo requis.' }); return; }
         if (pseudo.length > 50) { socket.emit('error', { message: 'Pseudo trop long (50 caractères max).' }); return; }
@@ -617,11 +655,20 @@ export function createApp(db) {
         currentSpace = spaceId;
         currentPseudo = pseudo;
         currentColor = getParticipantColor(spaceId, pseudo);
+        const keys = facilitatorKeys(spaceId);
+        socket.data.keyOk = !!(keys[pseudo] && typeof key === 'string' && hashKey(key) === keys[pseudo]);
+        // Facilitateur d'un ancien cadrage (sans clé) : sa première connexion lui remet la sienne
+        const ids = JSON.parse(db.prepare(`SELECT facilitator_ids FROM spaces WHERE id = ?`).get(spaceId)?.facilitator_ids || '[]');
+        if (ids.includes(pseudo) && !keys[pseudo] && !space.archived) {
+          socket.emit('facilitator-key', { spaceId, pseudo, key: issueKey(spaceId, pseudo) });
+          socket.data.keyOk = true;
+        }
         socket.join(spaceId);
         participants.set(socket.id, { pseudo, color: currentColor, view: 'phase', target: null, field: null, at: Date.now() });
         logActivity(spaceId, pseudo, 'join', '', '');
 
         socket.emit('joined', { pseudo, color: currentColor, archived: !!space.archived });
+        sendAdminStatus(socket);
         io.to(spaceId).emit('participants', getParticipantsList(spaceId));
         socket.to(spaceId).emit('notification', { message: `${pseudo} a rejoint le cadrage` });
 
@@ -857,15 +904,34 @@ export function createApp(db) {
     });
 
     socket.on('set-facilitator', ({ pseudo, add }) => {
-      if (!currentSpace) return;
+      if (!currentSpace || typeof pseudo !== 'string' || !pseudo.trim()) return;
+      if (isArchived(currentSpace)) return;
       const space = db.prepare(`SELECT facilitator_ids FROM spaces WHERE id = ?`).get(currentSpace);
       const ids = JSON.parse(space?.facilitator_ids || '[]');
-      // First facilitator can self-assign; after that, only facilitators can add/remove
-      if (ids.length > 0 && !ids.includes(currentPseudo)) return;
+      // Le premier facilitateur se désigne lui-même ; ensuite, seul un facilitateur vérifié ajoute ou retire
+      if (ids.length > 0 && !isFacilitator(currentSpace, currentPseudo)) return;
+      pseudo = pseudo.slice(0, 50);
       if (add && !ids.includes(pseudo)) ids.push(pseudo);
       if (!add) { const idx = ids.indexOf(pseudo); if (idx >= 0) ids.splice(idx, 1); }
       db.prepare(`UPDATE spaces SET facilitator_ids = ? WHERE id = ?`).run(JSON.stringify(ids), currentSpace);
+      const keys = facilitatorKeys(currentSpace);
+      if (add) {
+        // La clé part vers les navigateurs connectés sous ce prénom
+        const key = issueKey(currentSpace, pseudo);
+        for (const [sid, p] of spaceParticipants.get(currentSpace) || []) {
+          if (p.pseudo !== pseudo) continue;
+          const sock = io.sockets.sockets.get(sid);
+          if (sock) { sock.data.keyOk = true; sock.emit('facilitator-key', { spaceId: currentSpace, pseudo, key }); }
+        }
+      } else if (keys[pseudo]) {
+        delete keys[pseudo];
+        db.prepare(`UPDATE spaces SET facilitator_keys = ? WHERE id = ?`).run(JSON.stringify(keys), currentSpace);
+      }
       io.to(currentSpace).emit('facilitators-updated', ids);
+      for (const sid of (spaceParticipants.get(currentSpace) || new Map()).keys()) {
+        const sock = io.sockets.sockets.get(sid);
+        if (sock) sendAdminStatus(sock);
+      }
     });
 
     socket.on('lock-phase', ({ phase, locked }) => {

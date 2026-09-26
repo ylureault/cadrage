@@ -166,3 +166,9 @@ Fonctionnalité: Rôle de facilitateur
     Soit je ne suis pas facilitateur
     Quand j'émets "archive-space"
     Alors je reçois une erreur d'autorisation
+
+  Scénario: Prendre le prénom du facilitateur ne donne aucun droit
+    Soit Yoan est facilitateur et son navigateur détient sa clé
+    Quand quelqu'un rejoint le cadrage sous le prénom « Yoan » depuis un autre navigateur
+    Alors il n'a pas les outils du facilitateur
+    Et le serveur refuse ses actions de facilitateur (en-tête, votes, phases, timer)
