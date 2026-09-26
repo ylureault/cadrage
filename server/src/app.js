@@ -2,6 +2,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import compression from 'compression';
 import { nanoid } from 'nanoid';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -25,6 +26,7 @@ export function createApp(db) {
     cors: { origin: '*', methods: ['GET', 'POST'] }
   });
 
+  app.use(compression());
   app.use(cors());
   app.use(express.json({ limit: '2mb' }));
 
@@ -34,7 +36,10 @@ export function createApp(db) {
   // Serve static files in production
   const clientDist = join(__dirname, '..', '..', 'client', 'dist');
   if (existsSync(clientDist)) {
-    app.use(express.static(clientDist));
+    // Fichiers versionnés (assets/*-hash.js) : cache d'un an. index.html : toujours revalidé.
+    app.use('/assets', express.static(join(clientDist, 'assets'), { maxAge: '1y', immutable: true }));
+    app.use('/fonts', express.static(join(clientDist, 'fonts'), { maxAge: '1y', immutable: true }));
+    app.use(express.static(clientDist, { maxAge: '1h', setHeaders: (res, path) => { if (path.endsWith('.html')) res.setHeader('Cache-Control', 'no-cache'); } }));
   }
 
   // ===================== HELPERS =====================
@@ -551,7 +556,7 @@ export function createApp(db) {
   app.get('*', (req, res) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) return res.status(404).end();
     const indexPath = join(clientDist, 'index.html');
-    if (existsSync(indexPath)) return res.sendFile(indexPath);
+    if (existsSync(indexPath)) { res.setHeader('Cache-Control', 'no-cache'); return res.sendFile(indexPath); }
     res.status(404).json({ error: 'Not found' });
   });
 

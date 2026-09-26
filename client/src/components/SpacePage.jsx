@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useStore } from '../store.jsx';
 import { api } from '../api.js';
@@ -11,22 +11,24 @@ import LiveCursors from '../live/LiveCursors.jsx';
 import LiveTicker from '../live/LiveTicker.jsx';
 import { updatePresence, resendPresence } from '../live/presence.js';
 import AxesPanel from './AxesPanel.jsx';
-import ActivityPanel from './ActivityPanel.jsx';
-import StatsPanel from './StatsPanel.jsx';
-import ExportPanel from './ExportPanel.jsx';
+const ActivityPanel = lazy(() => import('./ActivityPanel.jsx'));
+const StatsPanel = lazy(() => import('./StatsPanel.jsx'));
+const ExportPanel = lazy(() => import('./ExportPanel.jsx'));
 import TimerDisplay from './TimerDisplay.jsx';
 import SpotlightOverlay from './SpotlightOverlay.jsx';
 import Notifications from './Notifications.jsx';
 import CommandPalette from './CommandPalette.jsx';
 import DarkboardPromo from './DarkboardPromo.jsx';
-import DarkboardTab from './DarkboardTab.jsx';
-import RecapTab from './RecapTab.jsx';
-import ConceptionPage from './planning/ConceptionPage.jsx';
-import AgendaA4Page from './planning/AgendaA4Page.jsx';
-import SuccessPage, { VoteCard } from './success/SuccessPage.jsx';
-import ReperesDrawer from './ReperesDrawer.jsx';
-import { InsuffleDrawer } from './promo/Insuffle.jsx';
-import SallePage, { StageFollower } from './salle/SallePage.jsx';
+const DarkboardTab = lazy(() => import('./DarkboardTab.jsx'));
+const RecapTab = lazy(() => import('./RecapTab.jsx'));
+const ConceptionPage = lazy(() => import('./planning/ConceptionPage.jsx'));
+const AgendaA4Page = lazy(() => import('./planning/AgendaA4Page.jsx'));
+import { VoteCard } from './success/VoteCard.jsx';
+const SuccessPage = lazy(() => import('./success/SuccessPage.jsx'));
+const ReperesDrawer = lazy(() => import('./ReperesDrawer.jsx'));
+const InsuffleDrawer = lazy(() => import('./promo/Insuffle.jsx').then(m => ({ default: m.InsuffleDrawer })));
+import { StageFollower } from './salle/StageFollower.jsx';
+const SallePage = lazy(() => import('./salle/SallePage.jsx'));
 import FirstSteps from './FirstSteps.jsx';
 import Logo from './brand/Logo.jsx';
 
@@ -276,7 +278,7 @@ export default function SpacePage() {
       )}
 
       {/* Timer */}
-      {state.timer && <TimerDisplay timer={state.timer} isFacilitator={state.isFacilitator} />}
+      {state.timer && !state.showSalle && <TimerDisplay timer={state.timer} isFacilitator={state.isFacilitator || (state.facilitators || []).length === 0} />}
 
       <AppHeader view={view} setView={setView} />
 
@@ -313,6 +315,7 @@ export default function SpacePage() {
 
       <main className="flex-1 pb-16 md:pb-0" role="main" aria-label="Cadrage">
         <LiveCursors view={view}>
+        <Suspense fallback={<div className="py-24 flex justify-center"><span className="w-6 h-6 rounded-full border-2 border-[var(--color-border)] border-t-[#F2C245] animate-spin" /></div>}>
         {view === 'darkboard' ? (
           <DarkboardTab spaceId={spaceId} />
         ) : view === 'recap' ? (
@@ -338,6 +341,7 @@ export default function SpacePage() {
             </div>
           </>
         )}
+        </Suspense>
         </LiveCursors>
       </main>
 
@@ -349,6 +353,7 @@ export default function SpacePage() {
         </div>
       ))}
 
+      <Suspense fallback={null}>
       {/* Side panels (axes removed from here — now inline) */}
       {state.showActivity && <ActivityPanel />}
       {state.showStats && <StatsPanel />}
@@ -367,6 +372,7 @@ export default function SpacePage() {
       <LiveTicker onOpen={() => setView('conception')} />
       <StageFollower />
       {state.showSalle && <SallePage />}
+      </Suspense>
 
       {/* Notifications */}
       <Notifications />
