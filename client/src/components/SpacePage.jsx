@@ -26,6 +26,7 @@ import AgendaA4Page from './planning/AgendaA4Page.jsx';
 import SuccessPage, { VoteCard } from './success/SuccessPage.jsx';
 import ReperesDrawer from './ReperesDrawer.jsx';
 import { InsuffleDrawer } from './promo/Insuffle.jsx';
+import SallePage, { StageFollower } from './salle/SallePage.jsx';
 import Logo from './brand/Logo.jsx';
 
 export default function SpacePage() {
@@ -86,6 +87,7 @@ export default function SpacePage() {
       case 'agenda': setView('agenda'); break;
       case 'succes': setView('succes'); break;
       case 'reperes': dispatch({ type: 'TOGGLE_REPERES' }); break;
+      case 'salle': dispatch({ type: 'SET_SALLE', open: true }); break;
     }
   }
 
@@ -171,6 +173,7 @@ export default function SpacePage() {
     socket.on('planning-sync', (d) => dispatch({ type: 'PLANNING_SYNC', ...d }));
     socket.on('success-sync', (d) => dispatch({ type: 'SUCCESS_SYNC', success: d }));
     socket.on('block-comment-added', (comment) => dispatch({ type: 'ADD_BLOCK_COMMENT', comment }));
+    socket.on('stage', (stage) => dispatch({ type: 'SET_STAGE', stage }));
 
     socket.on('notification', ({ message }) => dispatch({ type: 'ADD_NOTIFICATION', notification: { message, type: 'info' } }));
     socket.on('activity-notification', (data) => dispatch({ type: 'ADD_NOTIFICATION', notification: { ...data, type: 'activity' } }));
@@ -356,6 +359,8 @@ export default function SpacePage() {
       )}
 
       <LiveTicker onOpen={() => setView('conception')} />
+      <StageFollower />
+      {state.showSalle && <SallePage />}
 
       {/* Notifications */}
       <Notifications />

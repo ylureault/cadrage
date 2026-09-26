@@ -58,6 +58,8 @@ const initialState = {
   showExport: false,
   showReperes: false,
   showInsuffle: false,
+  showSalle: false,
+  stage: null,
   darkMode: getInitialDarkMode(),
   isFacilitator: false,
   archived: false,
@@ -262,6 +264,8 @@ function reducer(state, action) {
     case 'TOGGLE_EXPORT': return { ...state, showExport: !state.showExport };
     case 'TOGGLE_REPERES': return { ...state, showReperes: !state.showReperes };
     case 'TOGGLE_INSUFFLE': return { ...state, showInsuffle: !state.showInsuffle };
+    case 'SET_SALLE': return { ...state, showSalle: action.open };
+    case 'SET_STAGE': return { ...state, stage: action.stage && action.stage.seqId ? action.stage : null };
     case 'TOGGLE_DARK': return { ...state, darkMode: !state.darkMode };
     case 'SET_SPACE_ARCHIVED': return { ...state, archived: action.archived };
     case 'SET_WELCOME_MESSAGE': return { ...state, welcomeMessage: action.message };

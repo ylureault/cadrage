@@ -3,13 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import QRCode from 'qrcode';
 import {
   Activity, Archive, ArchiveRestore, BarChart3, CalendarRange, Check, Compass, Copy, Download, FileText, LayoutList,
-  Lock, Menu, Sparkles, Moon, MonitorPlay, Search, Settings2, Share2, Sun, Target, Timer, Unlock, X, Eye, EyeOff, Columns,
+  Lock, Menu, Sparkles, Presentation, CheckCircle2, Circle, Moon, MonitorPlay, Search, Settings2, Share2, Sun, Target, Timer, Unlock, X, Eye, EyeOff, Columns,
 } from 'lucide-react';
 import { useStore } from '../../store.jsx';
 import socket from '../../socket.js';
 import Logo from '../brand/Logo.jsx';
 import { AvatarStack, Avatar } from '../../live/Avatars.jsx';
 import { Drawer } from '../ui/Overlay.jsx';
+import { readiness } from '../../planning/readiness.js';
 
 export const NAV = [
   { key: 'phase', label: 'Cadrer', icon: Compass },
@@ -161,6 +162,44 @@ export function FacilitatorPanel({ onClose }) {
   );
 }
 
+function ReadinessButton({ setView }) {
+  const { state } = useStore();
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useOutside(ref, () => setOpen(false));
+  const r = readiness(state);
+  const color = r.pct === 100 ? '#10B981' : r.pct >= 60 ? '#F2C245' : '#F87171';
+  return (
+    <div ref={ref} className="relative hidden sm:block">
+      <button onClick={() => setOpen(!open)} className="h-9 pl-1.5 pr-3 rounded-lg flex items-center gap-2 hover:bg-white/10 text-[12px] font-semibold" title="Préparation du temps collectif">
+        <svg width="26" height="26" viewBox="0 0 36 36" aria-hidden>
+          <circle cx="18" cy="18" r="14" fill="none" stroke="rgba(255,255,255,.15)" strokeWidth="4" />
+          <circle cx="18" cy="18" r="14" fill="none" stroke={color} strokeWidth="4" strokeLinecap="round" strokeDasharray={`${r.pct * 0.88} 88`} transform="rotate(-90 18 18)" style={{ transition: 'stroke-dasharray .6s ease' }} />
+        </svg>
+        <span className="hidden xl:inline text-white/80">Prêt à</span> {r.pct} %
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-2 z-50 w-80 rounded-card p-2 elevation-3 animate-scale-in" style={{ backgroundColor: 'var(--color-surface)', color: 'var(--color-text)' }}>
+          <div className="px-3 pt-2 pb-3">
+            <p className="font-display font-semibold text-body">Prêt à {r.pct} %</p>
+            <p className="text-caption" style={{ color: 'var(--color-text-muted)' }}>{r.pct === 100 ? 'Tout est posé. Il ne reste qu\'à le vivre.' : `${r.total - r.done} point${r.total - r.done > 1 ? 's' : ''} avant d'entrer dans la salle.`}</p>
+            <div className="h-1.5 rounded-full mt-3 overflow-hidden" style={{ backgroundColor: 'var(--color-surface-alt)' }}><div className="h-full rounded-full transition-all" style={{ width: `${r.pct}%`, backgroundColor: color }} /></div>
+          </div>
+          {r.items.map(i => (
+            <button key={i.key} onClick={() => { setView(i.view); setOpen(false); }} className="w-full flex items-start gap-2.5 px-3 py-2 rounded-lg text-left hover:bg-[var(--color-surface-alt)]">
+              {i.done ? <CheckCircle2 size={17} className="shrink-0 mt-0.5" style={{ color: '#10B981' }} /> : <Circle size={17} className="shrink-0 mt-0.5" style={{ color: 'var(--color-border-strong)' }} />}
+              <span className="flex-1">
+                <span className="block text-body-sm" style={{ color: i.done ? 'var(--color-text-muted)' : 'var(--color-text)', textDecoration: i.done ? 'line-through' : 'none' }}>{i.label}</span>
+                {i.hint && !i.done && <span className="block text-[11px]" style={{ color: 'var(--color-text-muted)' }}>{i.hint}</span>}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AppHeader({ view, setView }) {
   const navigate = useNavigate();
   const { state, dispatch } = useStore();
@@ -208,7 +247,11 @@ export default function AppHeader({ view, setView }) {
               title={state.offline ? 'Connexion perdue' : 'Synchronisé en direct'}>
               <span className={`live-dot ${state.offline ? 'off' : ''}`} /> {state.offline ? 'Hors ligne' : 'Live'}
             </span>
+            <ReadinessButton setView={setView} />
             {people.length > 0 && <AvatarStack people={people} me={state.pseudo} size={28} max={4} />}
+            <button onClick={() => dispatch({ type: 'SET_SALLE', open: true })} className="hidden md:flex h-9 px-3 rounded-lg items-center gap-2 text-[13px] font-semibold hover:bg-white/10" title="Mode salle : projeter le jour J">
+              <Presentation size={16} /> <span className="hidden xl:inline">Projeter</span>
+            </button>
             <div className="relative">
               <button onClick={() => setShare(!share)} className="btn-primary !h-9 !px-3 sm:!px-4"><Share2 size={15} /><span className="hidden sm:inline">Partager</span></button>
               {share && <SharePopover onClose={() => setShare(false)} />}

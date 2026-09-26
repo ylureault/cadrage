@@ -62,7 +62,7 @@ function AxisSlider({ axis, compact }) {
       aria-valuemax={5}
       aria-valuenow={myPos?.position || undefined}>
 
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 mb-2">
         <button onClick={() => setShowDetail(!showDetail)}
           className="flex items-center gap-1.5 text-body-sm font-semibold hover:opacity-80 transition-opacity">
           {showDetail ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
@@ -98,8 +98,8 @@ function AxisSlider({ axis, compact }) {
 
       {/* Slider track */}
       <div className="flex items-center gap-1 mb-1">
-        <span className="text-caption min-w-[7rem] max-w-[10rem] text-right shrink-0" style={{ color: 'var(--color-text-muted)' }}>{axis.left}</span>
-        <div className="flex-1 flex items-center justify-between px-2 relative">
+        <span className="hidden sm:block text-caption w-[7rem] text-right shrink-0" style={{ color: 'var(--color-text-muted)' }}>{axis.left}</span>
+        <div className="flex-1 min-w-0 flex items-center justify-between px-2 relative">
           {/* Track line */}
           <div className="absolute inset-x-2 top-1/2 h-0.5 -translate-y-1/2" style={{ backgroundColor: 'var(--color-border)' }} />
           {/* Position circles */}
@@ -144,8 +144,9 @@ function AxisSlider({ axis, compact }) {
             </div>
           )}
         </div>
-        <span className="text-caption min-w-[7rem] max-w-[10rem] shrink-0" style={{ color: 'var(--color-text-muted)' }}>{axis.right}</span>
+        <span className="hidden sm:block text-caption w-[7rem] shrink-0" style={{ color: 'var(--color-text-muted)' }}>{axis.right}</span>
       </div>
+      <div className="flex sm:hidden justify-between text-[11px] mt-3 px-1" style={{ color: 'var(--color-text-muted)' }}><span>{axis.left}</span><span>{axis.right}</span></div>
 
       {/* Respondents count */}
       <div className="text-label text-center mt-1" style={{ color: 'var(--color-text-muted)' }}>

@@ -559,6 +559,7 @@ export function createApp(db) {
 
   const spaceParticipants = new Map();
   const spaceTimers = new Map();
+  const spaceStage = new Map(); // spaceId -> { seqId, at } : l'étape projetée en salle, suivie par les téléphones
   const spaceSilent = new Map(); // spaceId -> { columnKey: true } : colonnes en mode silencieux, pour les arrivants
 
   io.on('connection', (socket) => {
@@ -603,6 +604,7 @@ export function createApp(db) {
         const timer = spaceTimers.get(spaceId);
         if (timer) socket.emit('timer-update', { remaining: timer.remaining, duration: timer.duration });
         for (const columnKey of Object.keys(spaceSilent.get(spaceId) || {})) socket.emit('silent-mode-changed', { columnKey, active: true });
+        if (spaceStage.has(spaceId)) socket.emit('stage', spaceStage.get(spaceId));
       } catch (e) {
         console.error('join-space error:', e);
         socket.emit('error', { message: 'Erreur lors de la connexion à l\'espace.' });
@@ -1085,6 +1087,14 @@ export function createApp(db) {
       me.field = typeof field === 'string' ? field.slice(0, 40) : null;
       me.at = Date.now();
       io.to(currentSpace).emit('participants', getParticipantsList(currentSpace));
+    });
+
+    // Mode salle : le facilitateur choisit l'étape projetée, toute la salle la suit
+    socket.on('stage', ({ seqId } = {}) => {
+      if (!currentSpace || !canAdmin(currentSpace, currentPseudo)) return;
+      const stage = { seqId: typeof seqId === 'string' ? seqId.slice(0, 40) : null, by: currentPseudo, at: Date.now() };
+      if (stage.seqId) spaceStage.set(currentSpace, stage); else spaceStage.delete(currentSpace);
+      io.to(currentSpace).emit('stage', stage);
     });
 
     socket.on('cursor', ({ x, y, view } = {}) => {

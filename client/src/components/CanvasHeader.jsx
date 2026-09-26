@@ -71,7 +71,7 @@ export default function CanvasHeader() {
   }
 
   return (
-    <div className="border-b px-4 sm:px-6 py-3 no-print" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+    <div className="hidden md:block border-b px-4 sm:px-6 py-3 no-print" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
       <div className="max-w-[1600px] mx-auto grid grid-cols-2 md:grid-cols-5 gap-x-6 gap-y-2">
         <HeaderField label="Client" field="client_name" value={state.space?.client_name} locked={locked} />
         <HeaderField label="Sponsor" field="sponsor" value={state.space?.sponsor} locked={locked} />

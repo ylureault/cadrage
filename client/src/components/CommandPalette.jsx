@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useStore } from '../store.jsx';
-import { Search, Download, Sliders, Activity, Settings, HelpCircle, LayoutList, CalendarRange, Target, Compass } from 'lucide-react';
+import { Search, Download, Sliders, Activity, Settings, HelpCircle, LayoutList, CalendarRange, Target, Compass, Presentation } from 'lucide-react';
 
 /* US-411: Command Palette (Cmd+K) */
 
@@ -9,6 +9,7 @@ const ACTIONS = [
   { id: 'agenda', label: 'Agenda A4 et exports', icon: CalendarRange },
   { id: 'succes', label: 'Mesure du succès', icon: Target },
   { id: 'reperes', label: 'Repères Insuffle', icon: Compass },
+  { id: 'salle', label: 'Projeter : mode salle', icon: Presentation },
   { id: 'export', label: 'Exporter', icon: Download, shortcut: 'E' },
   { id: 'axes', label: 'Les 8 polarités', icon: Sliders },
   { id: 'activity', label: 'Activité récente', icon: Activity },
