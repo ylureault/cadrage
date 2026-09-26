@@ -554,6 +554,7 @@ export function createApp(db) {
 
   const spaceParticipants = new Map();
   const spaceTimers = new Map();
+  const spaceSilent = new Map(); // spaceId -> { columnKey: true } : colonnes en mode silencieux, pour les arrivants
 
   io.on('connection', (socket) => {
     let currentSpace = null;
@@ -596,6 +597,7 @@ export function createApp(db) {
 
         const timer = spaceTimers.get(spaceId);
         if (timer) socket.emit('timer-update', { remaining: timer.remaining, duration: timer.duration });
+        for (const columnKey of Object.keys(spaceSilent.get(spaceId) || {})) socket.emit('silent-mode-changed', { columnKey, active: true });
       } catch (e) {
         console.error('join-space error:', e);
         socket.emit('error', { message: 'Erreur lors de la connexion à l\'espace.' });
@@ -749,24 +751,26 @@ export function createApp(db) {
       if (isArchived(currentSpace)) return;
       const existing = db.prepare(`SELECT COUNT(*) as c FROM votes WHERE space_id = ? AND pseudo = ?`).get(currentSpace, currentPseudo);
       if (existing.c >= 3) { socket.emit('error', { message: 'Vous avez utilisé tous vos votes (3 max)' }); return; }
+      if (!db.prepare(`SELECT id FROM cards WHERE id = ? AND space_id = ?`).get(cardId, currentSpace)) return;
       try {
         db.prepare(`INSERT INTO votes (space_id, card_id, pseudo) VALUES (?, ?, ?)`).run(currentSpace, cardId, currentPseudo);
       } catch { return; }
-      const votes = db.prepare(`SELECT card_id, COUNT(*) as count FROM votes WHERE space_id = ? GROUP BY card_id`).all(currentSpace);
-      io.to(currentSpace).emit('votes-updated', votes);
+      io.to(currentSpace).emit('votes-updated', db.prepare(`SELECT * FROM votes WHERE space_id = ?`).all(currentSpace));
     });
 
     socket.on('unvote', ({ cardId }) => {
       if (!currentSpace) return;
       if (isArchived(currentSpace)) return;
       db.prepare(`DELETE FROM votes WHERE space_id = ? AND card_id = ? AND pseudo = ?`).run(currentSpace, cardId, currentPseudo);
-      const votes = db.prepare(`SELECT card_id, COUNT(*) as count FROM votes WHERE space_id = ? GROUP BY card_id`).all(currentSpace);
-      io.to(currentSpace).emit('votes-updated', votes);
+      io.to(currentSpace).emit('votes-updated', db.prepare(`SELECT * FROM votes WHERE space_id = ?`).all(currentSpace));
     });
 
-    socket.on('add-comment', ({ cardId, content }) => {
+    socket.on('add-comment', ({ cardId, content: rawContent }) => {
+      let content = typeof rawContent === 'string' ? rawContent : '';
       if (!currentSpace || !currentPseudo || !currentColor || !content?.trim()) return;
       if (isArchived(currentSpace)) return;
+      if (!db.prepare(`SELECT id FROM cards WHERE id = ? AND space_id = ?`).get(cardId, currentSpace)) return;
+      content = content.slice(0, 1000);
       const id = generateId();
       db.prepare(`INSERT INTO comments (id, card_id, space_id, author, author_color, content) VALUES (?, ?, ?, ?, ?, ?)`).run(
         id, cardId, currentSpace, currentPseudo, currentColor, content.trim()
@@ -890,11 +894,15 @@ export function createApp(db) {
 
     socket.on('toggle-silent-mode', ({ columnKey, active }) => {
       if (!currentSpace || !canAdmin(currentSpace, currentPseudo)) return;
+      const silent = spaceSilent.get(currentSpace) || {};
+      if (active) silent[columnKey] = true; else delete silent[columnKey];
+      spaceSilent.set(currentSpace, silent);
       io.to(currentSpace).emit('silent-mode-changed', { columnKey, active });
     });
 
     socket.on('reveal-cards', ({ columnKey }) => {
       if (!currentSpace || !canAdmin(currentSpace, currentPseudo)) return;
+      delete (spaceSilent.get(currentSpace) || {})[columnKey];
       io.to(currentSpace).emit('cards-revealed', { columnKey });
     });
 

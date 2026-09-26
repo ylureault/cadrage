@@ -298,7 +298,7 @@ function ChecksPanel({ analysis, onFixDashes, onEdit }) {
         <section className="rounded-card p-4 elevation-1" style={{ backgroundColor: 'var(--color-surface)' }}>
           <h3 className="font-display font-semibold text-body-sm mb-3">Équilibre du déroulé</h3>
           <div className="flex h-2.5 rounded-full overflow-hidden mb-2">
-            <div style={{ width: `${(stats.collectif / work) * 100}%`, backgroundColor: '#141E37' }} title="Collectif" />
+            <div style={{ width: `${(stats.collectif / work) * 100}%`, backgroundColor: 'var(--color-ink)' }} title="Collectif" />
             <div style={{ width: `${(stats.apport / work) * 100}%`, backgroundColor: '#F2C245' }} title="Apport" />
             <div style={{ width: `${(stats.pause / work) * 100}%`, backgroundColor: '#c4c4c4' }} title="Pauses" />
           </div>
@@ -357,7 +357,7 @@ function Bench({ blocks, onEdit }) {
           <div key={s.id} draggable={!actions.archived}
             onDragStart={e => { e.dataTransfer.setData(DRAG_TYPE, s.id); e.dataTransfer.effectAllowed = 'move'; }}
             className="flex items-center gap-2 rounded-btn px-2.5 py-1.5 text-caption cursor-grab"
-            style={{ backgroundColor: 'var(--color-surface-alt)', borderLeft: `3px solid ${s.kind === 'apport' ? '#F2C245' : s.kind === 'pause' ? '#c4c4c4' : '#141E37'}` }}>
+            style={{ backgroundColor: 'var(--color-surface-alt)', borderLeft: `3px solid ${s.kind === 'apport' ? '#F2C245' : s.kind === 'pause' ? '#c4c4c4' : 'var(--color-ink)'}` }}>
             <button type="button" className="flex-1 text-left truncate font-medium" onClick={() => onEdit(s.id)}>{s.title}</button>
             <span className="tabular-nums" style={{ color: 'var(--color-text-muted)' }}>{fmtDur(s.duration_minutes)}</span>
             {days.length > 0 && !actions.archived && (

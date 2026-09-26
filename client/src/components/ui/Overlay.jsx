@@ -56,8 +56,13 @@ export function AutoField({ value, onSave, placeholder, multiline = false, rows 
   useEffect(() => { if (!focused.current) setLocal(value ?? ''); }, [value]);
   useEffect(() => {
     if (!autoGrow || !area.current) return;
-    area.current.style.height = 'auto';
-    area.current.style.height = `${area.current.scrollHeight + 2}px`;
+    const el = area.current;
+    const fit = () => { el.style.height = 'auto'; el.style.height = `${el.scrollHeight + 2}px`; };
+    fit();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : null;
+    ro?.observe(el);
+    document.fonts?.ready?.then(fit);
+    return () => ro?.disconnect();
   }, [local, autoGrow]);
   function commit() {
     focused.current = false;

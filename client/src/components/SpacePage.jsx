@@ -268,8 +268,8 @@ export default function SpacePage() {
       {/* Top bar */}
       <ToolBar />
 
-      {/* Header */}
-      <CanvasHeader />
+      {/* En-tête du cadrage : utile sur le canvas ; ailleurs, la fiche du temps collectif le remplace */}
+      {view === 'phase' && <CanvasHeader />}
 
       {/* Participants */}
       <ParticipantsBar />

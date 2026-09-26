@@ -1,4 +1,4 @@
-# Insuffle Cadrage Live - Spécifications Fonctionnelles
+# Insuffle Cadrage · Spécifications fonctionnelles
 
 **Produit** : Application collaborative de cadrage d'atelier Insuffle
 **Principe** : URL unique, sans compte, temps réel, multi-utilisateurs
@@ -56,3 +56,12 @@ Le système est recettable si et seulement si :
 ---
 
 *Insuffle Cadrage Live | insuffle.com | Insuffle Académie | Certifié Qualiopi*
+
+## Version 2 : outil de design d'atelier
+
+| Domaine | Fichier Gherkin |
+|---------|-----------------|
+| Conception du temps collectif (question-titre, intention, séquences au quart d'heure, bibliothèque, modèles, contrôles, Jour J) | [05-conception](../features/05-conception.feature) |
+| Agenda A4 et exports (planning client, fiche animateur, PDF, HTML modifiable, JSON planning Insuffle) | [06-agenda-a4](../features/06-agenda-a4.feature) |
+| Mesure du succès (critères, Avant / Après, ROTI, la suite, J+15 / J+90, regard du facilitateur) | [10-succes](../features/10-succes.feature) |
+| Repères Insuffle (Boussole 4C, carte de la complexité, questions génératives, double diamant) | [11-reperes](../features/11-reperes.feature) |

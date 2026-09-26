@@ -217,7 +217,8 @@ function reducer(state, action) {
     // Silent mode
     case 'SET_SILENT_MODE': return {
       ...state,
-      silentColumns: { ...state.silentColumns, [action.columnKey]: action.active }
+      silentColumns: { ...state.silentColumns, [action.columnKey]: action.active },
+      revealedColumns: action.active ? { ...state.revealedColumns, [action.columnKey]: false } : state.revealedColumns,
     };
     case 'REVEAL_COLUMN': return {
       ...state,

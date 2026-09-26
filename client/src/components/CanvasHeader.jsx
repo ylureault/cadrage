@@ -57,7 +57,8 @@ function formatDate(dateStr) {
 
 export default function CanvasHeader() {
   const { state } = useStore();
-  const locked = state.archived;
+  // L'en-tête est réservé aux facilitateurs dès qu'il y en a un (le serveur refuse sinon)
+  const locked = state.archived || ((state.facilitators || []).length > 0 && !state.isFacilitator);
   const dateStart = state.space?.session_date;
   const dateEnd = state.space?.session_date_end;
 

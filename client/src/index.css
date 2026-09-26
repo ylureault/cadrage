@@ -27,6 +27,7 @@
   --color-warning: #f59e0b;
   --color-error: #ef4444;
   --color-academie: #8E2183;
+  --color-ink: #141E37;
   --color-academie-bg: #f3e8f1;
 
   /* US-366: Elevations */
@@ -55,6 +56,7 @@
   --color-accent: #f2c245;
   --color-accent-bg: rgba(242,194,69,0.12);
   --color-academie-bg: #1a0e1e;
+  --color-ink: #cbd5e1;
 
   --shadow-1: 0 1px 3px rgba(0,0,0,0.2);
   --shadow-2: 0 4px 12px rgba(0,0,0,0.3);
@@ -207,7 +209,7 @@
   }
   /* Mobile touch target (US-432) */
   @media (max-width: 768px) {
-    .input-field { height: 44px; }
+    input.input-field, select.input-field { height: 44px; }
     .btn-primary, .btn-secondary, .btn-danger { height: 44px; }
   }
 

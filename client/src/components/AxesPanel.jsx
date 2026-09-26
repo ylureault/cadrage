@@ -54,7 +54,7 @@ function AxisSlider({ axis, compact }) {
       style={{
         backgroundColor: 'var(--color-surface)',
         borderColor: spread >= 3 ? 'var(--color-error)' : 'var(--color-border)',
-        ...(spread >= 3 ? { ringColor: 'rgba(239,68,68,0.2)' } : {}),
+        ...(spread >= 3 ? { '--tw-ring-color': 'rgba(239,68,68,0.2)' } : {}),
       }}
       role="slider"
       aria-label={`${axis.left} / ${axis.right}`}

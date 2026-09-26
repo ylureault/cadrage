@@ -90,7 +90,7 @@ export default function ToolBar() {
 
   return (
     <div className="text-white no-print" style={{ backgroundColor: '#141e37' }}>
-      <div className="max-w-[1600px] mx-auto px-4 py-2 flex items-center justify-between gap-2">
+      <div className="max-w-[1600px] mx-auto px-3 sm:px-4 py-2 flex items-center justify-between gap-2">
         {/* US-381: Logo Insuffle */}
         <button onClick={() => navigate('/')} className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0"
           aria-label="Retour à l'accueil Insuffle">
@@ -107,7 +107,7 @@ export default function ToolBar() {
                 onChange={e => dispatch({ type: 'SET_SEARCH', query: e.target.value })}
                 placeholder="Rechercher dans les cartes..."
                 className="text-white px-2 py-1 rounded-btn text-body-sm w-40 focus:outline-none focus:ring-1"
-                style={{ backgroundColor: 'rgba(255,255,255,0.1)', ringColor: 'var(--color-accent)' }}
+                style={{ backgroundColor: 'rgba(255,255,255,0.1)', '--tw-ring-color': 'var(--color-accent)' }}
                 autoFocus
               />
               {state.searchQuery && (
@@ -125,7 +125,7 @@ export default function ToolBar() {
               </button>
             </div>
           ) : (
-            <button onClick={() => setShowSearch(true)} className="p-1.5 hover:bg-white/10 rounded" title="Rechercher (Cmd+F)">
+            <button onClick={() => setShowSearch(true)} className="p-1.5 hover:bg-white/10 rounded hidden sm:block" title="Rechercher dans les cartes">
               <Search size={18} />
             </button>
           )}
@@ -138,7 +138,7 @@ export default function ToolBar() {
                 dispatch({ type: 'ADD_NOTIFICATION', notification: { message: 'Retournez sur un onglet du cadrage pour voir les 8 polarités', type: 'info' } });
               }
             }}
-            className="p-1.5 hover:bg-white/10 rounded" title="Les 8 polarités">
+            className="p-1.5 hover:bg-white/10 rounded hidden sm:block" title="Les 8 polarités">
             <Sliders size={18} />
           </button>
 
@@ -148,7 +148,7 @@ export default function ToolBar() {
           </button>
 
           <button onClick={() => dispatch({ type: 'TOGGLE_ACTIVITY' })}
-            className={`p-1.5 hover:bg-white/10 rounded ${state.showActivity ? 'bg-white/20' : ''}`} title="Activité récente">
+            className={`p-1.5 hover:bg-white/10 rounded hidden sm:block ${state.showActivity ? 'bg-white/20' : ''}`} title="Activité récente">
             <Activity size={18} />
           </button>
 
@@ -162,13 +162,13 @@ export default function ToolBar() {
           </button>
 
           <button onClick={() => dispatch({ type: 'TOGGLE_DARK' })}
-            className="p-1.5 hover:bg-white/10 rounded" title="Mode sombre">
+            className="p-1.5 hover:bg-white/10 rounded hidden sm:block" title="Mode sombre">
             {state.darkMode ? <Sun size={18} /> : <Moon size={18} />}
           </button>
 
           {/* Darkboard link */}
           <a href={`https://darkboard.insuffle.com/board/cadrage-${state.spaceId}`} target="_blank" rel="noopener"
-            className="p-1.5 hover:bg-white/10 rounded" title="Ouvrir le Darkboard Insuffle">
+            className="p-1.5 hover:bg-white/10 rounded hidden sm:block" title="Ouvrir le Darkboard Insuffle">
             <QrCode size={18} />
           </a>
 
@@ -186,7 +186,7 @@ export default function ToolBar() {
         </div>
 
         {/* Connection info */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="hidden sm:flex items-center gap-2 shrink-0">
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: state.offline ? '#ef4444' : '#22c55e' }} />
             <span className="text-xs text-gray-400">{state.offline ? 'Hors ligne' : 'Connecté'}</span>

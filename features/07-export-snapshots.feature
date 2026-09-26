@@ -32,7 +32,7 @@ Fonctionnalité: Export et snapshots
     Et le PDF contient les cartes organisées par phase
     Et le PDF contient les axes avec les positionnements
     Et le PDF contient le déroulé avec les durées
-    Et le PDF contient l'agenda détaillé
+    Et le PDF contient le déroulé jour par jour, horaires calculés
     Et le PDF est téléchargeable
 
   # --- Export depuis un espace archivé ---

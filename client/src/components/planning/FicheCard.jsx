@@ -14,6 +14,7 @@ export default function FicheCard({ compact = false }) {
   const actions = usePlanning();
   const [open, setOpen] = useState(!compact || !p.question);
   const ro = actions.archived;
+  const roHeader = ro || ((state.facilitators || []).length > 0 && !state.isFacilitator);
 
   const save = (field) => (value) => actions.setMeta({ [field]: value });
   const saveHeader = (field) => (value) => {
@@ -36,11 +37,12 @@ export default function FicheCard({ compact = false }) {
         </div>
         <AutoField value={p.question} onSave={save('question')} disabled={ro} maxLength={400} multiline rows={1} autoGrow
           placeholder="La question qui embarque le groupe dans une réponse commune ?"
-          className="!text-[20px] sm:!text-[24px] font-display font-bold !h-auto !py-2 !border-transparent hover:!border-[var(--color-border)] focus:!border-[var(--color-accent)]"
-          style={{ color: CHARTES[p.charte]?.main || 'var(--color-text)' }} />
+          className="!text-[20px] sm:!text-[24px] font-display font-bold !py-2 !border-transparent hover:!border-[var(--color-border)] focus:!border-[var(--color-accent)]"
+          style={{ color: state.darkMode ? 'var(--color-text)' : (CHARTES[p.charte]?.main || 'var(--color-text)') }} />
         <div className="w-16 h-1.5 rounded-full mt-1.5 mb-4" style={{ backgroundColor: CHARTES[p.charte]?.accent || '#F2C245' }} />
         <div className="flex gap-3 items-start">
-          <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded mt-2 shrink-0 text-white" style={{ backgroundColor: CHARTES[p.charte]?.main || '#141E37' }}>Intention</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded mt-2 shrink-0"
+            style={state.darkMode ? { backgroundColor: CHARTES[p.charte]?.accent, color: '#141E37' } : { backgroundColor: CHARTES[p.charte]?.main || '#141E37', color: '#fff' }}>Intention</span>
           <AutoField value={p.intention} onSave={save('intention')} disabled={ro} multiline rows={1} autoGrow maxLength={1000}
             placeholder="Ce qu'on aimerait avoir obtenu à la fin. « Que chacun reparte en… »" />
         </div>
@@ -64,10 +66,10 @@ export default function FicheCard({ compact = false }) {
       {open && (
         <div className="px-5 pb-5 pt-1 grid gap-4 animate-fade-in">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div><Label>Client</Label><AutoField value={space.client_name} onSave={saveHeader('client_name')} disabled={ro} placeholder="Nom du client" /></div>
-            <div><Label>Sponsor</Label><AutoField value={space.sponsor} onSave={saveHeader('sponsor')} disabled={ro} placeholder="Le commanditaire" /></div>
-            <div><Label>Animé par</Label><AutoField value={space.facilitator} onSave={saveHeader('facilitator')} disabled={ro} placeholder="Yoan Lureault, Insuffle" /></div>
-            <div><Label>Date</Label><AutoField inputType="date" value={space.session_date} onSave={saveHeader('session_date')} disabled={ro} /></div>
+            <div><Label>Client</Label><AutoField value={space.client_name} onSave={saveHeader('client_name')} disabled={roHeader} placeholder="Nom du client" /></div>
+            <div><Label>Sponsor</Label><AutoField value={space.sponsor} onSave={saveHeader('sponsor')} disabled={roHeader} placeholder="Le commanditaire" /></div>
+            <div><Label>Animé par</Label><AutoField value={space.facilitator} onSave={saveHeader('facilitator')} disabled={roHeader} placeholder="Yoan Lureault, Insuffle" /></div>
+            <div><Label>Date</Label><AutoField inputType="date" value={space.session_date} onSave={saveHeader('session_date')} disabled={roHeader} /></div>
             <div><Label>Lieu</Label><AutoField value={p.lieu} onSave={save('lieu')} disabled={ro} placeholder="Lieu à confirmer" /></div>
             <div><Label>Participants</Label><AutoField value={p.participants} onSave={save('participants')} disabled={ro} placeholder="30" /></div>
             <div><Label>Accueil</Label><AutoField value={p.accueil} onSave={save('accueil')} disabled={ro} placeholder="café d'accueil dès 8h45" /></div>

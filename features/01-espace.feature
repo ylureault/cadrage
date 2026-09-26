@@ -14,7 +14,7 @@ Fonctionnalité: Gestion des espaces de cadrage
     Quand je crée un nouvel espace via l'API POST /api/spaces
     Alors un espace est créé avec un identifiant unique
     Et l'espace contient 4 phases prédéfinies (AVANT, PENDANT Facilitation, PENDANT Risques, CONCLUSION)
-    Et l'espace contient 8 axes de positionnement
+    Et l'espace contient les 8 polarités
     Et l'espace n'est pas archivé
 
   # --- Rejoindre ---
@@ -31,7 +31,7 @@ Fonctionnalité: Gestion des espaces de cadrage
     Alors je reçois une erreur "Pseudo requis"
 
   Scénario: Rejoindre un espace plein (plan gratuit, 5 max)
-    Soit l'espace "abc123" a déjà 5 participants uniques
+    Soit l'espace "abc123" a déjà 80 participants uniques connectés
     Quand j'émets l'événement "join-space" avec le pseudo "Sixième"
     Alors je reçois une erreur de capacité dépassée
 

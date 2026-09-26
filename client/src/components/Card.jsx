@@ -82,9 +82,9 @@ export default function Card({ card }) {
       style={{
         borderLeftColor: card.author_color,
         backgroundColor: 'var(--color-surface)',
-        ...(isSpotlight ? { ringColor: 'var(--color-accent)' } : {}),
-        ...(isHighlighted ? { ringColor: 'var(--color-accent)', backgroundColor: 'rgba(242,194,69,0.05)' } : {}),
-        ...(card.marked_discuss ? { ringColor: 'var(--color-warning)' } : {}),
+        ...(isSpotlight ? { '--tw-ring-color': 'var(--color-accent)' } : {}),
+        ...(isHighlighted ? { '--tw-ring-color': 'var(--color-accent)', backgroundColor: 'rgba(242,194,69,0.05)' } : {}),
+        ...(card.marked_discuss ? { '--tw-ring-color': 'var(--color-warning)' } : {}),
       }}
       role="listitem"
       tabIndex={0}

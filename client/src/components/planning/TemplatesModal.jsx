@@ -49,7 +49,7 @@ export default function TemplatesModal({ onClose }) {
   }
 
   const Card = ({ t, personal }) => (
-    <div className="rounded-card p-4 flex flex-col gap-1.5" style={{ border: '1px solid var(--color-border)', borderTop: `3px solid ${t.charte === 'academie' ? '#6B1963' : '#141E37'}` }}>
+    <div className="rounded-card p-4 flex flex-col gap-1.5" style={{ border: '1px solid var(--color-border)', borderTop: `3px solid ${t.charte === 'academie' ? '#6B1963' : 'var(--color-ink)'}` }}>
       <div className="flex items-start justify-between gap-2">
         <h3 className="font-display font-semibold text-body-sm leading-snug">{t.name}</h3>
         {t.charte === 'academie' && <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold text-white shrink-0" style={{ backgroundColor: '#6B1963' }}>Académie</span>}

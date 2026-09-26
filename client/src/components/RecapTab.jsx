@@ -293,7 +293,7 @@ export default function RecapTab() {
                     {c.seqs.map(s => (
                       <div key={s.id} className="flex gap-3 py-1.5 border-b last:border-b-0" style={{ borderColor: 'var(--color-border)' }}>
                         <span className="text-caption font-semibold w-14 shrink-0 tabular-nums">{hm(s.start)}</span>
-                        <span className="w-1 rounded-full shrink-0" style={{ backgroundColor: s.kind === 'apport' ? '#F2C245' : s.kind === 'pause' ? 'var(--color-border)' : '#141E37' }} />
+                        <span className="w-1 rounded-full shrink-0" style={{ backgroundColor: s.kind === 'apport' ? '#F2C245' : s.kind === 'pause' ? 'var(--color-border)' : 'var(--color-ink)' }} />
                         <div className="min-w-0 flex-1">
                           <p className={`text-body-sm ${s.kind === 'pause' ? 'uppercase tracking-wide text-caption' : 'font-semibold'}`} style={s.kind === 'pause' ? { color: 'var(--color-text-muted)' } : undefined}>
                             {s.title} <span className="font-normal text-caption" style={{ color: 'var(--color-text-muted)' }}>· {fmtDur(s.duration_minutes)}</span>

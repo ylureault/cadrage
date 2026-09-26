@@ -44,17 +44,6 @@ export default {
         'caption': ['12px', { lineHeight: '1.5', fontWeight: '500' }],
         'label': ['11px', { lineHeight: '1.4', fontWeight: '500' }],
       },
-      spacing: {
-        // US-364: Échelle 4px
-        '1': '4px',
-        '2': '8px',
-        '3': '12px',
-        '4': '16px',
-        '5': '24px',
-        '6': '32px',
-        '7': '48px',
-        '8': '64px',
-      },
       borderRadius: {
         // US-365: Coins arrondis uniformes
         'btn': '8px',

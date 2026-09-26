@@ -12,7 +12,7 @@ Fonctionnalité: Interface utilisateur et navigation
     Alors je vois le hero avec le titre et le sous-titre
     Et je vois le bouton pour créer un nouvel espace
     Et je vois le micro-texte "Gratuit · Sans inscription · Prêt en 5 secondes"
-    Et je vois les sections : problème, étapes, 8 axes, fonctionnalités, pour qui, FAQ
+    Et je vois les sections : accroche, signature, le chemin (cadrer, concevoir, envoyer, mesurer), positionnement, modèles, questions
     Et je vois mes espaces récents si j'en ai
 
   Scénario: Créer un espace depuis la page d'accueil

@@ -59,7 +59,7 @@ export default function MethodLibrary({ onClose, targetDayId = undefined }) {
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {list.map(m => (
           <article key={m.key} className="rounded-card p-3.5 flex flex-col gap-1.5 transition-shadow hover:elevation-2"
-            style={{ border: '1px solid var(--color-border)', borderLeft: `4px solid ${m.kind === 'apport' ? '#F2C245' : m.kind === 'pause' ? '#c4c4c4' : '#141E37'}`, backgroundColor: m.kind === 'apport' ? 'rgba(242,194,69,0.06)' : 'var(--color-surface)' }}>
+            style={{ border: '1px solid var(--color-border)', borderLeft: `4px solid ${m.kind === 'apport' ? '#F2C245' : m.kind === 'pause' ? '#c4c4c4' : 'var(--color-ink)'}`, backgroundColor: m.kind === 'apport' ? 'rgba(242,194,69,0.06)' : 'var(--color-surface)' }}>
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-display font-semibold text-body-sm leading-snug">{m.name}</h3>
               <span className="text-caption shrink-0 font-semibold" style={{ color: 'var(--color-text-muted)' }}>{fmtDur(m.duration)}</span>
