@@ -252,3 +252,15 @@ describe('suggestions tirées du cadrage', () => {
     for (const x of all) expect(x.method).toBeTruthy();
   });
 });
+
+describe('sécurité des exports', () => {
+  it('le CSV neutralise les formules', () => {
+    const csv = toCsv({ days: [day], blocks: [seq('z', '=HYPERLINK("http://x")', 15, { position: 0 })] });
+    expect(csv).toContain(`"'=HYPERLINK(""http://x"")"`);
+  });
+  it('le HTML des pages échappe le contenu saisi', () => {
+    const html = buildSheetHtml({ variant: 'planning', space: { client_name: '<img src=x onerror=alert(1)>' }, meta: { question: '<script>alert(1)</script>' }, days: [day], blocks });
+    expect(html).not.toContain('<script>alert(1)</script>');
+    expect(html).not.toContain('<img src=x');
+  });
+});

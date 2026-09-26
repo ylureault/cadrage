@@ -178,3 +178,48 @@ describe('mesure du succès', () => {
     expect(success.state('sp1').votesOpen).toEqual(['avant', 'roti']);
   });
 });
+
+describe('robustesse', () => {
+  it('annuler (remplacer) garde les commentaires des séquences qui reviennent', () => {
+    const db = createDatabase(':memory:');
+    const planning = createPlanningStore(db, gen);
+    db.prepare(`INSERT INTO spaces (id) VALUES ('c1')`).run();
+    const d1 = planning.createDay('c1');
+    const a = planning.insertSequence('c1', d1, null, { title: 'A' });
+    const b = planning.insertSequence('c1', d1, null, { title: 'B' });
+    db.prepare(`INSERT INTO block_comments (id, block_id, space_id, author, author_color, content) VALUES ('k1', ?, 'c1', 'Camille', '#000', 'On raccourcit ?')`).run(a);
+    db.prepare(`INSERT INTO block_comments (id, block_id, space_id, author, author_color, content) VALUES ('k2', ?, 'c1', 'Camille', '#000', 'Et celle-ci ?')`).run(b);
+    const snap = planning.state('c1');
+    snap.blocks = snap.blocks.filter(x => x.id !== b); // B disparaît dans la version restaurée
+    planning.replaceAll('c1', snap);
+    const left = db.prepare(`SELECT id FROM block_comments WHERE space_id = 'c1'`).all().map(r => r.id);
+    expect(left).toEqual(['k1']);
+  });
+
+  it('refuse un planning trop gros au lieu de le tronquer', async () => {
+    const { LIMITS, PlanningLimitError } = await import('../planning.js');
+    const db = createDatabase(':memory:');
+    const planning = createPlanningStore(db, gen);
+    db.prepare(`INSERT INTO spaces (id) VALUES ('c2')`).run();
+    const days = Array.from({ length: LIMITS.days + 1 }, (_, i) => ({ label: `J${i}`, sequences: [] }));
+    expect(() => planning.replaceAll('c2', { days })).toThrow(PlanningLimitError);
+  });
+
+  it('un remplacement par un non-facilitateur ne touche pas à l\'en-tête', () => {
+    const db = createDatabase(':memory:');
+    const planning = createPlanningStore(db, gen);
+    db.prepare(`INSERT INTO spaces (id, client_name) VALUES ('c3', 'Mess Family')`).run();
+    planning.replaceAll('c3', { planning: { client_name: 'Piraté', question: 'Q ?' }, days: [] }, 'Claire', { allowHeader: false });
+    const row = db.prepare(`SELECT client_name, question FROM spaces WHERE id = 'c3'`).get();
+    expect(row).toEqual({ client_name: 'Mess Family', question: 'Q ?' });
+  });
+
+  it('un index absurde ne déplace pas un jour en tête', () => {
+    const db = createDatabase(':memory:');
+    const planning = createPlanningStore(db, gen);
+    db.prepare(`INSERT INTO spaces (id) VALUES ('c4')`).run();
+    const d1 = planning.createDay('c4'); const d2 = planning.createDay('c4');
+    expect(planning.moveDay('c4', d2, "n'importe quoi")).toBe(false);
+    expect(planning.state('c4').agendaDays.map(d => d.id)).toEqual([d1, d2]);
+  });
+});

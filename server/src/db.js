@@ -399,6 +399,14 @@ export function migrateAgendaToPlanning(d) {
       if (slot.block_id) {
         const r = place.run(day.id, pos, slot.duration_minutes, slot.block_id);
         if (r.changes) pos++;
+        else {
+          // Bloc déjà placé ailleurs (planifié deux fois) : on le copie plutôt que de perdre le créneau
+          const src = d.prepare(`SELECT * FROM blocks WHERE id = ?`).get(slot.block_id);
+          if (src) {
+            d.prepare(`INSERT INTO blocks (id, space_id, day_id, title, intention, description, block_type, kind, duration_minutes, format, material, deliverable, position)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(newId(), src.space_id, day.id, src.title, src.intention, src.description, src.block_type, src.kind || 'collectif', slot.duration_minutes, src.format, src.material, src.deliverable, pos++);
+          }
+        }
       } else {
         insertPause.run(newId(), day.space_id, day.id, slot.title || (slot.slot_type === 'buffer' ? 'Marge' : 'Pause'), slot.duration_minutes, pos++);
       }

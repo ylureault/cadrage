@@ -6,6 +6,11 @@ export const KINDS = ['collectif', 'apport', 'pause'];
 export const BLOCK_TYPES = ['ouverture', 'icebreaker', 'production', 'exploration', 'debriefing', 'decision', 'pause', 'cloture', 'transition', 'energizer'];
 export const PLANNING_COLUMNS = ['sequence', 'intention', 'format', 'production'];
 export const CHARTES = ['insuffle', 'academie'];
+// Limites : assez larges pour un parcours de plusieurs semaines, assez strictes pour protéger le serveur
+export const LIMITS = { days: 30, perList: 120, total: 600 };
+export class PlanningLimitError extends Error {}
+const HEADER_KEYS = ['client_name', 'sponsor', 'facilitator', 'session_date', 'session_date_end'];
+const toIndexOrNull = (v) => (typeof v === 'number' && Number.isFinite(v) ? Math.trunc(v) : null);
 export const DIAMOND = ['', 'diverger', 'groan', 'converger'];
 
 export const META_FIELDS = {
@@ -178,6 +183,7 @@ export function createPlanningStore(db, generateId) {
 
   function createDay(spaceId, input = {}, keepId = false) {
     const days = q.days.all(spaceId);
+    if (days.length >= LIMITS.days) throw new PlanningLimitError(`${LIMITS.days} jours au plus par cadrage.`);
     const last = days[days.length - 1];
     const clean = sanitizeDay(input);
     const id = keepId ? reuseId('agenda_days', input.id) : generateId();
@@ -226,6 +232,8 @@ export function createPlanningStore(db, generateId) {
   }
 
   function moveDay(spaceId, dayId, toIndex) {
+    toIndex = toIndexOrNull(toIndex);
+    if (toIndex === null) return false;
     const ids = q.days.all(spaceId).map(d => d.id);
     const from = ids.indexOf(dayId);
     if (from < 0) return false;
@@ -246,6 +254,9 @@ export function createPlanningStore(db, generateId) {
   function insertSequence(spaceId, dayId, index, input, author = '', keepId = false) {
     const clean = sanitizeSequence(input);
     if (dayId && !q.dayOf.get(dayId, spaceId)) dayId = null;
+    if (orderedIds(spaceId, dayId).length >= LIMITS.perList) throw new PlanningLimitError(`${LIMITS.perList} séquences au plus par jour.`);
+    if (db.prepare(`SELECT COUNT(*) AS n FROM blocks WHERE space_id = ?`).get(spaceId).n >= LIMITS.total) throw new PlanningLimitError(`${LIMITS.total} séquences au plus par cadrage.`);
+    index = toIndexOrNull(index);
     const id = keepId ? reuseId('blocks', input.id) : generateId();
     const row = {
       title: '', intention: '', description: '', format: '', production: '', material: '', deliverable: '',
@@ -281,6 +292,7 @@ export function createPlanningStore(db, generateId) {
   }
 
   function moveSequence(spaceId, seqId, toDayId, toIndex) {
+    toIndex = toIndexOrNull(toIndex);
     const seq = q.seqOf.get(seqId, spaceId);
     if (!seq) return false;
     if (toDayId && !q.dayOf.get(toDayId, spaceId)) return false;
@@ -304,18 +316,39 @@ export function createPlanningStore(db, generateId) {
   }
 
   // Remplace tout le planning (annuler, import JSON, modèle en mode remplacement)
-  function replaceAll(spaceId, data, author = '') {
+  // Les commentaires des séquences survivent au remplacement (annuler, import, restauration)
+  // quand la séquence revient avec le même identifiant.
+  function replaceAll(spaceId, data, author = '', { allowHeader = true } = {}) {
+    checkSize(data);
+    const comments = db.prepare(`SELECT * FROM block_comments WHERE space_id = ?`).all(spaceId);
     db.prepare(`DELETE FROM agenda_slots WHERE space_id = ?`).run(spaceId);
     db.prepare(`DELETE FROM blocks WHERE space_id = ?`).run(spaceId);
     db.prepare(`DELETE FROM agenda_days WHERE space_id = ?`).run(spaceId);
-    appendAll(spaceId, data, author, true);
+    appendAll(spaceId, data, author, true, { allowHeader });
+    const alive = new Set(db.prepare(`SELECT id FROM blocks WHERE space_id = ?`).all(spaceId).map(r => r.id));
+    const put = db.prepare(`INSERT OR IGNORE INTO block_comments (id, block_id, space_id, author, author_color, content, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`);
+    for (const c of comments) if (alive.has(c.block_id)) put.run(c.id, c.block_id, c.space_id, c.author, c.author_color, c.content, c.created_at);
+  }
+
+  // Refuse franchement ce qui dépasse, au lieu de tronquer en silence
+  function checkSize(data = {}) {
+    const days = Array.isArray(data.days) ? data.days : Array.isArray(data.agendaDays) ? data.agendaDays : [];
+    if (days.length > LIMITS.days) throw new PlanningLimitError(`${LIMITS.days} jours au plus par cadrage.`);
+    const total = Array.isArray(data.blocks) ? data.blocks.length
+      : days.reduce((a, d) => a + (Array.isArray(d.sequences) ? d.sequences.length : 0), 0) + (Array.isArray(data.bench) ? data.bench.length : 0);
+    if (total > LIMITS.total) throw new PlanningLimitError(`${LIMITS.total} séquences au plus par cadrage.`);
   }
 
   // Ajoute des jours et des séquences (modèle en mode ajout). Accepte deux formes :
   //  - { days: [{ ..., sequences: [...] }], bench: [...] }   (modèles, import)
   //  - { agendaDays: [...], blocks: [...] }                   (état client, annuler)
-  function appendAll(spaceId, data = {}, author = '', keepIds = false) {
-    if (data.planning) updateMeta(spaceId, data.planning);
+  function appendAll(spaceId, data = {}, author = '', keepIds = false, { allowHeader = true } = {}) {
+    checkSize(data);
+    if (data.planning && typeof data.planning === 'object') {
+      const meta = { ...data.planning };
+      if (!allowHeader) HEADER_KEYS.forEach(k => delete meta[k]);
+      updateMeta(spaceId, meta);
+    }
     let days = Array.isArray(data.days) ? data.days : null;
     let bench = Array.isArray(data.bench) ? data.bench : [];
     if (!days && Array.isArray(data.agendaDays)) {
@@ -325,11 +358,12 @@ export function createPlanningStore(db, generateId) {
       const dayIds = new Set(data.agendaDays.map(d => d.id));
       bench = blocks.filter(b => !b.day_id || !dayIds.has(b.day_id));
     }
-    for (const d of (days || []).slice(0, 14)) {
+    for (const d of days || []) {
+      if (!d || typeof d !== 'object') continue;
       const dayId = createDay(spaceId, d, keepIds);
-      for (const seq of (d.sequences || []).slice(0, 80)) insertSequence(spaceId, dayId, null, seq, seq.created_by || author, keepIds);
+      for (const seq of (Array.isArray(d.sequences) ? d.sequences : [])) if (seq && typeof seq === 'object') insertSequence(spaceId, dayId, null, seq, seq.created_by || author, keepIds);
     }
-    for (const seq of bench.slice(0, 80)) insertSequence(spaceId, null, null, seq, seq.created_by || author, keepIds);
+    for (const seq of bench) if (seq && typeof seq === 'object') insertSequence(spaceId, null, null, seq, seq.created_by || author, keepIds);
   }
 
   return {

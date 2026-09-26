@@ -9,7 +9,7 @@ import { fileURLToPath } from 'url';
 import { existsSync } from 'fs';
 import { PHASES, AXES, PARTICIPANT_COLORS } from './canvas-data.js';
 import { createLinkedBoard, getEmbedUrl, checkBoardExists } from './darkboard-service.js';
-import { createPlanningStore, templateToV2 } from './planning.js';
+import { createPlanningStore, templateToV2, PlanningLimitError } from './planning.js';
 import { createSuccessStore } from './success.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -23,7 +23,8 @@ export function createApp(db) {
   const app = express();
   const server = createServer(app);
   const io = new Server(server, {
-    cors: { origin: '*', methods: ['GET', 'POST'] }
+    cors: { origin: '*', methods: ['GET', 'POST'] },
+    maxHttpBufferSize: 1e6,
   });
 
   app.use(compression());
@@ -163,7 +164,12 @@ export function createApp(db) {
   });
 
   app.patch('/api/spaces/:id', (req, res) => {
-    const { client_name, sponsor, facilitator, session_date, session_date_end, welcome_message, archived, hidden_columns } = req.body;
+    // L'archivage se décide dans l'outil, par un facilitateur : l'API ne peut ni archiver ni modifier un cadrage archivé
+    const current = db.prepare(`SELECT archived FROM spaces WHERE id = ? AND deleted = 0`).get(req.params.id);
+    if (!current) return res.status(404).json({ error: 'Espace introuvable' });
+    if (current.archived) return res.status(403).json({ error: 'Espace archivé : lecture seule' });
+    const { client_name, sponsor, facilitator, session_date, session_date_end, welcome_message, hidden_columns } = req.body || {};
+    const archived = undefined;
     const fields = [];
     const values = [];
     if (client_name !== undefined) { fields.push('client_name = ?'); values.push(client_name); }
@@ -568,6 +574,19 @@ export function createApp(db) {
   const spaceSilent = new Map(); // spaceId -> { columnKey: true } : colonnes en mode silencieux, pour les arrivants
 
   io.on('connection', (socket) => {
+    // Bouclier : un message malformé ne doit jamais faire tomber le serveur.
+    // Le premier argument est toujours un objet (sinon {}), et toute erreur est rattrapée.
+    const rawOn = socket.on.bind(socket);
+    socket.on = (event, handler) => rawOn(event, (payload, ...rest) => {
+      const safe = payload && typeof payload === 'object' && !Array.isArray(payload) ? payload : {};
+      try {
+        const r = handler(event === 'disconnect' ? payload : safe, ...rest);
+        if (r && typeof r.catch === 'function') r.catch(e => console.error(`socket ${event}:`, e.message));
+      } catch (e) {
+        console.error(`socket ${event}:`, e.message);
+      }
+    });
+
     let currentSpace = null;
     let currentPseudo = null;
     let currentColor = null;
@@ -621,7 +640,8 @@ export function createApp(db) {
       if (!canAdmin(currentSpace, currentPseudo)) return;
       const space = db.prepare(`SELECT archived FROM spaces WHERE id = ?`).get(currentSpace);
       if (space?.archived) return;
-      const { field, value } = data;
+      const { field } = data;
+      const value = typeof data.value === 'string' ? data.value.slice(0, 200) : '';
       const allowed = ['client_name', 'sponsor', 'facilitator', 'session_date', 'session_date_end'];
       if (!allowed.includes(field)) return;
       db.prepare(`UPDATE spaces SET ${field} = ?, updated_at = datetime('now') WHERE id = ?`).run(value, currentSpace);
@@ -745,6 +765,7 @@ export function createApp(db) {
 
     socket.on('react', ({ cardId, emoji }) => {
       if (!currentSpace) return;
+      if (!['👍', '👎', '❓', '💡', '🔥'].includes(emoji)) return;
       if (isArchived(currentSpace)) return;
       const card = db.prepare(`SELECT reactions FROM cards WHERE id = ? AND space_id = ?`).get(cardId, currentSpace);
       if (!card) return;
@@ -864,22 +885,24 @@ export function createApp(db) {
     socket.on('start-timer', ({ duration }) => {
       if (!currentSpace) return;
       if (!canAdmin(currentSpace, currentPseudo)) return;
-      if (!duration || duration < 1 || duration > 3600) return;
-      const existing = spaceTimers.get(currentSpace);
+      duration = Math.round(Number(duration));
+      if (!Number.isFinite(duration) || duration < 1 || duration > 3600) return;
+      const room = currentSpace; // la salle est fixée au lancement, même si ce socket change d'espace ensuite
+      const existing = spaceTimers.get(room);
       if (existing?.interval) clearInterval(existing.interval);
 
       const timer = { duration, remaining: duration };
       timer.interval = setInterval(() => {
         timer.remaining--;
-        io.to(currentSpace).emit('timer-update', { remaining: timer.remaining, duration: timer.duration });
+        io.to(room).emit('timer-update', { remaining: timer.remaining, duration: timer.duration });
         if (timer.remaining <= 0) {
           clearInterval(timer.interval);
-          spaceTimers.delete(currentSpace);
-          io.to(currentSpace).emit('timer-ended');
+          spaceTimers.delete(room);
+          io.to(room).emit('timer-ended');
         }
       }, 1000);
-      spaceTimers.set(currentSpace, timer);
-      io.to(currentSpace).emit('timer-update', { remaining: duration, duration });
+      spaceTimers.set(room, timer);
+      io.to(room).emit('timer-update', { remaining: duration, duration });
     });
 
     socket.on('stop-timer', () => {
@@ -961,6 +984,7 @@ export function createApp(db) {
           if (label) logActivity(currentSpace, currentPseudo, label, '', '');
           broadcastPlanning();
         } catch (e) {
+          if (e instanceof PlanningLimitError) { socket.emit('error', { message: e.message }); return; }
           console.error('planning error:', e);
           socket.emit('error', { message: 'Modification du planning impossible.' });
         }
@@ -992,7 +1016,7 @@ export function createApp(db) {
     socket.on('seq:move', planningOp(({ id, dayId = null, index = null }) => planning.moveSequence(currentSpace, id, dayId, index)));
     socket.on('seq:duplicate', planningOp(({ id }) => planning.duplicateSequence(currentSpace, id)));
 
-    socket.on('planning:replace', planningOp(({ data }) => planning.replaceAll(currentSpace, data || {}, currentPseudo), 'replace-planning'));
+    socket.on('planning:replace', planningOp(({ data }) => planning.replaceAll(currentSpace, data && typeof data === 'object' ? data : {}, currentPseudo, { allowHeader: canAdmin(currentSpace, currentPseudo) }), 'replace-planning'));
 
     socket.on('planning:template-apply', planningOp(({ templateId, mode = 'replace' }) => {
       const tpl = db.prepare(`SELECT * FROM deroulement_templates WHERE id = ?`).get(templateId);
@@ -1002,7 +1026,7 @@ export function createApp(db) {
         const { planning: _meta, ...rest } = data;
         planning.appendAll(currentSpace, rest, currentPseudo);
       } else {
-        planning.replaceAll(currentSpace, data, currentPseudo);
+        planning.replaceAll(currentSpace, data, currentPseudo, { allowHeader: canAdmin(currentSpace, currentPseudo) });
       }
     }, 'apply-template'));
 
@@ -1018,6 +1042,8 @@ export function createApp(db) {
       const st = planning.state(currentSpace);
       const label = String(name || 'Version').slice(0, 120);
       db.prepare(`INSERT INTO snapshots (id, space_id, name, data) VALUES (?, ?, ?, ?)`).run(generateId(), currentSpace, `planning:${label}`, JSON.stringify(st));
+      // On garde les 50 versions les plus récentes
+      db.prepare(`DELETE FROM snapshots WHERE space_id = ? AND name LIKE 'planning:%' AND id NOT IN (SELECT id FROM snapshots WHERE space_id = ? AND name LIKE 'planning:%' ORDER BY created_at DESC, rowid DESC LIMIT 50)`).run(currentSpace, currentSpace);
       logActivity(currentSpace, currentPseudo, 'save-version', label, '');
       const rows = db.prepare(`SELECT id, name, created_at FROM snapshots WHERE space_id = ? AND name LIKE 'planning:%' ORDER BY created_at DESC LIMIT 50`).all(currentSpace);
       io.to(currentSpace).emit('planning:versions', rows.map(r => ({ ...r, name: r.name.slice(9) })));
@@ -1051,7 +1077,9 @@ export function createApp(db) {
 
     socket.on('planning:template-delete', ({ templateId, ids }) => {
       if (!currentSpace) return;
-      db.prepare(`DELETE FROM deroulement_templates WHERE id = ? AND is_system = 0`).run(templateId);
+      if (isArchived(currentSpace)) return;
+      // Un modèle se supprime depuis son cadrage d'origine, ou par la personne qui l'a créé
+      db.prepare(`DELETE FROM deroulement_templates WHERE id = ? AND is_system = 0 AND (space_id = ? OR created_by = ?)`).run(templateId, currentSpace, currentPseudo);
       socket.emit('templates-list', listTemplates(currentSpace, ids));
     });
 
@@ -1109,8 +1137,13 @@ export function createApp(db) {
 
     // ===================== PRÉSENCE EN DIRECT =====================
     // Où est chacun (vue, séquence ouverte, champ en cours d'écriture) et curseurs relayés sans stockage.
+    let lastPresence = 0;
+    let lastCursor = 0;
     socket.on('presence', ({ view, target, field } = {}) => {
       if (!currentSpace) return;
+      const now = Date.now();
+      if (now - lastPresence < 80) return;
+      lastPresence = now;
       const me = spaceParticipants.get(currentSpace)?.get(socket.id);
       if (!me) return;
       me.view = typeof view === 'string' ? view.slice(0, 40) : me.view;
@@ -1130,6 +1163,9 @@ export function createApp(db) {
 
     socket.on('cursor', ({ x, y, view } = {}) => {
       if (!currentSpace || !currentPseudo) return;
+      const now = Date.now();
+      if (now - lastCursor < 40) return; // 25 positions par seconde au plus
+      lastCursor = now;
       if (typeof x !== 'number' || typeof y !== 'number' || !Number.isFinite(x) || !Number.isFinite(y)) return;
       socket.volatile.to(currentSpace).emit('cursor', {
         id: socket.id, pseudo: currentPseudo, color: currentColor,

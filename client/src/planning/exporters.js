@@ -99,7 +99,12 @@ export function toPlainText({ space, meta, days, blocks }) {
   return t;
 }
 
-const csvCell = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+// Une cellule qui commence par = + - @ serait lue comme une formule par Excel : on la neutralise
+const csvCell = (v) => {
+  let t = String(v ?? '');
+  if (/^[=+\-@\t\r]/.test(t)) t = `'${t}`;
+  return `"${t.replace(/"/g, '""')}"`;
+};
 
 export function toCsv({ days, blocks }) {
   const rows = [['Jour', 'Date', 'Début', 'Fin', 'Durée (min)', 'Type', 'Séquence', 'Intention', 'Format', 'Ce qui en sort', 'Consignes', 'Matériel', 'Rôles', 'Point d\'attention'].map(csvCell).join(';')];

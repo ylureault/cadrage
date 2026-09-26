@@ -197,6 +197,8 @@ function reducer(state, action) {
         blocks: action.blocks || state.blocks,
         space: state.space && action.planning ? { ...state.space, ...pickHeader(action.planning) } : state.space,
         liveFlash,
+        // Quelqu'un d'autre a modifié : annuler rejouerait une photo périmée et effacerait son travail
+        ...(action.by && action.by !== state.pseudo ? { planningHistory: [], planningFuture: [] } : {}),
       };
     }
     case 'PUSH_PLANNING_HISTORY': return {

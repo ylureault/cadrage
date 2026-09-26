@@ -115,3 +115,24 @@ describe('temps réel', () => {
     expect((await err).message).toMatch(/archivé/);
   });
 });
+
+describe('messages malformés', () => {
+  it('le serveur survit aux messages absurdes', async () => {
+    const id = await newSpace();
+    const a = await connect(id, 'Yoan');
+    a.emit('add-block-comment');
+    a.emit('cursor', null);
+    a.emit('update-header', { field: 'client_name', value: {} });
+    a.emit('react', { cardId: 'x', emoji: '__proto__' });
+    a.emit('planning:replace', { data: 'pas un objet' });
+    a.emit('seq:move', { id: 'inconnu', index: 'abc' });
+    a.emit('join-space');
+    await new Promise(r => setTimeout(r, 200));
+    // le serveur répond toujours
+    const res = await fetch(`${url}/api/spaces/${id}`);
+    expect(res.status).toBe(200);
+    const created = next(a, 'planning-sync');
+    a.emit('day:create', {});
+    expect((await created).agendaDays).toHaveLength(1);
+  });
+});

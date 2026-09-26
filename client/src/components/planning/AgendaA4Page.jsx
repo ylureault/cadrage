@@ -42,7 +42,7 @@ export function SheetFrame({ html, pageWidthPx, onClickSeq, onFit, minHeight = 4
   return (
     <div ref={wrap} className="w-full overflow-hidden" style={{ height: height * scale }}>
       {/* zoom plutôt que transform : le texte est remis en page à la bonne taille, donc net */}
-      <iframe ref={frame} title="Aperçu A4" srcDoc={html} sandbox="allow-scripts allow-same-origin"
+      <iframe ref={frame} title="Aperçu A4" srcDoc={html} sandbox="allow-scripts allow-modals"
         style={{ width: pageWidthPx + 24, height, border: 0, zoom: scale, display: 'block', background: 'transparent' }} />
     </div>
   );

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store.jsx';
 import { Avatar } from './Avatars.jsx';
 
@@ -7,6 +7,8 @@ export default function LiveTicker({ onOpen }) {
   const { state } = useStore();
   const [items, setItems] = useState([]);
   const flash = state.liveFlash;
+  const timers = useRef([]);
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
   useEffect(() => {
     if (!flash?.n) return;
@@ -16,8 +18,8 @@ export default function LiveTicker({ onOpen }) {
     const text = ids.length > 1 ? `a modifié ${ids.length} séquences` : first ? `a modifié « ${first.title} »` : 'a modifié le déroulé';
     const item = { key: flash.n, p, text, seqId: ids.length === 1 ? ids[0] : null };
     setItems(prev => [...prev.filter(i => i.p.pseudo !== p.pseudo), item].slice(-3));
-    const t = setTimeout(() => setItems(prev => prev.filter(i => i.key !== item.key)), 4500);
-    return () => clearTimeout(t);
+    // Chaque annonce a son propre minuteur : une nouvelle ne prolonge pas la précédente
+    timers.current.push(setTimeout(() => setItems(prev => prev.filter(i => i.key !== item.key)), 4500));
   }, [flash?.n]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!items.length) return null;
