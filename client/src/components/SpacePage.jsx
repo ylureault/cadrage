@@ -74,7 +74,7 @@ export default function SpacePage() {
   function handleCommandAction(actionId) {
     switch (actionId) {
       case 'export': dispatch({ type: 'TOGGLE_EXPORT' }); break;
-      case 'axes': dispatch({ type: 'TOGGLE_AXES' }); break;
+      case 'axes': setView('phase'); setTimeout(() => document.querySelector('[data-section="polarites"]')?.scrollIntoView({ behavior: 'smooth' }), 100); break;
       case 'activity': dispatch({ type: 'TOGGLE_ACTIVITY' }); break;
       case 'facilitator': socket.emit('set-facilitator', { pseudo: state.pseudo, add: true }); break;
       case 'help': setShowCommandPalette(true); break;

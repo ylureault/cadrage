@@ -1,13 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { useStore } from '../store.jsx';
-import { Search, Plus, Download, Sliders, Activity, Settings, HelpCircle } from 'lucide-react';
+import { Search, Download, Sliders, Activity, Settings, HelpCircle, LayoutList, CalendarRange, Target, Compass } from 'lucide-react';
 
 /* US-411: Command Palette (Cmd+K) */
 
 const ACTIONS = [
-  { id: 'new-card', label: 'Créer une carte', icon: Plus, shortcut: 'N' },
-  { id: 'export', label: 'Exporter en PDF', icon: Download, shortcut: 'E' },
-  { id: 'axes', label: 'Ouvrir les 8 axes', icon: Sliders },
+  { id: 'conception', label: 'Concevoir le déroulé', icon: LayoutList },
+  { id: 'agenda', label: 'Agenda A4 et exports', icon: CalendarRange },
+  { id: 'succes', label: 'Mesure du succès', icon: Target },
+  { id: 'reperes', label: 'Repères Insuffle', icon: Compass },
+  { id: 'export', label: 'Exporter', icon: Download, shortcut: 'E' },
+  { id: 'axes', label: 'Les 8 polarités', icon: Sliders },
   { id: 'activity', label: 'Activité récente', icon: Activity },
   { id: 'facilitator', label: 'Mode facilitateur', icon: Settings, shortcut: 'F' },
   { id: 'help', label: 'Aide et raccourcis', icon: HelpCircle, shortcut: '?' },

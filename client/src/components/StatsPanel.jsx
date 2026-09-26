@@ -55,7 +55,7 @@ export default function StatsPanel() {
                   <div className="flex gap-4 text-caption" style={{ color: 'var(--color-text-muted)' }}>
                     <span><strong style={{ color: 'var(--color-text)' }}>{s.cards}</strong> carte{s.cards > 1 ? 's' : ''}</span>
                     <span><strong style={{ color: 'var(--color-text)' }}>{s.comments}</strong> commentaire{s.comments > 1 ? 's' : ''}</span>
-                    <span><strong style={{ color: 'var(--color-text)' }}>{s.axes}</strong>/8 axes</span>
+                    <span><strong style={{ color: 'var(--color-text)' }}>{s.axes}</strong>/8 polarités</span>
                   </div>
                 </div>
               );
