@@ -127,6 +127,20 @@ export default function LandingPage() {
     }
   }
 
+  // La démo : une copie à soi, modifiable, avec des données qui montrent tout
+  async function openDemo() {
+    setCreating('demo');
+    try {
+      const { id } = await api.createDemo();
+      rememberSpace(id, 'NovaPulse (démo)');
+      navigate(`/${id}#conception`);
+    } catch {
+      navigate('/6AG_demo');
+    } finally {
+      setCreating(null);
+    }
+  }
+
   let recentSpaces = [];
   try { recentSpaces = JSON.parse(localStorage.getItem('recentSpaces') || '[]'); } catch (_) { /* stockage indisponible */ }
   const mail = `mailto:${CONTACT.email}?subject=${encodeURIComponent('Échange sur un temps collectif')}`;
@@ -143,7 +157,7 @@ export default function LandingPage() {
             {[['#methode', 'La méthode'], ['#direct', 'Le direct'], ['#modeles', 'Les modèles'], ['#insuffle', 'Insuffle']].map(([h, l]) => (
               <a key={h} href={h} className="hidden lg:inline px-3 py-2 rounded-lg text-white/75 hover:text-white hover:bg-white/5">{l}</a>
             ))}
-            <button onClick={() => navigate('/6AG_demo')} className="px-3 py-2 rounded-lg text-white/90 hover:bg-white/10 font-medium">Démo</button>
+            <button onClick={openDemo} disabled={!!creating} className="px-3 py-2 rounded-lg text-white/90 hover:bg-white/10 font-medium">Démo</button>
             <button onClick={() => create()} disabled={!!creating} className="btn-primary !h-9">Créer un cadrage</button>
           </nav>
         </div>
@@ -169,7 +183,7 @@ export default function LandingPage() {
               <button onClick={() => create()} disabled={!!creating} className="btn-primary !h-12 !px-6 !text-[15px]">
                 {creating === 'blank' ? <Loader2 size={18} className="animate-spin" /> : null} Créer un cadrage <ArrowRight size={18} />
               </button>
-              <button onClick={() => navigate('/6AG_demo')} className="h-12 px-6 rounded-[10px] font-semibold text-[15px] text-white hover:bg-white/10" style={{ boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.2)' }}>Voir un cadrage complet</button>
+              <button onClick={openDemo} disabled={!!creating} className="h-12 px-6 rounded-[10px] font-semibold text-[15px] text-white hover:bg-white/10 inline-flex items-center gap-2" style={{ boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.2)' }}>{creating === 'demo' ? <Loader2 size={17} className="animate-spin" /> : null} Essayer un cadrage complet</button>
             </div>
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-white/60">
               {['Sans compte', 'Jusqu\'à 80 personnes en direct', 'PDF aux couleurs Insuffle'].map(t => <span key={t} className="flex items-center gap-1.5"><Check size={14} style={{ color: '#F2C245' }} />{t}</span>)}

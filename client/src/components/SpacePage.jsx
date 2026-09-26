@@ -285,9 +285,15 @@ export default function SpacePage() {
 
       {/* Archived banner */}
       {!!state.archived && (
-        <div className="px-4 py-1.5 text-center text-[12px] font-semibold tracking-wide no-print" role="status"
+        <div className="px-4 py-1.5 text-center text-[12px] font-semibold tracking-wide no-print flex items-center justify-center gap-3" role="status"
           style={{ backgroundColor: 'var(--color-surface-sunken)', color: 'var(--color-text-muted)', borderBottom: '1px solid var(--color-border)' }}>
-          🔒 Cadrage archivé : lecture seule
+          {spaceId === '6AG_demo' ? (
+            <>
+              <span>Démo en lecture seule.</span>
+              <button onClick={async () => { try { const { id } = await api.createDemo(); window.location.href = `/${id}#${view === 'phase' ? '' : view}`; } catch { /* réseau */ } }}
+                className="px-2.5 py-0.5 rounded-md font-bold" style={{ backgroundColor: '#F2C245', color: '#141E37' }}>Créer ma copie pour tout essayer</button>
+            </>
+          ) : '🔒 Cadrage archivé : lecture seule'}
         </div>
       )}
 

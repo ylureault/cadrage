@@ -67,3 +67,4 @@ Le système est recettable si et seulement si :
 | Repères Insuffle (Boussole 4C, carte de la complexité, questions génératives, double diamant) | [11-reperes](../features/11-reperes.feature) |
 | Le direct et le mode salle (présence, curseurs, commentaires, projection, étape suivie par les téléphones) | [12-direct-et-salle](../features/12-direct-et-salle.feature) |
 | Préparation guidée (premiers pas, jauge, méthodes suggérées) | [13-preparation](../features/13-preparation.feature) |
+| La démo (copie modifiable, données complètes, dates du jour) | [14-demo](../features/14-demo.feature) |

@@ -17,6 +17,7 @@ export const api = {
   getStructure: () => request('/api/canvas-structure'),
   createSpace: (body = {}) => request('/api/spaces', { method: 'POST', body }),
   listTemplates: () => request('/api/templates'),
+  createDemo: () => request('/api/demo', { method: 'POST' }),
   getSpace: (id) => request(`/api/spaces/${id}`),
   updateSpace: (id, data) => request(`/api/spaces/${id}`, { method: 'PATCH', body: data }),
   deleteSpace: (id) => request(`/api/spaces/${id}`, { method: 'DELETE' }),

@@ -117,7 +117,7 @@ npm run install:all   # installe la racine, le serveur et le client
 npm run dev           # serveur sur :3001, client sur :3000
 ```
 
-Ouvrez [http://localhost:3000](http://localhost:3000). La démo est à [http://localhost:3000/6AG_demo](http://localhost:3000/6AG_demo).
+Ouvrez [http://localhost:3000](http://localhost:3000) et cliquez sur **Essayer un cadrage complet** : vous obtenez votre propre copie de la démo NovaPulse, modifiable, datée d'aujourd'hui, où chaque fonction est remplie. La démo de référence, en lecture seule, est à [/6AG_demo](http://localhost:3000/6AG_demo).
 
 | Commande | Ce qu'elle fait |
 |---|---|

@@ -12,6 +12,7 @@ import { PHASES, AXES, PARTICIPANT_COLORS } from './canvas-data.js';
 import { createLinkedBoard, getEmbedUrl, checkBoardExists } from './darkboard-service.js';
 import { createPlanningStore, templateToV2, PlanningLimitError } from './planning.js';
 import { createSuccessStore } from './success.js';
+import { buildDemo } from './demo.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -274,6 +275,13 @@ export function createApp(db) {
     const tpl = db.prepare(`SELECT * FROM deroulement_templates WHERE id = ?`).get(req.params.id);
     if (!tpl) return res.status(404).json({ error: 'Modèle introuvable' });
     res.json({ ...tpl, data: templateToV2(JSON.parse(tpl.data)) });
+  });
+
+  // Une copie modifiable de la démo, pour tout essayer sans toucher à la référence
+  app.post('/api/demo', (req, res) => {
+    const id = generateId();
+    db.transaction(() => buildDemo(db, id, { archived: false, gen: () => nanoid(10) }))();
+    res.status(201).json({ id });
   });
 
   // Qui est là, avant même de rejoindre (écran d'arrivée)

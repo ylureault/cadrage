@@ -55,6 +55,10 @@ h1::after { content: ''; display: block; width: 18mm; height: 1.3mm; background:
 .blk.apport .in { border-left-color: ${P.accent}; background: ${P.soft} }
 .blk.pause .in { display: flex; align-items: center; border: none; background: repeating-linear-gradient(135deg, #F3F3F3 0 2mm, #FAFAFA 2mm 4mm); color: ${P.grey}; font-size: 7pt; letter-spacing: .1em; text-transform: uppercase }
 .blk.over .in { box-shadow: inset 0 0 0 .5mm #ef4444 }
+.blk.tight .d { display: none }
+.blk.compact .in { padding-top: .3mm; padding-bottom: .3mm; align-items: center }
+.blk.compact .in > div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0 }
+.blk.compact .in .t { white-space: nowrap }
 .t { font-weight: 700; color: ${P.main} } .d { display: block; font-size: 6pt; color: ${P.grey}; font-weight: 400 }
 .p { font-weight: 600 }
 .box { margin-top: 4mm; background: ${P.soft}; border-left: 1.4mm solid ${P.accent}; border-radius: 1.2mm; padding: 2.6mm 3.5mm }
@@ -329,7 +333,13 @@ const FIT_JS = `<script>(function(){
   function check(){ over = []; document.querySelectorAll('.blk').forEach(function(b){ var i = b.querySelector('.in'); b.classList.remove('over');
     if (i && i.scrollHeight > i.clientHeight + 1) over.push(b); }); return over.length; }
   root.style.setProperty('--fs', fs + 'pt');
+  document.querySelectorAll('.blk').forEach(function(b){ b.classList.remove('tight', 'compact'); });
   while (check() && fs > 7.0) { fs = Math.round((fs - 0.2) * 10) / 10; root.style.setProperty('--fs', fs + 'pt'); }
+  // Blocs trop courts (journées longues) : on retire l'horaire (déjà sur l'axe), puis on passe sur une ligne
+  over.forEach(function(b){ b.classList.add('tight'); });
+  check();
+  over.forEach(function(b){ b.classList.add('compact'); });
+  check();
   over.forEach(function(b){ b.classList.add('over'); });
   var msg = { type: 'sheet-fit', fs: fs, overflow: over.map(function(b){ return b.getAttribute('data-seq'); }), height: document.body.scrollHeight };
   if (window.parent && window.parent !== window) window.parent.postMessage(msg, '*');

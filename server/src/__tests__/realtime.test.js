@@ -172,3 +172,25 @@ describe('clé de facilitateur', () => {
     expect((await opened).votesOpen).toEqual(['avant']);
   });
 });
+
+describe('démo', () => {
+  it('« Essayer » crée une copie complète et modifiable, datée d\'aujourd\'hui', async () => {
+    const res = await fetch(`${url}/api/demo`, { method: 'POST' });
+    expect(res.status).toBe(201);
+    const { id } = await res.json();
+    const sp = await (await fetch(`${url}/api/spaces/${id}`)).json();
+    expect(sp.space.archived).toBe(false);
+    expect(sp.space.facilitator_ids).toEqual([]);
+    expect(sp.cards.length).toBeGreaterThan(30);
+    expect(sp.agendaDays).toHaveLength(2);
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    expect(sp.agendaDays[0].date).toBe(today);
+    expect(sp.blockComments.length).toBeGreaterThan(0);
+    expect(sp.success.votes.length).toBe(36);
+    expect(sp.success.review.length).toBe(9);
+    // la référence, elle, reste en lecture seule
+    const ref = await (await fetch(`${url}/api/spaces/6AG_demo`)).json();
+    expect(ref.space.archived).toBe(true);
+  });
+});
