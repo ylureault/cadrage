@@ -7,6 +7,7 @@ import { successSummary, printSheet, buildSheetHtml, sheetFileName } from '../..
 import { successToCsv } from '../../planning/exporters.js';
 import { downloadFile, formatDate, sortByPos } from '../../planning/utils.js';
 import { AutoField } from '../ui/Overlay.jsx';
+import { InsuffleNudge } from '../promo/Insuffle.jsx';
 
 const f1 = (x) => (x == null ? '·' : x.toFixed(1).replace('.', ','));
 
@@ -99,7 +100,7 @@ export function VoteCard({ kind, compact = false }) {
 }
 
 export default function SuccessPage() {
-  const { state } = useStore();
+  const { state, dispatch } = useStore();
   const S = state.success;
   const summary = useMemo(() => successSummary(S), [S]);
   const ro = !!state.archived;
@@ -378,6 +379,9 @@ export default function SuccessPage() {
           </div>
         </section>
       )}
+      <InsuffleNudge id="suivi" title="Le succès se joue après le séminaire." cta="Parler du suivi" onMore={() => dispatch({ type: 'TOGGLE_INSUFFLE' })}>
+        Insuffle porte le suivi à J+15 et J+90, et accompagne les transformations dans la durée avec le cycle Futur Désiré® : Observer, Désirer, Concevoir, Transformer.
+      </InsuffleNudge>
     </div>
   );
 }

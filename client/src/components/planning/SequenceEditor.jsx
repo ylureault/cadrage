@@ -6,6 +6,8 @@ import { KINDS, BLOCK_TYPES, DIAMOND } from '../../planning/constants.js';
 import { METHODS_BY_KEY } from '../../planning/methods.js';
 import { computeDay, hm, fmtDur, LONG_DASH } from '../../planning/utils.js';
 import { Drawer, Label, Segmented } from '../ui/Overlay.jsx';
+import { updatePresence, typingProps } from '../../live/presence.js';
+import { HereBadge } from '../../live/Avatars.jsx';
 
 const DURATIONS = [5, 10, 15, 20, 30, 45, 60, 75, 90, 105, 120, 150, 180, 210, 240];
 
@@ -23,6 +25,13 @@ export default function SequenceEditor({ seqId, onClose }) {
     if (!seq) return;
     if (!dirty) setF({ ...seq });
   }, [seq]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Présence : les autres voient que j'ai ouvert cette séquence
+  useEffect(() => {
+    updatePresence({ target: seqId, field: null });
+    return () => updatePresence({ target: null, field: null });
+  }, [seqId]);
+  const here = (state.participants || []).filter(p => p.target === seqId && p.pseudo !== state.pseudo);
 
   const timing = useMemo(() => {
     if (!seq?.day_id) return null;
@@ -64,7 +73,13 @@ export default function SequenceEditor({ seqId, onClose }) {
         <button onClick={onClose} className="btn-ghost text-body-sm">{ro ? 'Fermer' : 'Annuler'}</button>
         {!ro && <button onClick={() => save(true)} className="btn-primary text-body-sm">Enregistrer</button>}
       </>}>
-      <form className="grid gap-5" onSubmit={e => { e.preventDefault(); save(true); }}
+      {here.length > 0 && (
+        <div className="mb-4 flex items-center gap-2 text-caption rounded-lg px-3 py-2" style={{ backgroundColor: `${here[0].color}14` }}>
+          <HereBadge people={here} />
+          <span style={{ color: 'var(--color-text-muted)' }}>{here.some(p => p.field) ? 'Vos modifications se fusionnent à l\'enregistrement.' : 'regarde aussi cette séquence.'}</span>
+        </div>
+      )}
+      <form className="grid gap-5" {...typingProps(seqId, 'seq')} onSubmit={e => { e.preventDefault(); save(true); }}
         onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) save(true); }}>
         {timing && (
           <div className="flex items-center justify-between text-body-sm rounded-btn px-3 py-2" style={{ backgroundColor: 'var(--color-surface-alt)' }}>

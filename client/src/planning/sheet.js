@@ -183,7 +183,7 @@ function docWrap(content, footer) {
 }
 
 function docFooter(P, label) {
-  return `<div class="doc-foot"><span>${E(label)}</span>${logoHtml(P)}</div>`;
+  return `<div class="doc-foot"><span>${E(label)} · outil de cadrage offert par ${E(P.entite)} · insuffle.com</span>${logoHtml(P)}</div>`;
 }
 
 function animateurBody({ space, meta, days, blocks, P }) {

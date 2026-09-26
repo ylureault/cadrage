@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle, ArrowDown, ArrowUp, BookOpen, CalendarPlus, CheckCircle2, ChevronDown, ChevronRight, Coffee,
-  Copy, Edit3, FileText, GripVertical, Info, LayoutTemplate, Lightbulb, Minus, Play, Plus, Redo2, Trash2, Undo2, Utensils, Wand2,
+  CalendarDays, Copy, Edit3, FileText, GripVertical, Info, LayoutTemplate, Lightbulb, Minus, Play, Plus, Redo2, Trash2, Undo2, Utensils, Wand2,
 } from 'lucide-react';
 import { useStore } from '../../store.jsx';
 import socket from '../../socket.js';
@@ -13,24 +13,41 @@ import FicheCard from './FicheCard.jsx';
 import SequenceEditor from './SequenceEditor.jsx';
 import MethodLibrary from './MethodLibrary.jsx';
 import TemplatesModal from './TemplatesModal.jsx';
+import { HereBadge } from '../../live/Avatars.jsx';
+import { InsuffleNudge } from '../promo/Insuffle.jsx';
+import { RELAIS_SITUATION } from '../../planning/insuffle.js';
 
 const DRAG_TYPE = 'application/x-insuffle-seq';
 
 // ================= Ligne de séquence =================
 function SequenceRow({ seq, index, onEdit, onDropAt, dayId, isFirst, isLast, highlight, live }) {
   const actions = usePlanning();
+  const { state } = useStore();
   const [over, setOver] = useState(null); // 'before' | 'after'
+  const ref = useRef(null);
   const ro = actions.archived;
   const kind = KINDS[seq.kind] ? seq.kind : 'collectif';
   const bt = BLOCK_TYPES[seq.block_type];
   const step = 15;
+  const here = (state.participants || []).filter(p => p.target === seq.id && p.pseudo !== state.pseudo);
+  const flashColor = state.liveFlash?.ids?.[seq.id];
 
-  const leftColor = kind === 'apport' ? '#F2C245' : kind === 'pause' ? 'transparent' : 'var(--color-primary)';
-  const bg = kind === 'apport' ? 'rgba(242,194,69,0.10)' : kind === 'pause'
-    ? 'repeating-linear-gradient(135deg, var(--color-surface-alt) 0 8px, var(--color-surface) 8px 16px)' : 'var(--color-surface)';
+  // Rejoue l'illumination à chaque modification venue d'un autre participant
+  useEffect(() => {
+    if (!flashColor || !ref.current) return;
+    const el = ref.current;
+    el.style.setProperty('--flash', flashColor);
+    el.classList.remove('live-flash');
+    void el.offsetWidth;
+    el.classList.add('live-flash');
+  }, [state.liveFlash?.n, flashColor]);
+
+  const bar = kind === 'apport' ? '#F2C245' : kind === 'pause' ? 'transparent' : 'var(--color-ink)';
+  const isPause = kind === 'pause';
 
   return (
     <div
+      ref={ref}
       draggable={!ro}
       onDragStart={e => { e.dataTransfer.setData(DRAG_TYPE, seq.id); e.dataTransfer.setData('text/plain', seq.title); e.dataTransfer.effectAllowed = 'move'; }}
       onDragOver={e => {
@@ -49,64 +66,71 @@ function SequenceRow({ seq, index, onEdit, onDropAt, dayId, isFirst, isLast, hig
         e.stopPropagation();
         onDropAt(id, pos === 'after' ? index + 1 : index);
       }}
-      className={`group relative flex items-stretch rounded-card transition-shadow ${kind === 'pause' ? '' : 'elevation-1 hover:elevation-2'} ${highlight ? 'ring-2 ring-red-400' : ''} ${live ? 'ring-2 ring-emerald-500' : ''}`}
-      style={{ background: bg, borderLeft: `5px solid ${leftColor}`, border: kind === 'pause' ? '1px dashed var(--color-border)' : undefined, borderLeftWidth: 5, borderLeftStyle: 'solid', borderLeftColor: leftColor }}
+      className={`group relative flex items-stretch rounded-[12px] transition-all duration-150 ${isPause ? '' : 'hover:-translate-y-px'} ${highlight ? 'ring-2 ring-red-400' : ''} ${live ? 'ring-2 ring-emerald-500' : ''}`}
+      style={{
+        background: kind === 'apport' ? 'linear-gradient(0deg, rgba(242,194,69,0.09), rgba(242,194,69,0.09)), var(--color-surface)'
+          : isPause ? 'repeating-linear-gradient(135deg, transparent 0 7px, var(--color-surface-sunken) 7px 8px)' : 'var(--color-surface)',
+        boxShadow: isPause ? 'inset 0 0 0 1px var(--color-border)' : here.length ? `0 0 0 2px ${here[0].color}, var(--shadow-1)` : 'var(--shadow-1)',
+      }}
     >
-      {over && <div className="absolute left-0 right-0 h-0.5 rounded-full pointer-events-none" style={{ backgroundColor: 'var(--color-accent)', top: over === 'before' ? -4 : undefined, bottom: over === 'after' ? -4 : undefined }} />}
+      {over && <div className="absolute left-2 right-2 h-[3px] rounded-full pointer-events-none z-10" style={{ backgroundColor: 'var(--color-accent)', top: over === 'before' ? -5 : undefined, bottom: over === 'after' ? -5 : undefined }} />}
+      {!isPause && <span className="absolute left-0 top-2 bottom-2 w-[3px] rounded-full" style={{ backgroundColor: bar }} />}
 
-      <div className="w-[76px] shrink-0 flex flex-col justify-center pl-2.5 py-2 text-caption" style={{ color: 'var(--color-text-muted)' }}>
-        <span className="font-bold text-body-sm" style={{ color: 'var(--color-text)' }}>{seq.start != null ? hm(seq.start) : '·'}</span>
-        <span className="text-[11px]">{seq.end != null ? hm(seq.end) : ''}</span>
+      <div className="w-[72px] shrink-0 flex flex-col justify-center pl-4 py-2.5">
+        <span className="font-semibold text-[13px] tabular-nums" style={{ color: 'var(--color-text)' }}>{seq.start != null ? hm(seq.start) : '·'}</span>
+        <span className="text-[11px] tabular-nums" style={{ color: 'var(--color-text-muted)' }}>{seq.end != null ? hm(seq.end) : ''}</span>
       </div>
 
       <button type="button" onClick={() => onEdit(seq.id)} className="flex-1 min-w-0 text-left py-2.5 pr-2">
-        {kind === 'pause' ? (
-          <span className="flex items-center gap-2 text-body-sm font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
+        {isPause ? (
+          <span className="flex items-center gap-2 text-[12px] font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--color-text-muted)' }}>
             {/déj/i.test(seq.title) ? <Utensils size={14} /> : <Coffee size={14} />} {seq.title}
+            {here.length > 0 && <HereBadge people={here} compact />}
           </span>
         ) : (
           <>
             <span className="flex items-center gap-2 flex-wrap">
-              <span className="font-display font-semibold text-body-sm leading-snug">{seq.title}</span>
-              {kind === 'apport' && <span className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded" style={{ backgroundColor: '#F2C245', color: '#141E37' }}>Apport</span>}
-              {seq.diamond && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white" style={{ backgroundColor: DIAMOND[seq.diamond]?.color }} title={DIAMOND[seq.diamond]?.hint}>{DIAMOND[seq.diamond]?.label}</span>}
-              {bt && <span className="w-2 h-2 rounded-full" style={{ backgroundColor: bt.color }} title={bt.label} />}
+              <span className="font-semibold text-[14px] leading-snug" style={{ color: 'var(--color-text)' }}>{seq.title}</span>
+              {kind === 'apport' && <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md" style={{ backgroundColor: '#F2C245', color: '#141E37' }}>Apport</span>}
+              {seq.diamond && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md" style={{ backgroundColor: `${DIAMOND[seq.diamond]?.color}22`, color: DIAMOND[seq.diamond]?.color }} title={DIAMOND[seq.diamond]?.hint}>{DIAMOND[seq.diamond]?.label}</span>}
+              {bt && <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md flex items-center gap-1" style={{ backgroundColor: 'var(--color-surface-alt)', color: 'var(--color-text-muted)' }}><span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: bt.color }} />{bt.label}</span>}
               {seq.attention_flag && <AlertTriangle size={13} style={{ color: 'var(--color-warning)' }} aria-label="Point d'attention" />}
+              {here.length > 0 && <HereBadge people={here} />}
             </span>
             {seq.intention
-              ? <span className="block text-caption mt-0.5 line-clamp-2">{seq.intention}</span>
-              : <span className="block text-caption mt-0.5 italic" style={{ color: 'var(--color-warning)' }}>Intention à écrire</span>}
+              ? <span className="block text-[13px] mt-1 line-clamp-2" style={{ color: 'var(--color-text)' }}>{seq.intention}</span>
+              : <span className="block text-[13px] mt-1 italic" style={{ color: 'var(--color-warning)' }}>Intention à écrire</span>}
             {(seq.format || seq.production) && (
-              <span className="block text-caption mt-0.5 line-clamp-2" style={{ color: 'var(--color-text-muted)' }}>
-                {seq.format}{seq.production && <b style={{ color: 'var(--color-text)' }}>{seq.format ? ' → ' : ''}{seq.production}</b>}
+              <span className="block text-[12px] mt-0.5 line-clamp-2" style={{ color: 'var(--color-text-muted)' }}>
+                {seq.format}{seq.production && <span className="font-semibold" style={{ color: 'var(--color-text)' }}>{seq.format ? '  →  ' : ''}{seq.production}</span>}
               </span>
             )}
           </>
         )}
       </button>
 
-      <div className="flex items-center gap-0.5 pr-1.5 shrink-0">
+      <div className="flex items-center gap-0.5 pr-2 shrink-0">
         {!ro && (
-          <button type="button" className="p-1 rounded hover:bg-black/5 opacity-50 hover:opacity-100" aria-label="Réduire de 15 min"
+          <button type="button" className="w-7 h-7 rounded-lg flex items-center justify-center opacity-40 hover:opacity-100 hover:bg-[var(--color-surface-alt)]" aria-label="Réduire de 15 min"
             onClick={() => actions.updateSequence(seq.id, { duration_minutes: Math.max(5, seq.duration_minutes - step) })}><Minus size={13} /></button>
         )}
-        <span className="text-caption font-bold w-12 text-center tabular-nums">{fmtDur(seq.duration_minutes)}</span>
+        <span className="text-[12px] font-semibold min-w-[48px] text-center tabular-nums px-2 py-1 rounded-md" style={{ backgroundColor: 'var(--color-surface-alt)' }}>{fmtDur(seq.duration_minutes)}</span>
         {!ro && (
-          <button type="button" className="p-1 rounded hover:bg-black/5 opacity-50 hover:opacity-100" aria-label="Allonger de 15 min"
+          <button type="button" className="w-7 h-7 rounded-lg flex items-center justify-center opacity-40 hover:opacity-100 hover:bg-[var(--color-surface-alt)]" aria-label="Allonger de 15 min"
             onClick={() => actions.updateSequence(seq.id, { duration_minutes: Math.min(600, seq.duration_minutes + step) })}><Plus size={13} /></button>
         )}
         {!ro && (
           <div className="hidden sm:flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity ml-1">
-            <button type="button" className="p-1 rounded hover:bg-black/5 disabled:opacity-20" disabled={isFirst} aria-label="Monter"
+            <button type="button" className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[var(--color-surface-alt)] disabled:opacity-20" disabled={isFirst} aria-label="Monter"
               onClick={() => actions.moveSequence(seq.id, dayId, index - 1)}><ArrowUp size={14} /></button>
-            <button type="button" className="p-1 rounded hover:bg-black/5 disabled:opacity-20" disabled={isLast} aria-label="Descendre"
+            <button type="button" className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[var(--color-surface-alt)] disabled:opacity-20" disabled={isLast} aria-label="Descendre"
               onClick={() => actions.moveSequence(seq.id, dayId, index + 1)}><ArrowDown size={14} /></button>
-            <button type="button" className="p-1 rounded hover:bg-black/5" aria-label="Dupliquer" onClick={() => actions.duplicateSequence(seq.id)}><Copy size={14} /></button>
-            <button type="button" className="p-1 rounded hover:bg-black/5" aria-label="Supprimer" style={{ color: 'var(--color-error)' }}
+            <button type="button" className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[var(--color-surface-alt)]" aria-label="Dupliquer" onClick={() => actions.duplicateSequence(seq.id)}><Copy size={14} /></button>
+            <button type="button" className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-[var(--color-surface-alt)]" aria-label="Supprimer" style={{ color: 'var(--color-error)' }}
               onClick={() => { if (confirm(`Supprimer « ${seq.title} » ?`)) actions.deleteSequence(seq.id); }}><Trash2 size={14} /></button>
           </div>
         )}
-        {!ro && <span className="cursor-grab opacity-25 group-hover:opacity-60 pl-0.5 hidden sm:inline" aria-hidden><GripVertical size={16} /></span>}
+        {!ro && <span className="cursor-grab opacity-20 group-hover:opacity-60 pl-0.5 hidden sm:inline" aria-hidden><GripVertical size={16} /></span>}
       </div>
     </div>
   );
@@ -164,25 +188,36 @@ function DayPanel({ day, index, count, blocks, onEdit, onLibrary, overflowIds, l
   const quick = (fields) => actions.addSequence(day.id, null, fields);
 
   return (
-    <section className="rounded-card p-4 sm:p-5 elevation-1" style={{ backgroundColor: 'var(--color-surface)' }} aria-label={dayLabel(day, index)}>
-      <header className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-3">
-        <div className="w-36"><AutoField value={day.label} disabled={ro} onSave={v => actions.updateDay(day.id, { label: v })} placeholder={`Jour ${index + 1}`} className="font-display font-bold !text-body" /></div>
-        <input type="date" className="input-field !w-auto text-caption" value={day.date || ''} disabled={ro} aria-label="Date du jour"
-          onChange={e => actions.updateDay(day.id, { date: e.target.value })} />
-        <div className="flex items-center gap-1 text-caption">
-          <input type="time" step={900} className="input-field !w-auto text-caption" value={day.start_time} disabled={ro} aria-label="Début"
+    <section className="rounded-[18px] p-3 sm:p-4" style={{ backgroundColor: 'var(--color-surface-sunken)', boxShadow: 'inset 0 0 0 1px var(--color-border)' }} aria-label={dayLabel(day, index)}>
+      <header className="flex flex-wrap items-center gap-x-2 gap-y-2 px-1 pb-3">
+        <span className="w-8 h-8 rounded-lg flex items-center justify-center text-[13px] font-bold shrink-0" style={{ backgroundColor: '#141E37', color: '#F2C245' }}>{index + 1}</span>
+        <div className="w-32 sm:w-40"><AutoField value={day.label} disabled={ro} onSave={v => actions.updateDay(day.id, { label: v })} placeholder={`Jour ${index + 1}`} className="input-seamless font-display font-semibold !text-[17px] !px-2" /></div>
+<label className="relative flex items-center gap-1.5 h-8 px-2.5 rounded-lg text-[12px] font-medium cursor-pointer" style={{ backgroundColor: 'var(--color-surface)', boxShadow: 'var(--shadow-1)' }} title="Date du jour">
+          <CalendarDays size={14} style={{ color: 'var(--color-text-muted)' }} />
+          <span className={day.date ? 'capitalize' : ''} style={{ color: day.date ? 'var(--color-text)' : 'var(--color-text-muted)' }}>{day.date ? formatDate(day.date, { weekday: 'short', day: 'numeric', month: 'short' }) : 'Date à confirmer'}</span>
+          <input type="date" className="absolute inset-0 opacity-0 cursor-pointer" value={day.date || ''} disabled={ro} aria-label="Date du jour"
+            onClick={e => { try { e.currentTarget.showPicker?.(); } catch { /* navigateur ancien */ } }}
+            onChange={e => actions.updateDay(day.id, { date: e.target.value })} />
+        </label>
+        <div className="flex items-center gap-0.5 h-8 px-1 rounded-lg text-[12px] font-semibold tabular-nums" style={{ backgroundColor: 'var(--color-surface)', boxShadow: 'var(--shadow-1)' }}>
+          <input type="time" step={900} className="bg-transparent outline-none px-1 w-[88px]" value={day.start_time} disabled={ro} aria-label="Début"
             onChange={e => e.target.value && actions.updateDay(day.id, { start_time: e.target.value })} />
-          <span>à</span>
-          <input type="time" step={900} className="input-field !w-auto text-caption" value={day.end_time} disabled={ro} aria-label="Fin"
+          <span style={{ color: 'var(--color-text-muted)' }}>→</span>
+          <input type="time" step={900} className="bg-transparent outline-none px-1 w-[88px]" value={day.end_time} disabled={ro} aria-label="Fin"
             onChange={e => e.target.value && actions.updateDay(day.id, { end_time: e.target.value })} />
         </div>
-        {day.date && <span className="text-caption capitalize hidden md:inline" style={{ color: 'var(--color-text-muted)' }}>{formatDate(day.date)}</span>}
+        <span className="flex items-center gap-2 h-8 px-2.5 rounded-lg text-[12px] font-semibold tabular-nums"
+          style={{ backgroundColor: over > 0 ? 'rgba(224,65,58,0.1)' : fill === 100 ? 'rgba(14,159,110,0.1)' : 'var(--color-surface)', color: over > 0 ? 'var(--color-error)' : fill === 100 ? 'var(--color-success)' : 'var(--color-text-muted)', boxShadow: over > 0 || fill === 100 ? 'none' : 'var(--shadow-1)' }}>
+          <svg width="16" height="16" viewBox="0 0 36 36" aria-hidden><circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeOpacity=".2" strokeWidth="5" /><circle cx="18" cy="18" r="15" fill="none" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeDasharray={`${Math.min(100, fill) * 0.942} 94.2`} transform="rotate(-90 18 18)" /></svg>
+          {fmtDur(c.planned)} / {fmtDur(c.window)}
+          <span className="hidden sm:inline font-medium">{over > 0 ? `· dépasse de ${fmtDur(over)}` : c.planned < c.window && c.seqs.length ? `· ${fmtDur(c.window - c.planned)} libres` : c.seqs.length ? '· tombe juste' : ''}</span>
+        </span>
         {!ro && (
           <div className="flex items-center gap-0.5 ml-auto">
-            <button type="button" className="p-1.5 rounded hover:bg-black/5 disabled:opacity-20" disabled={index === 0} aria-label="Jour précédent" onClick={() => actions.moveDay(day.id, index - 1)}><ArrowUp size={15} /></button>
-            <button type="button" className="p-1.5 rounded hover:bg-black/5 disabled:opacity-20" disabled={index === count - 1} aria-label="Jour suivant" onClick={() => actions.moveDay(day.id, index + 1)}><ArrowDown size={15} /></button>
-            <button type="button" className="p-1.5 rounded hover:bg-black/5" aria-label="Dupliquer le jour" title="Dupliquer le jour" onClick={() => actions.duplicateDay(day.id)}><Copy size={15} /></button>
-            <button type="button" className="p-1.5 rounded hover:bg-black/5" aria-label="Supprimer le jour" title="Supprimer le jour" style={{ color: 'var(--color-error)' }}
+            <button type="button" className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--color-surface)] disabled:opacity-20" disabled={index === 0} aria-label="Jour précédent" onClick={() => actions.moveDay(day.id, index - 1)}><ArrowUp size={15} /></button>
+            <button type="button" className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--color-surface)] disabled:opacity-20" disabled={index === count - 1} aria-label="Jour suivant" onClick={() => actions.moveDay(day.id, index + 1)}><ArrowDown size={15} /></button>
+            <button type="button" className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--color-surface)]" aria-label="Dupliquer le jour" title="Dupliquer le jour" onClick={() => actions.duplicateDay(day.id)}><Copy size={15} /></button>
+            <button type="button" className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-[var(--color-surface)]" aria-label="Supprimer le jour" title="Supprimer le jour" style={{ color: 'var(--color-error)' }}
               onClick={() => {
                 if (!c.seqs.length) { actions.deleteDay(day.id, false); return; }
                 const keep = confirm(`Supprimer ${dayLabel(day, index)} ?\n\nOK : ses séquences partent sur le banc.\nAnnuler : on ne supprime rien.`);
@@ -192,17 +227,7 @@ function DayPanel({ day, index, count, blocks, onEdit, onLibrary, overflowIds, l
         )}
       </header>
 
-      <div className="flex items-center gap-3 mb-3 text-caption">
-        <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: 'var(--color-surface-alt)' }}>
-          <div className="h-full rounded-full transition-all" style={{ width: `${fill}%`, backgroundColor: over > 0 ? 'var(--color-error)' : fill === 100 ? 'var(--color-success)' : 'var(--color-accent)' }} />
-        </div>
-        <span className="font-semibold tabular-nums" style={{ color: over > 0 ? 'var(--color-error)' : fill === 100 ? 'var(--color-success)' : 'var(--color-text-muted)' }}>
-          {fmtDur(c.planned)} / {fmtDur(c.window)}
-          {over > 0 ? ` · dépasse de ${fmtDur(over)}` : c.planned < c.window && c.seqs.length ? ` · ${fmtDur(c.window - c.planned)} libres` : c.seqs.length ? ' · tombe juste' : ''}
-        </span>
-      </div>
-
-      <div className="space-y-1.5"
+      <div className="space-y-2"
         onDragOver={e => { if (e.dataTransfer.types.includes(DRAG_TYPE)) { e.preventDefault(); setDropOver(true); } }}
         onDragLeave={() => setDropOver(false)}
         onDrop={e => { setDropOver(false); const id = e.dataTransfer.getData(DRAG_TYPE); if (id) { e.preventDefault(); actions.moveSequence(id, day.id, null); } }}>
@@ -227,15 +252,15 @@ function DayPanel({ day, index, count, blocks, onEdit, onLibrary, overflowIds, l
 
       {!ro && (
         <div className="flex flex-wrap items-center gap-1.5 mt-3">
-          <button type="button" className="btn-ghost text-caption flex items-center gap-1" style={{ border: '1px solid var(--color-border)' }}
+          <button type="button" className="btn-outline !h-8 text-[12px]"
             onClick={() => quick({ kind: 'collectif', title: 'Nouvelle séquence', duration_minutes: 30, block_type: 'production' })}><Plus size={13} /> Séquence</button>
-          <button type="button" className="btn-ghost text-caption flex items-center gap-1" style={{ border: '1px solid var(--color-border)' }}
+          <button type="button" className="btn-outline !h-8 text-[12px]"
             onClick={() => quick({ kind: 'apport', title: 'Apport', duration_minutes: 15, block_type: 'transition' })}><Lightbulb size={13} /> Apport</button>
-          <button type="button" className="btn-ghost text-caption flex items-center gap-1" style={{ border: '1px solid var(--color-border)' }}
+          <button type="button" className="btn-outline !h-8 text-[12px]"
             onClick={() => quick({ kind: 'pause', title: 'Pause', duration_minutes: 15 })}><Coffee size={13} /> Pause</button>
-          <button type="button" className="btn-ghost text-caption flex items-center gap-1" style={{ border: '1px solid var(--color-border)' }}
+          <button type="button" className="btn-outline !h-8 text-[12px]"
             onClick={() => quick({ kind: 'pause', title: 'Déjeuner', duration_minutes: 60 })}><Utensils size={13} /> Déjeuner</button>
-          <button type="button" className="btn-ghost text-caption flex items-center gap-1" style={{ border: '1px solid var(--color-border)' }}
+          <button type="button" className="btn-outline !h-8 text-[12px]"
             onClick={() => onLibrary(day.id)}><BookOpen size={13} /> Méthode</button>
           {c.plannedEnd < c.end && c.seqs.length > 0 && (
             <button type="button" className="btn-ghost text-caption flex items-center gap-1 ml-auto" title="Allonge la dernière séquence non-pause pour finir pile à l'heure"
@@ -479,19 +504,19 @@ export default function ConceptionPage({ onOpenAgenda }) {
         <div className="grid gap-5 min-w-0">
           <FicheCard compact={!empty} />
 
-          <div className="flex flex-wrap items-center gap-2 sticky top-[49px] z-10 py-2 -my-2" style={{ backgroundColor: 'var(--color-surface-alt)' }}>
-            <button type="button" onClick={() => setTemplates(true)} className="btn-ghost text-body-sm flex items-center gap-1.5" style={{ border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+          <div className="flex flex-wrap items-center gap-2 sticky top-14 z-20 py-2 -my-2" style={{ backgroundColor: 'var(--color-surface-alt)' }}>
+            <button type="button" onClick={() => setTemplates(true)} className="btn-outline" >
               <LayoutTemplate size={16} /> Modèles
             </button>
-            <button type="button" onClick={() => setLibrary({ open: true, dayId: days[0]?.id ?? null })} className="btn-ghost text-body-sm flex items-center gap-1.5" style={{ border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+            <button type="button" onClick={() => setLibrary({ open: true, dayId: days[0]?.id ?? null })} className="btn-outline" >
               <BookOpen size={16} /> Méthodes
             </button>
             {!actions.archived && (
-              <button type="button" onClick={() => actions.addDay({ date: days.length === 0 ? (state.space?.session_date || '') : '' })} className="btn-ghost text-body-sm flex items-center gap-1.5" style={{ border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+              <button type="button" onClick={() => actions.addDay({ date: days.length === 0 ? (state.space?.session_date || '') : '' })} className="btn-outline" >
                 <CalendarPlus size={16} /> Jour
               </button>
             )}
-            <div className="flex items-center" style={{ border: '1px solid var(--color-border)', borderRadius: 8, backgroundColor: 'var(--color-surface)' }}>
+            <div className="flex items-center rounded-[10px]" style={{ backgroundColor: 'var(--color-surface)', boxShadow: 'var(--shadow-1)' }}>
               <button type="button" onClick={actions.undo} disabled={!actions.canUndo} className="p-2 disabled:opacity-30" aria-label="Annuler" title="Annuler (Ctrl+Z)"><Undo2 size={16} /></button>
               <button type="button" onClick={actions.redo} disabled={!actions.canRedo} className="p-2 disabled:opacity-30" aria-label="Rétablir" title="Rétablir (Ctrl+Maj+Z)"><Redo2 size={16} /></button>
             </div>
@@ -499,7 +524,7 @@ export default function ConceptionPage({ onOpenAgenda }) {
               {days.length} jour{days.length > 1 ? 's' : ''} · {fmtDur(totalMinutes)}
             </span>
             {onOpenAgenda && (
-              <button type="button" onClick={onOpenAgenda} className="btn-primary text-body-sm flex items-center gap-1.5 ml-auto">
+              <button type="button" onClick={onOpenAgenda} className="btn-secondary ml-auto">
                 <FileText size={16} /> Agenda A4
               </button>
             )}
@@ -527,9 +552,18 @@ export default function ConceptionPage({ onOpenAgenda }) {
           ))}
         </div>
 
-        <aside className="grid gap-4 lg:sticky lg:top-[64px] lg:max-h-[calc(100vh-80px)] lg:overflow-y-auto pb-2">
+        <aside className="grid gap-4 lg:sticky lg:top-[72px] lg:max-h-[calc(100vh-80px)] lg:overflow-y-auto pb-2">
           <ChecksPanel analysis={analysis} onFixDashes={fixDashes} onEdit={setEditId} />
           <Bench blocks={blocks} onEdit={setEditId} />
+          {RELAIS_SITUATION[state.planning?.situation] ? (
+            <InsuffleNudge id={`situation-${state.planning.situation}`} title="Un regard extérieur pour ce collectif ?" onMore={() => dispatch({ type: 'TOGGLE_INSUFFLE' })}>
+              {RELAIS_SITUATION[state.planning.situation]}
+            </InsuffleNudge>
+          ) : (
+            <InsuffleNudge id="concevoir" title="Et si on l'animait avec vous ?" onMore={() => dispatch({ type: 'TOGGLE_INSUFFLE' })}>
+              Insuffle conçoit et facilite séminaires, CODIR et ateliers, partout en France. Le facilitateur n'a pas d'enjeu politique interne : c'est ce qui libère la parole.
+            </InsuffleNudge>
+          )}
         </aside>
       </div>
 

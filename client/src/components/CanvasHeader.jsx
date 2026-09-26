@@ -20,14 +20,14 @@ function HeaderField({ label, field, value, locked, type = 'text' }) {
 
   if (locked) return (
     <div className="flex-1 min-w-[150px]">
-      <label className="text-label uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>{label}</label>
-      <p className="text-body-sm font-medium truncate">{value || '·'}</p>
+      <label className="text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--color-text-muted)' }}>{label}</label>
+      <p className="text-body-sm font-medium truncate">{(type === 'date' && value ? formatDate(value) : value) || '·'}</p>
     </div>
   );
 
   if (editing) return (
     <div className="flex-1 min-w-[150px]">
-      <label className="text-label uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>{label}</label>
+      <label className="text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--color-text-muted)' }}>{label}</label>
       <input ref={inputRef} value={localValue}
         onChange={e => setLocalValue(e.target.value)}
         onBlur={save} onKeyDown={e => e.key === 'Enter' && save()}
@@ -38,11 +38,11 @@ function HeaderField({ label, field, value, locked, type = 'text' }) {
 
   return (
     <div className="flex-1 min-w-[150px] cursor-pointer group" onClick={() => setEditing(true)}>
-      <label className="text-label uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>{label}</label>
+      <label className="text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ color: 'var(--color-text-muted)' }}>{label}</label>
       <p className="text-body-sm font-medium truncate transition-colors" style={{ color: 'var(--color-text)' }}
         onMouseEnter={e => e.currentTarget.style.color = 'var(--color-accent-dark)'}
         onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text)'}>
-        {value || <span className="italic" style={{ color: 'var(--color-border)' }}>Cliquez pour saisir</span>}
+        {(type === 'date' && value ? formatDate(value) : value) || <span className="italic font-normal" style={{ color: 'var(--color-text-muted)', opacity: 0.6 }}>À renseigner</span>}
       </p>
     </div>
   );
@@ -71,8 +71,8 @@ export default function CanvasHeader() {
   }
 
   return (
-    <div className="border-b px-4 py-3" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
-      <div className="max-w-[1600px] mx-auto flex flex-wrap gap-4">
+    <div className="border-b px-4 sm:px-6 py-3 no-print" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
+      <div className="max-w-[1600px] mx-auto grid grid-cols-2 md:grid-cols-5 gap-x-6 gap-y-2">
         <HeaderField label="Client" field="client_name" value={state.space?.client_name} locked={locked} />
         <HeaderField label="Sponsor" field="sponsor" value={state.space?.sponsor} locked={locked} />
         <HeaderField label="Facilitateur" field="facilitator" value={state.space?.facilitator} locked={locked} />

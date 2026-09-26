@@ -5,6 +5,8 @@ import { usePlanning } from '../../planning/usePlanning.js';
 import { EVENT_TYPES, SITUATIONS, CHARTES } from '../../planning/constants.js';
 import { AutoField, Label, Segmented } from '../ui/Overlay.jsx';
 import { LONG_DASH } from '../../planning/utils.js';
+import { typingProps } from '../../live/presence.js';
+import { HereBadge } from '../../live/Avatars.jsx';
 
 // La fiche du temps collectif : ce qui fait le haut de chaque page du planning.
 export default function FicheCard({ compact = false }) {
@@ -22,12 +24,16 @@ export default function FicheCard({ compact = false }) {
     actions.setMeta({ [field]: value }, { history: false });
   };
   const situation = SITUATIONS.find(s => s.key === p.situation);
+  const here = (state.participants || []).filter(x => x.target === 'fiche' && x.field && x.pseudo !== state.pseudo);
 
   return (
-    <section className="rounded-card elevation-1 overflow-hidden" style={{ backgroundColor: 'var(--color-surface)' }} aria-label="Fiche du temps collectif">
+    <section className="rounded-[18px] overflow-hidden" style={{ backgroundColor: 'var(--color-surface)', boxShadow: here.length ? `0 0 0 2px ${here[0].color}, var(--shadow-1)` : 'var(--shadow-1)' }} aria-label="Fiche du temps collectif" {...typingProps('fiche', 'fiche')}>
       <div className="px-5 pt-5 pb-4" style={{ borderTop: `4px solid ${CHARTES[p.charte]?.main || '#141E37'}` }}>
         <div className="flex items-center justify-between gap-3 mb-2">
-          <span className="text-label font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Question-titre</span>
+          <span className="flex items-center gap-2">
+            <span className="text-label font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>Question-titre</span>
+            {here.length > 0 && <HereBadge people={here} />}
+          </span>
           <Segmented
             value={p.charte || 'insuffle'}
             onChange={(v) => actions.setMeta({ charte: v })}

@@ -21,14 +21,16 @@ export default function PhaseView({ phase }) {
       id={`phase-${phase.key}`}
       role="tabpanel"
       aria-label={phase.name}
-      style={{ backgroundColor: phase.bgColor || 'transparent' }}>
+      style={{ background: `linear-gradient(180deg, ${phase.color}0d 0, transparent 220px)` }}>
 
       <div className="max-w-[1600px] mx-auto p-4 md:p-6">
         {/* Phase header */}
         <div className="mb-5 flex items-center gap-3">
-          <div className="w-1.5 h-10 rounded-full" style={{ backgroundColor: phase.color }} />
+          <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${phase.color}1a` }}>
+            <span className="w-3 h-3 rounded-full" style={{ backgroundColor: phase.color }} />
+          </span>
           <div>
-            <h2 className="font-display text-h2-mobile md:text-h2 flex items-center gap-2" style={{ color: phase.color }}>
+            <h2 className="font-display font-bold text-[22px] md:text-[26px] tracking-tight flex items-center gap-2" style={{ color: 'var(--color-text)' }}>
               {!!ps?.locked && <Lock size={16} style={{ color: 'var(--color-text-muted)' }} />}
               {phase.name}
             </h2>

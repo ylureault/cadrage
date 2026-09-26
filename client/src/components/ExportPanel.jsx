@@ -77,8 +77,8 @@ export default function ExportPanel({ onNavigate }) {
     }
 
     text += `\n────────────────────────────────────────\n`;
-    text += `Cadrage réalisé avec le cadrage Insuffle\n`;
-    text += `insuffle.com | Méthode de cadrage Insuffle\n`;
+    text += `Outil de cadrage offert par Insuffle\n`;
+    text += `insuffle.com · contact@insuffle.com · 09 80 80 89 62\n`;
 
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -108,7 +108,7 @@ export default function ExportPanel({ onNavigate }) {
       function footer(doc) {
         doc.setFontSize(7);
         doc.setTextColor(...muted);
-        doc.text('Cadrage Insuffle · insuffle.com · Méthode de cadrage Insuffle', W / 2, H - 5, { align: 'center' });
+        doc.text('Outil de cadrage offert par Insuffle · insuffle.com · contact@insuffle.com · 09 80 80 89 62', W / 2, H - 5, { align: 'center' });
       }
 
       let logoYellow = null;

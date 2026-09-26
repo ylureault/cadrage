@@ -36,6 +36,7 @@ const initialState = {
   planningHistory: [],
   planningFuture: [],
   sheetOverflow: [],
+  liveFlash: null,
 
   // Mesure du succès
   success: { criteria: [], actions: [], votes: [], review: [], votesOpen: [], scaleQuestion: '' },
@@ -56,6 +57,7 @@ const initialState = {
   showStats: false,
   showExport: false,
   showReperes: false,
+  showInsuffle: false,
   darkMode: getInitialDarkMode(),
   isFacilitator: false,
   archived: false,
@@ -163,13 +165,38 @@ function reducer(state, action) {
     }
 
     // Planning : l'état complet arrive du serveur à chaque modification
-    case 'PLANNING_SYNC': return {
-      ...state,
-      planning: action.planning || state.planning,
-      agendaDays: action.agendaDays || state.agendaDays,
-      blocks: action.blocks || state.blocks,
-      space: state.space && action.planning ? { ...state.space, ...pickHeader(action.planning) } : state.space,
-    };
+    case 'PLANNING_SYNC': {
+      // Ce que quelqu'un d'autre vient de changer s'illumine de sa couleur
+      let liveFlash = state.liveFlash;
+      if (action.by && action.by !== state.pseudo && action.blocks) {
+        const before = new Map(state.blocks.map(b => [b.id, b]));
+        const color = state.participants.find(p => p.pseudo === action.by)?.color || '#F2C245';
+        const ids = {};
+        for (const b of action.blocks) {
+          const old = before.get(b.id);
+          if (!old || old.title !== b.title || old.intention !== b.intention || old.format !== b.format || old.production !== b.production
+            || old.duration_minutes !== b.duration_minutes || old.kind !== b.kind || old.day_id !== b.day_id) ids[b.id] = color;
+        }
+        if (!Object.keys(ids).length) {
+          // Simple déplacement : on illumine la séquence qui a le plus bougé
+          let best = null; let gap = 0;
+          for (const b of action.blocks) {
+            const old = before.get(b.id);
+            if (old && Math.abs((old.position ?? 0) - (b.position ?? 0)) > gap) { gap = Math.abs(old.position - b.position); best = b.id; }
+          }
+          if (best) ids[best] = color;
+        }
+        if (Object.keys(ids).length) liveFlash = { ids, by: action.by, n: (state.liveFlash?.n || 0) + 1 };
+      }
+      return {
+        ...state,
+        planning: action.planning || state.planning,
+        agendaDays: action.agendaDays || state.agendaDays,
+        blocks: action.blocks || state.blocks,
+        space: state.space && action.planning ? { ...state.space, ...pickHeader(action.planning) } : state.space,
+        liveFlash,
+      };
+    }
     case 'PUSH_PLANNING_HISTORY': return {
       ...state,
       planningHistory: [...state.planningHistory.slice(-29), action.snapshot],
@@ -234,6 +261,7 @@ function reducer(state, action) {
     case 'TOGGLE_STATS': return { ...state, showStats: !state.showStats };
     case 'TOGGLE_EXPORT': return { ...state, showExport: !state.showExport };
     case 'TOGGLE_REPERES': return { ...state, showReperes: !state.showReperes };
+    case 'TOGGLE_INSUFFLE': return { ...state, showInsuffle: !state.showInsuffle };
     case 'TOGGLE_DARK': return { ...state, darkMode: !state.darkMode };
     case 'SET_SPACE_ARCHIVED': return { ...state, archived: action.archived };
     case 'SET_WELCOME_MESSAGE': return { ...state, welcomeMessage: action.message };

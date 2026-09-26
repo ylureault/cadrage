@@ -8,6 +8,7 @@ import { analyzePlanning, dayLabel, downloadFile, pageOrientation, sortByPos } f
 import { PLANNING_COLUMNS } from '../../planning/constants.js';
 import { Segmented } from '../ui/Overlay.jsx';
 import SequenceEditor from './SequenceEditor.jsx';
+import { InsuffleNudge } from '../promo/Insuffle.jsx';
 
 // Aperçu fidèle d'une page A4 : l'iframe reçoit exactement le HTML imprimé.
 export function SheetFrame({ html, pageWidthPx, onClickSeq, onFit, minHeight = 400 }) {
@@ -116,7 +117,7 @@ export default function AgendaA4Page() {
   return (
     <div className="max-w-[1400px] mx-auto px-3 sm:px-5 py-5">
       <div className="grid lg:grid-cols-[300px_minmax(0,1fr)] gap-5 items-start">
-        <aside className="grid gap-4 lg:sticky lg:top-[64px]">
+        <aside className="grid gap-4 lg:sticky lg:top-[72px]">
           <section className="rounded-card p-4 elevation-1 grid gap-3" style={{ backgroundColor: 'var(--color-surface)' }}>
             <h2 className="font-display font-bold text-body">Document</h2>
             <div className="grid gap-1.5">
@@ -194,6 +195,9 @@ export default function AgendaA4Page() {
               </>
             )}
           </section>
+          <InsuffleNudge id="agenda" title="Ce planning, on peut aussi l'animer." onMore={() => dispatch({ type: 'TOGGLE_INSUFFLE' })}>
+            Insuffle facilite ce type de temps collectif, de la préparation au suivi.
+          </InsuffleNudge>
         </aside>
 
         <div className="min-w-0 grid grid-cols-[minmax(0,1fr)] gap-3">

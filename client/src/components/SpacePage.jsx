@@ -6,7 +6,10 @@ import socket from '../socket.js';
 import PseudoModal from './PseudoModal.jsx';
 import CanvasHeader from './CanvasHeader.jsx';
 import PhaseView from './PhaseView.jsx';
-import ToolBar from './ToolBar.jsx';
+import AppHeader from './shell/AppHeader.jsx';
+import LiveCursors from '../live/LiveCursors.jsx';
+import LiveTicker from '../live/LiveTicker.jsx';
+import { updatePresence, resendPresence } from '../live/presence.js';
 import AxesPanel from './AxesPanel.jsx';
 import ActivityPanel from './ActivityPanel.jsx';
 import StatsPanel from './StatsPanel.jsx';
@@ -14,7 +17,6 @@ import ExportPanel from './ExportPanel.jsx';
 import TimerDisplay from './TimerDisplay.jsx';
 import SpotlightOverlay from './SpotlightOverlay.jsx';
 import Notifications from './Notifications.jsx';
-import ParticipantsBar from './ParticipantsBar.jsx';
 import CommandPalette from './CommandPalette.jsx';
 import DarkboardPromo from './DarkboardPromo.jsx';
 import DarkboardTab from './DarkboardTab.jsx';
@@ -23,6 +25,7 @@ import ConceptionPage from './planning/ConceptionPage.jsx';
 import AgendaA4Page from './planning/AgendaA4Page.jsx';
 import SuccessPage, { VoteCard } from './success/SuccessPage.jsx';
 import ReperesDrawer from './ReperesDrawer.jsx';
+import { InsuffleDrawer } from './promo/Insuffle.jsx';
 import Logo from './brand/Logo.jsx';
 
 export default function SpacePage() {
@@ -44,6 +47,7 @@ export default function SpacePage() {
     window.scrollTo({ top: 0 });
   }, []);
   const [hideVote, setHideVote] = useState({});
+  useEffect(() => { updatePresence({ view, target: null, field: null }); }, [view]);
 
   // Session persistence: restore pseudo from sessionStorage on mount
   const sessionKey = `insuffle-session-${spaceId}`;
@@ -113,6 +117,7 @@ export default function SpacePage() {
     socket.emit('join-space', { spaceId, pseudo: state.pseudo });
 
     socket.on('joined', ({ pseudo, color, archived }) => {
+      resendPresence();
       dispatch({ type: 'SET_PSEUDO', pseudo, color });
       dispatch({ type: 'SET_CONNECTED', connected: true });
       dispatch({ type: 'SET_ARCHIVED', archived: !!archived });
@@ -248,69 +253,58 @@ export default function SpacePage() {
       style={{ backgroundColor: 'var(--color-surface-alt)', color: 'var(--color-text)' }}>
       {/* US-441: Offline banner */}
       {state.offline && (
-        <div className="px-4 py-2 text-center text-body-sm font-medium" role="alert"
-          style={{ backgroundColor: 'var(--color-warning)', color: 'var(--color-primary)' }}>
+        <div className="px-4 py-1.5 text-center text-[12px] font-semibold no-print" role="alert"
+          style={{ backgroundColor: 'rgba(217,119,6,0.12)', color: 'var(--color-warning)' }}>
           Connexion perdue. Vos modifications seront synchronisées au retour.
         </div>
       )}
 
       {/* Archived banner */}
       {!!state.archived && (
-        <div className="px-4 py-2 text-center text-body-sm font-medium" role="status"
-          style={{ backgroundColor: 'var(--color-text-muted)', color: 'white' }}>
-          Cadrage archivé : lecture seule
+        <div className="px-4 py-1.5 text-center text-[12px] font-semibold tracking-wide no-print" role="status"
+          style={{ backgroundColor: 'var(--color-surface-sunken)', color: 'var(--color-text-muted)', borderBottom: '1px solid var(--color-border)' }}>
+          🔒 Cadrage archivé : lecture seule
         </div>
       )}
 
       {/* Timer */}
       {state.timer && <TimerDisplay timer={state.timer} isFacilitator={state.isFacilitator} />}
 
-      {/* Top bar */}
-      <ToolBar />
+      <AppHeader view={view} setView={setView} />
 
-      {/* En-tête du cadrage : utile sur le canvas ; ailleurs, la fiche du temps collectif le remplace */}
-      {view === 'phase' && <CanvasHeader />}
+      {/* En-tête du cadrage et phases : sur le canvas seulement */}
+      {view === 'phase' && (
+        <>
+          <CanvasHeader />
+          <div className="border-b sticky top-14 z-30 no-print" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
+            role="tablist" aria-label="Phases du cadrage">
+            <div className="max-w-[1600px] mx-auto flex overflow-x-auto items-stretch px-2 sm:px-3">
+              {state.phases.map(phase => {
+                const ps = state.phaseStates.find(p => p.phase === phase.key);
+                if (ps?.hidden && !state.isFacilitator) return null;
+                const isActive = state.activePhase === phase.key;
+                const cardCount = state.cards.filter(c => c.phase === phase.key).length;
+                return (
+                  <Tab key={phase.key} active={isActive} dim={ps?.hidden} accent={phase.color}
+                    onClick={() => dispatch({ type: 'SET_ACTIVE_PHASE', phase: phase.key })}
+                    badge={cardCount > 0 ? cardCount : null}>
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: phase.color }} />
+                    {ps?.locked ? '🔒 ' : null}{phase.name}
+                  </Tab>
+                );
+              })}
+              <span className="flex-1" />
+              <Tab active={false} onClick={() => document.querySelector('[data-section="polarites"]')?.scrollIntoView({ behavior: 'smooth' })}>Les 8 polarités</Tab>
+            </div>
+          </div>
+          <div className="progress-bar no-print !rounded-none">
+            <div className="progress-bar-fill" style={{ width: `${Math.round((state.phases.reduce((acc, p) => acc + (state.cards.some(c => c.phase === p.key) ? 1 : 0), 0) / Math.max(state.phases.length, 1)) * 100)}%` }} />
+          </div>
+        </>
+      )}
 
-      {/* Participants */}
-      <ParticipantsBar />
-
-      {/* Onglets : le cadrage (4 phases), puis la conception, l'agenda, le succès */}
-      <div className="border-b sticky top-0 z-20 no-print" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}
-        role="tablist" aria-label="Espaces du cadrage">
-        <div className="max-w-[1600px] mx-auto flex overflow-x-auto items-stretch">
-          <span className="hidden md:flex items-center pl-4 pr-2 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>Cadrer</span>
-          {state.phases.map(phase => {
-            const ps = state.phaseStates.find(p => p.phase === phase.key);
-            if (ps?.hidden && !state.isFacilitator) return null;
-            const isActive = view === 'phase' && state.activePhase === phase.key;
-            const cardCount = state.cards.filter(c => c.phase === phase.key).length;
-            return (
-              <Tab key={phase.key} active={isActive} dim={ps?.hidden}
-                onClick={() => { setView('phase'); dispatch({ type: 'SET_ACTIVE_PHASE', phase: phase.key }); }}
-                badge={cardCount > 0 ? cardCount : null}>
-                {ps?.locked ? '🔒 ' : null}{phase.name}
-              </Tab>
-            );
-          })}
-          <span className="w-px my-2.5 mx-1 shrink-0" style={{ backgroundColor: 'var(--color-border)' }} />
-          <span className="hidden md:flex items-center pl-2 pr-2 text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>Concevoir</span>
-          <Tab active={view === 'conception'} onClick={() => setView('conception')} badge={state.blocks.length || null}>CONCEPTION</Tab>
-          <Tab active={view === 'agenda'} onClick={() => setView('agenda')}
-            badge={state.agendaDays.length ? `${state.agendaDays.length} j` : null}>AGENDA A4</Tab>
-          <Tab active={view === 'succes'} onClick={() => setView('succes')}
-            badge={state.success?.votesOpen?.length ? 'vote' : (state.success?.criteria?.length || null)}>SUCCÈS</Tab>
-          <span className="flex-1" />
-          <Tab active={view === 'recap'} onClick={() => setView('recap')}>Fiche récap</Tab>
-          <Tab active={view === 'darkboard'} onClick={() => setView('darkboard')} accent="#38bdf8">Atelier</Tab>
-        </div>
-      </div>
-
-      {/* US-417: Progress bar */}
-      <div className="progress-bar no-print">
-        <div className="progress-bar-fill" style={{ width: `${Math.round((state.phases.reduce((acc, p) => acc + (state.cards.some(c => c.phase === p.key) ? 1 : 0), 0) / Math.max(state.phases.length, 1)) * 100)}%` }} />
-      </div>
-
-      <main className="flex-1 overflow-auto" role="main" aria-label="Cadrage">
+      <main className="flex-1 pb-16 md:pb-0" role="main" aria-label="Cadrage">
+        <LiveCursors view={view}>
         {view === 'darkboard' ? (
           <DarkboardTab spaceId={spaceId} />
         ) : view === 'recap' ? (
@@ -335,6 +329,7 @@ export default function SpacePage() {
             </div>
           </>
         )}
+        </LiveCursors>
       </main>
 
       {/* Vote ouvert : chaque participant le voit, où qu'il soit */}
@@ -350,6 +345,7 @@ export default function SpacePage() {
       {state.showStats && <StatsPanel />}
       {state.showExport && <ExportPanel onNavigate={setView} />}
       {state.showReperes && <ReperesDrawer onClose={() => dispatch({ type: 'TOGGLE_REPERES' })} />}
+      {state.showInsuffle && <InsuffleDrawer onClose={() => dispatch({ type: 'TOGGLE_INSUFFLE' })} />}
 
       {/* Spotlight overlay */}
       {state.spotlight && <SpotlightOverlay />}
@@ -359,13 +355,17 @@ export default function SpacePage() {
         <CommandPalette onClose={() => setShowCommandPalette(false)} onAction={handleCommandAction} />
       )}
 
+      <LiveTicker onOpen={() => setView('conception')} />
+
       {/* Notifications */}
       <Notifications />
 
       <footer className="border-t py-2.5 px-4 no-print" style={{ borderColor: 'var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
         <div className="max-w-[1600px] mx-auto flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-label" style={{ color: 'var(--color-text-muted)' }}>
           <a href="https://insuffle.com" target="_blank" rel="noopener" aria-label="Insuffle" className="flex items-center"><Logo height={16} color="var(--color-text)" /></a>
-          <span>Cadrage de temps collectif</span>
+          <span>Outil de cadrage offert par Insuffle</span>
+          <span>·</span>
+          <button onClick={() => dispatch({ type: 'TOGGLE_INSUFFLE' })} className="font-semibold hover:underline" style={{ color: 'var(--color-accent-dark)' }}>Travailler avec nous</button>
           <span>·</span>
           <a href="https://insuffle.com" target="_blank" rel="noopener" className="hover:underline">insuffle.com</a>
           <span>·</span>
@@ -381,7 +381,7 @@ export default function SpacePage() {
 function Tab({ active, onClick, children, badge, dim, accent }) {
   return (
     <button role="tab" aria-selected={active} onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-3 text-body-sm font-medium whitespace-nowrap border-b-2 transition-all duration-200 ${active ? '' : 'border-transparent hover:border-[var(--color-border)]'} ${dim ? 'opacity-40' : ''}`}
+      className={`flex items-center gap-2 px-3.5 py-3 text-[13px] font-semibold whitespace-nowrap border-b-2 transition-colors duration-150 ${active ? '' : 'border-transparent hover:text-[var(--color-text)]'} ${dim ? 'opacity-40' : ''}`}
       style={{ borderBottomColor: active ? (accent || 'var(--color-accent)') : undefined, color: active ? 'var(--color-text)' : 'var(--color-text-muted)' }}>
       {children}
       {badge != null && (

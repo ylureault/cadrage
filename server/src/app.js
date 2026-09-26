@@ -250,6 +250,11 @@ export function createApp(db) {
     res.json({ ...tpl, data: templateToV2(JSON.parse(tpl.data)) });
   });
 
+  // Qui est là, avant même de rejoindre (écran d'arrivée)
+  app.get('/api/spaces/:id/presence', (req, res) => {
+    res.json(getParticipantsList(req.params.id).map(({ pseudo, color }) => ({ pseudo, color })));
+  });
+
   app.get('/api/spaces/:id/planning', (req, res) => {
     const space = db.prepare(`SELECT id FROM spaces WHERE id = ? AND deleted = 0`).get(req.params.id);
     if (!space) return res.status(404).json({ error: 'Espace introuvable' });
@@ -588,7 +593,7 @@ export function createApp(db) {
         currentPseudo = pseudo;
         currentColor = getParticipantColor(spaceId, pseudo);
         socket.join(spaceId);
-        participants.set(socket.id, { pseudo, color: currentColor });
+        participants.set(socket.id, { pseudo, color: currentColor, view: 'phase', target: null, field: null, at: Date.now() });
         logActivity(spaceId, pseudo, 'join', '', '');
 
         socket.emit('joined', { pseudo, color: currentColor, archived: !!space.archived });
@@ -1069,7 +1074,30 @@ export function createApp(db) {
       io.to(currentSpace).emit('block-comment-added', comment);
     });
 
+    // ===================== PRÉSENCE EN DIRECT =====================
+    // Où est chacun (vue, séquence ouverte, champ en cours d'écriture) et curseurs relayés sans stockage.
+    socket.on('presence', ({ view, target, field } = {}) => {
+      if (!currentSpace) return;
+      const me = spaceParticipants.get(currentSpace)?.get(socket.id);
+      if (!me) return;
+      me.view = typeof view === 'string' ? view.slice(0, 40) : me.view;
+      me.target = typeof target === 'string' ? target.slice(0, 60) : null;
+      me.field = typeof field === 'string' ? field.slice(0, 40) : null;
+      me.at = Date.now();
+      io.to(currentSpace).emit('participants', getParticipantsList(currentSpace));
+    });
+
+    socket.on('cursor', ({ x, y, view } = {}) => {
+      if (!currentSpace || !currentPseudo) return;
+      if (typeof x !== 'number' || typeof y !== 'number' || !Number.isFinite(x) || !Number.isFinite(y)) return;
+      socket.volatile.to(currentSpace).emit('cursor', {
+        id: socket.id, pseudo: currentPseudo, color: currentColor,
+        x: Math.max(0, Math.min(1, x)), y: Math.max(0, Math.min(100000, y)), view: String(view || '').slice(0, 40),
+      });
+    });
+
     socket.on('disconnect', () => {
+      if (currentSpace) socket.to(currentSpace).emit('cursor-leave', { id: socket.id });
       if (!currentSpace) return;
       const participants = spaceParticipants.get(currentSpace);
       if (participants) {
@@ -1090,14 +1118,16 @@ export function createApp(db) {
     });
   });
 
+  // Une entrée par personne (plusieurs onglets possibles) : on garde la présence la plus récente
   function getParticipantsList(spaceId) {
     const participants = spaceParticipants.get(spaceId);
     if (!participants) return [];
     const unique = new Map();
     for (const p of participants.values()) {
-      if (!unique.has(p.pseudo)) unique.set(p.pseudo, p);
+      const prev = unique.get(p.pseudo);
+      if (!prev || (p.at || 0) > (prev.at || 0)) unique.set(p.pseudo, p);
     }
-    return [...unique.values()];
+    return [...unique.values()].map(({ pseudo, color, view, target, field }) => ({ pseudo, color, view, target, field }));
   }
 
   return { app, server, io, spaceTimers };
