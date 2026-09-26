@@ -112,7 +112,7 @@ export default function RecapTab() {
               </div>
               <div className="text-center">
                 <p className="text-2xl font-bold" style={{ color: 'var(--color-primary)' }}>{axesData.length}</p>
-                <p className="text-caption" style={{ color: 'var(--color-text-muted)' }}>Axes positionnés</p>
+                <p className="text-caption" style={{ color: 'var(--color-text-muted)' }}>Polarités positionnées</p>
               </div>
               {discussCards.length > 0 && (
                 <div className="text-center">
@@ -212,7 +212,7 @@ export default function RecapTab() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <div className="w-1 h-8 rounded-full" style={{ backgroundColor: 'var(--color-accent)' }} />
-            <h2 className="font-display text-lg font-bold">8 axes de positionnement</h2>
+            <h2 className="font-display text-lg font-bold">Les 8 polarités</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

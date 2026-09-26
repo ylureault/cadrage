@@ -4,7 +4,7 @@ import { api } from '../api.js';
 import { X, FileText, Copy, Download, Printer, ExternalLink, Layers, Table, CalendarRange, ClipboardList, Target } from 'lucide-react';
 import { printSheet } from '../planning/sheet.js';
 import { toPlainText, toCsv, successToCsv } from '../planning/exporters.js';
-import { computeDay, dayLabel, hm, fmtDur, sortByPos } from '../planning/utils.js';
+import { computeDay, dayLabel, hm, fmtDur, sortByPos, formatDate } from '../planning/utils.js';
 
 async function loadImage(url) {
   const res = await fetch(url);
@@ -125,7 +125,7 @@ export default function ExportPanel({ onNavigate }) {
         doc.setFont('helvetica', 'bold');
         doc.text(title, 12, 11);
         // Logo à droite
-        if (logoYellow) doc.addImage(logoYellow, 'PNG', W - 34, 3.5, 24, 12);
+        if (logoYellow) doc.addImage(logoYellow, 'PNG', W - 34, 3.5, 24, 12, 'logo-insuffle', 'FAST');
         else { doc.setTextColor(...gold); doc.setFontSize(9); doc.text('INSUFFLE', W - 10, 11, { align: 'right' }); }
       }
 
@@ -136,7 +136,7 @@ export default function ExportPanel({ onNavigate }) {
       doc.setFillColor(...gold);
       doc.rect(W / 2 - 30, 50, 60, 2, 'F');
       // Title
-      if (logoYellow) doc.addImage(logoYellow, 'PNG', W / 2 - 30, 14, 60, 30);
+      if (logoYellow) doc.addImage(logoYellow, 'PNG', W / 2 - 30, 14, 60, 30, 'logo-insuffle', 'FAST');
       doc.setTextColor(...gold);
       doc.setFontSize(11);
       doc.text('CADRAGE DE TEMPS COLLECTIF', W / 2, 47, { align: 'center' });
@@ -152,7 +152,7 @@ export default function ExportPanel({ onNavigate }) {
       let infoY = 100;
       if (state.space?.facilitator) { doc.text(`Facilitateur : ${state.space.facilitator}`, W / 2, infoY, { align: 'center' }); infoY += 10; }
       if (state.space?.sponsor) { doc.text(`Sponsor : ${state.space.sponsor}`, W / 2, infoY, { align: 'center' }); infoY += 10; }
-      if (state.space?.session_date) { doc.text(`Date : ${state.space.session_date}`, W / 2, infoY, { align: 'center' }); infoY += 10; }
+      if (state.space?.session_date) { doc.text(`Date : ${formatDate(state.space.session_date, { day: 'numeric', month: 'long', year: 'numeric' })}`, W / 2, infoY, { align: 'center' }); infoY += 10; }
       // Stats
       doc.setFontSize(9);
       doc.setTextColor(...muted);
@@ -301,7 +301,7 @@ export default function ExportPanel({ onNavigate }) {
         doc.setFontSize(9);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(...navy);
-        doc.text(`${axis.left}  ---  ${axis.right}`, ax + 12, axY + 6);
+        doc.text(`${axis.left}  /  ${axis.right}`, ax + 12, axY + 6);
 
         // Status
         doc.setFontSize(7);
@@ -336,11 +336,11 @@ export default function ExportPanel({ onNavigate }) {
           const dotX = scaleX + ((p - 1) / 4) * scaleW;
           const pCount = positions.filter(pos => pos.position === p).length;
           // Circle
-          doc.setFillColor(pCount > 0 ? (finalPos?.position === p ? [...gold] : [...navy]) : [220, 220, 225]);
+          doc.setFillColor(...(pCount > 0 ? (finalPos?.position === p ? gold : navy) : [220, 220, 225]));
           doc.circle(dotX, scaleY, pCount > 0 ? 2.2 : 1.5, 'F');
           if (pCount > 0) {
             doc.setFontSize(5.5);
-            doc.setTextColor(pCount > 0 ? (finalPos?.position === p ? [...navy] : [...white]) : [...muted]);
+            doc.setTextColor(...(pCount > 0 ? (finalPos?.position === p ? navy : white) : muted));
             doc.text(String(p), dotX, scaleY + 1.5, { align: 'center' });
           }
         }
@@ -358,7 +358,7 @@ export default function ExportPanel({ onNavigate }) {
           doc.setFontSize(6);
           doc.setTextColor(...gold);
           doc.setFont('helvetica', 'bold');
-          doc.text(`Position finale : ${finalPos.position}`, ax + 12, axY + 16.5);
+          doc.text(`Position finale : ${finalPos.position}`, ax + axW - 18, axY + 16.5, { align: 'right' });
           doc.setFont('helvetica', 'normal');
         }
 
@@ -391,7 +391,7 @@ export default function ExportPanel({ onNavigate }) {
           if (y > H - 30) { doc.addPage(); pageHeader(doc, 'LE DÉROULÉ (suite)'); y = 24; }
           doc.setFillColor(...navy); doc.roundedRect(10, y, W - 20, 7, 1.5, 1.5, 'F');
           doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(...white);
-          doc.text(`${dayLabel(day, di)}${day.date ? ` · ${day.date}` : ''}`, 13, y + 4.8);
+          doc.text(`${dayLabel(day, di)}${day.date ? ` · ${formatDate(day.date)}` : ''}`, 13, y + 4.8);
           doc.setFont('helvetica', 'normal');
           doc.text(`${hm(c.start)} à ${hm(Math.max(c.end, c.plannedEnd))} · ${fmtDur(c.planned)}`, W - 13, y + 4.8, { align: 'right' });
           y += 10;
