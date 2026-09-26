@@ -133,6 +133,11 @@ export function createApp(db) {
 
   // ===================== REST API =====================
 
+  // Version de l'API : l'interface vérifie qu'elle parle au bon serveur
+  app.get('/api/health', (req, res) => {
+    res.json({ ok: true, api: 2, features: ['planning', 'success', 'demo', 'versions', 'presence'] });
+  });
+
   app.get('/api/canvas-structure', (req, res) => {
     res.json({ phases: PHASES, axes: AXES });
   });

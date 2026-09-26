@@ -134,7 +134,7 @@ npm run build
 PORT=3001 npm start
 ```
 
-Le serveur Express sert l'API, le temps réel (Socket.IO) et le client construit. Les données vivent dans `server/data/cadrage.db` (SQLite). Les migrations se font seules au démarrage : pensez à sauvegarder ce fichier avant une mise à jour.
+Le serveur Express sert l'API, le temps réel (Socket.IO) et le client construit. **Après chaque mise à jour : reconstruire l'interface ET redémarrer le serveur** (voir [DEPLOIEMENT.md](DEPLOIEMENT.md)). Les données vivent dans `server/data/cadrage.db` (SQLite). Les migrations se font seules au démarrage : pensez à sauvegarder ce fichier avant une mise à jour.
 
 ## Architecture
 

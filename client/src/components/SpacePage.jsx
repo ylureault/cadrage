@@ -56,6 +56,7 @@ export default function SpacePage() {
     window.scrollTo({ top: 0 });
   }, []);
   const [hideVote, setHideVote] = useState({});
+  const [serverOutdated, setServerOutdated] = useState(false);
   const pseudoRef = useRef(state.pseudo);
   pseudoRef.current = state.pseudo;
   useEffect(() => { updatePresence({ view, target: null, field: null }); }, [view]);
@@ -115,6 +116,8 @@ export default function SpacePage() {
           api.getSpace(spaceId)
         ]);
         dispatch({ type: 'LOAD_STRUCTURE', phases: structure.phases, axes: structure.axes });
+        // Interface à jour, serveur resté à l'ancienne version : on le dit clairement plutôt que d'afficher du vide
+        if (!spaceData.planning || !spaceData.success) setServerOutdated(true);
         dispatch({ type: 'SET_SPACE_ID', spaceId });
         dispatch({ type: 'LOAD_SPACE', data: spaceData });
         setLoading(false);
@@ -280,6 +283,13 @@ export default function SpacePage() {
         <div className="px-4 py-1.5 text-center text-[12px] font-semibold no-print" role="alert"
           style={{ backgroundColor: 'rgba(217,119,6,0.12)', color: 'var(--color-warning)' }}>
           Connexion perdue. Vos modifications seront synchronisées au retour.
+        </div>
+      )}
+
+      {serverOutdated && (
+        <div className="px-4 py-3 text-center text-[13px] font-semibold no-print" role="alert" style={{ backgroundColor: '#DC2626', color: '#fff' }}>
+          Le serveur n'est pas à jour : l'agenda, le planning et le succès ne peuvent pas s'afficher.
+          Il faut redémarrer le serveur Node après la mise à jour (npm start). Aucune donnée n'est perdue.
         </div>
       )}
 
