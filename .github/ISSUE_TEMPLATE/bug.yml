@@ -1,0 +1,39 @@
+name: Signaler un bug
+description: Quelque chose ne marche pas comme prévu.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Merci ! Plus c'est précis, plus c'est vite corrigé.
+  - type: textarea
+    id: quoi
+    attributes:
+      label: Ce qui se passe
+      description: Ce que vous avez vu, et ce que vous attendiez.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduire
+    attributes:
+      label: Pour reproduire
+      placeholder: |
+        1. Ouvrir un cadrage
+        2. Aller dans Concevoir
+        3. …
+    validations:
+      required: true
+  - type: dropdown
+    id: ecran
+    attributes:
+      label: Où
+      options: [Cadrer, Concevoir, Agenda A4, Succès, Mode salle, Récap, Exports, Page d'accueil, Autre]
+  - type: input
+    id: navigateur
+    attributes:
+      label: Navigateur et appareil
+      placeholder: Chrome sur Mac, Safari sur iPhone…
+  - type: textarea
+    id: capture
+    attributes:
+      label: Capture d'écran
+      description: Glissez une image ici si vous en avez une.

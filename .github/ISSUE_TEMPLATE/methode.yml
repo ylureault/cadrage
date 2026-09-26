@@ -1,0 +1,55 @@
+name: Proposer une méthode ou un modèle
+description: Une méthode pour la bibliothèque, un modèle de déroulé, une question générative.
+labels: ["méthode", "terrain"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de partager votre terrain. Deux règles : rien d'inventé (pas de chiffre ni de client invérifiable) et zéro tiret long dans les textes destinés aux clients.
+  - type: dropdown
+    id: type
+    attributes:
+      label: Vous proposez
+      options: [Une méthode pour la bibliothèque, Un modèle de déroulé, Une question générative, Une amélioration de repère]
+    validations:
+      required: true
+  - type: input
+    id: nom
+    attributes:
+      label: Nom
+      placeholder: Ex. Tables tournantes (World Café)
+    validations:
+      required: true
+  - type: textarea
+    id: intention
+    attributes:
+      label: Intention
+      description: Le pourquoi. Ce que ça permet au groupe.
+    validations:
+      required: true
+  - type: textarea
+    id: format
+    attributes:
+      label: Format et consignes
+      description: Comment on s'y prend, les temps, les rôles, le matériel.
+  - type: input
+    id: duree
+    attributes:
+      label: Durée type
+      placeholder: 15, 30, 45 min…
+  - type: dropdown
+    id: diamant
+    attributes:
+      label: Dans le double diamant
+      options: [Diverger, Groan Zone, Converger, Aucun]
+  - type: checkboxes
+    id: visio
+    attributes:
+      label: Contexte
+      options:
+        - label: Fonctionne aussi à distance (visio)
+  - type: textarea
+    id: source
+    attributes:
+      label: Source
+      description: D'où vient cette méthode (Liberating Structures, un auteur, votre pratique…).

@@ -1,0 +1,20 @@
+name: Proposer une idée
+description: Une fonctionnalité, une amélioration de l'interface.
+labels: ["idée"]
+body:
+  - type: textarea
+    id: probleme
+    attributes:
+      label: Le problème
+      description: Ce qui vous manque ou vous gêne, sur le terrain.
+    validations:
+      required: true
+  - type: textarea
+    id: proposition
+    attributes:
+      label: Ce que vous proposez
+  - type: textarea
+    id: contexte
+    attributes:
+      label: Contexte
+      description: Séminaire, formation, CODIR, visio… et combien de personnes.

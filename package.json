@@ -1,17 +1,40 @@
 {
   "name": "cadrage-insuffle",
   "version": "2.0.0",
-  "private": true,
-  "description": "Insuffle Cadrage Live - Outil collaboratif de cadrage d'atelier",
+  "description": "Cadrer, concevoir, envoyer, mesurer : l'outil de cadrage de temps collectif d'Insuffle",
   "scripts": {
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "dev:server": "cd server && npm run dev",
     "dev:client": "cd client && npm run dev",
     "build": "cd client && npm run build",
     "start": "cd server && npm start",
-    "install:all": "npm install && cd server && npm install && cd ../client && npm install"
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install",
+    "test": "npm test --prefix server && npm test --prefix client"
   },
   "devDependencies": {
     "concurrently": "^8.2.0"
-  }
+  },
+  "license": "MIT",
+  "author": "Insuffle (Yoan Lureault) <contact@insuffle.com>",
+  "homepage": "https://cadrage.insuffle.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ylureault/cadrage.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ylureault/cadrage/issues"
+  },
+  "keywords": [
+    "facilitation",
+    "intelligence collective",
+    "séminaire",
+    "atelier",
+    "cadrage",
+    "temps réel",
+    "insuffle"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "private": true
 }
