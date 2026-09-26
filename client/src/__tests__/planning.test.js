@@ -201,3 +201,24 @@ describe('bibliothèque de méthodes', () => {
     expect(methodToSequence(m)).toMatchObject({ title: 'Tables tournantes (World Café)', duration_minutes: 60, diamond: 'diverger', method_key: 'world-cafe' });
   });
 });
+
+import { readiness } from '../planning/readiness.js';
+
+describe('jauge de préparation', () => {
+  it('part de zéro et atteint 100 % quand tout est posé', () => {
+    const empty = readiness({ planning: {}, space: {}, cards: [], axes: [], agendaDays: [], blocks: [], success: {} });
+    expect(empty.pct).toBe(0);
+    expect(empty.total).toBe(9);
+    const full = readiness({
+      planning: { question: 'Q ?', intention: 'I.', situation: 'denouer' },
+      space: { client_name: 'Mess Family', session_date: '2026-10-01' },
+      cards: ['clarifier_cadre', 'personnes_roles', 'definir_succes'].map(k => ({ phase: 'avant', column_key: k })),
+      axes: ['a', 'b', 'c', 'd', 'e'].map(k => ({ axis_key: k, position: 3 })),
+      agendaDays: [day],
+      blocks,
+      success: { criteria: [{ statement: 'Un critère.' }], actions: [{ what: 'Envoyer la synthèse', horizon: '72h' }] },
+    });
+    expect(full.items.filter(i => !i.done).map(i => i.key)).toEqual([]);
+    expect(full.pct).toBe(100);
+  });
+});

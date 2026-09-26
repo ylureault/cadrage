@@ -209,6 +209,11 @@ export default function AppHeader({ view, setView }) {
   const [search, setSearch] = useState(false);
   const people = state.participants || [];
   const client = state.space?.client_name;
+  useEffect(() => {
+    const onShare = () => setShare(true);
+    window.addEventListener('insuffle:share', onShare);
+    return () => window.removeEventListener('insuffle:share', onShare);
+  }, []);
 
   return (
     <>

@@ -347,6 +347,11 @@ function initSchema(d) {
   });
   runOnce(d, 'demo-v2', () => upgradeDemo(d));
   runOnce(d, 'demo-v3', () => polishDemo(d));
+  runOnce(d, 'demo-v4', () => {
+    d.prepare(`UPDATE spaces SET welcome_message = ? WHERE id = '6AG_demo'`).run(
+      'Bienvenue dans la démo. NovaPulse est un cas fictif, construit pour explorer l\'outil : le cadrage avec le sponsor, les 8 polarités, un déroulé sur deux jours et la mesure du succès.'
+    );
+  });
 
   seedSystemTemplates(d);
 }

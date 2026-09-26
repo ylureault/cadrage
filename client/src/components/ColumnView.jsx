@@ -9,7 +9,8 @@ export default function ColumnView({ column, phase, locked }) {
   const [collapsed, setCollapsed] = useState(false);
   const [adding, setAdding] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [questionsOpen, setQuestionsOpen] = useState(true);
+  // Questions-guides ouvertes tant que la colonne est vide ; repliées ensuite, on y revient d'un clic
+  const [questionsOpen, setQuestionsOpen] = useState(() => !state.cards.some(c => c.column_key === column.key && c.phase === phase.key));
   const [newContent, setNewContent] = useState('');
   const prevCardIds = useRef(new Set());
 
@@ -71,8 +72,8 @@ export default function ColumnView({ column, phase, locked }) {
   const isSilent = state.silentColumns[column.key] && !state.revealedColumns[column.key];
 
   return (
-    <div className="rounded-card elevation-1 overflow-hidden transition-all duration-200 hover:elevation-2"
-      style={{ backgroundColor: 'var(--color-surface)' }}
+    <div className="rounded-[16px] overflow-hidden transition-shadow duration-200"
+      style={{ backgroundColor: 'var(--color-surface)', boxShadow: 'var(--shadow-1)' }}
       onClick={handleFocus}
       role="region" aria-label={column.name}>
       {/* Column header */}
@@ -83,7 +84,8 @@ export default function ColumnView({ column, phase, locked }) {
             aria-label={collapsed ? 'Déplier' : 'Replier'}>
             {collapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
           </button>
-          <h3 className="text-body-sm font-semibold truncate">{column.name}</h3>
+          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: phase.color }} />
+          <h3 className="text-[14px] font-semibold truncate">{column.name}</h3>
           {cards.length > 0 && (
             <span className="text-label px-1.5 py-0.5 rounded-full shrink-0"
               style={{ backgroundColor: 'var(--color-surface-alt)', color: 'var(--color-text-muted)' }}>{cards.length}</span>
@@ -132,7 +134,7 @@ export default function ColumnView({ column, phase, locked }) {
                 title={questionsOpen ? 'Masquer les questions-guides' : 'Afficher les questions-guides'}>
                 <HelpCircle size={14} style={{ color: 'var(--color-accent)' }} />
                 <span className="text-label font-semibold flex-1" style={{ color: 'var(--color-text-muted)' }}>
-                  Questions-guides
+                  Questions-guides <span className="font-normal opacity-70">· {column.questions.length}</span>
                 </span>
                 <span className="text-label" style={{ color: 'var(--color-text-muted)' }}>
                   {questionsOpen ? '▾' : '▸'}

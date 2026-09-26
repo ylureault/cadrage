@@ -2,7 +2,7 @@
 export const PHASES = [
   {
     key: 'avant',
-    name: 'AVANT',
+    name: 'Avant',
     color: '#1e3a5f',
     bgColor: '#eef3f9',
     description: 'Préparer et comprendre le contexte avant le temps collectif',
@@ -57,7 +57,7 @@ export const PHASES = [
   },
   {
     key: 'pendant_facilitation',
-    name: 'PENDANT - Facilitation',
+    name: 'Pendant · facilitation',
     color: '#2a5a3a',
     bgColor: '#eef7f0',
     description: 'Piloter la dynamique et le contenu pendant le temps collectif',
@@ -88,7 +88,7 @@ export const PHASES = [
   },
   {
     key: 'pendant_risques',
-    name: 'PENDANT - Risques',
+    name: 'Pendant · risques',
     color: '#7a2a2a',
     bgColor: '#fdf2f2',
     description: 'Anticiper les risques et résistances',
@@ -109,7 +109,7 @@ export const PHASES = [
   },
   {
     key: 'conclusion',
-    name: 'CONCLUSION',
+    name: 'Conclusion',
     color: '#4a3a6a',
     bgColor: '#f3f0f7',
     description: 'Conclure, produire et projeter la suite',

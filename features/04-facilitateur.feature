@@ -61,28 +61,28 @@ Fonctionnalité: Rôle de facilitateur
 
   Scénario: Verrouiller une phase
     Soit je suis facilitateur
-    Quand j'émets "lock-phase" sur la phase "AVANT" avec locked=true
+    Quand j'émets "lock-phase" sur la phase "Avant" avec locked=true
     Alors la phase est verrouillée
     Et aucun participant ne peut créer de carte dans cette phase
     Et les autres reçoivent "phase-state-changed"
 
   Scénario: Déverrouiller une phase
     Soit je suis facilitateur
-    Et la phase "AVANT" est verrouillée
-    Quand j'émets "lock-phase" sur la phase "AVANT" avec locked=false
+    Et la phase "Avant" est verrouillée
+    Quand j'émets "lock-phase" sur la phase "Avant" avec locked=false
     Alors la phase est déverrouillée
     Et les participants peuvent à nouveau créer des cartes
 
   Scénario: Masquer une phase
     Soit je suis facilitateur
-    Quand j'émets "hide-phase" sur la phase "CONCLUSION" avec hidden=true
+    Quand j'émets "hide-phase" sur la phase "Conclusion" avec hidden=true
     Alors la phase est masquée pour tous les participants
     Et les autres reçoivent "phase-state-changed"
 
   Scénario: Afficher une phase masquée
     Soit je suis facilitateur
-    Et la phase "CONCLUSION" est masquée
-    Quand j'émets "hide-phase" sur la phase "CONCLUSION" avec hidden=false
+    Et la phase "Conclusion" est masquée
+    Quand j'émets "hide-phase" sur la phase "Conclusion" avec hidden=false
     Alors la phase redevient visible
 
   # --- Timer ---

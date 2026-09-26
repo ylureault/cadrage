@@ -161,7 +161,7 @@ export default function SuccessPage() {
       </div>
 
       {/* ===== Critères ===== */}
-      <section className="rounded-card p-5 elevation-1" style={{ backgroundColor: 'var(--color-surface)' }}>
+      <section className="rounded-[20px] p-5 md:p-6" style={{ backgroundColor: 'var(--color-surface)', boxShadow: 'var(--shadow-1)' }}>
         <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
           <div>
             <h2 className="font-display font-bold text-body">C'est un succès si et seulement si…</h2>
@@ -201,16 +201,16 @@ export default function SuccessPage() {
         )}
         <div className="grid gap-3">
           {S.criteria.map((c, i) => (
-            <div key={c.id} className="rounded-card p-3 grid gap-2 md:grid-cols-[1.4fr_1.2fr_150px_auto]" style={{ border: '1px solid var(--color-border)' }}>
+            <div key={c.id} className="rounded-2xl p-4 grid gap-3 md:grid-cols-[1.4fr_1.2fr_160px_auto] transition-shadow hover:shadow-[var(--shadow-2)]" style={{ boxShadow: 'var(--shadow-1)', borderLeft: `3px solid ${CRITERION_STATUS[c.status]?.color}` }}>
               <div>
                 <span className="text-label font-semibold uppercase" style={{ color: 'var(--color-text-muted)' }}>Critère {i + 1}</span>
-                <AutoField value={c.statement} disabled={ro} multiline rows={2} placeholder="Chaque participant repart avec une action qu'il porte lui-même."
-                  onSave={v => saveCriterion(c.id, { statement: v })} />
+                <AutoField value={c.statement} disabled={ro} multiline rows={1} autoGrow placeholder="Chaque participant repart avec une action qu'il porte lui-même."
+                  className="input-seamless !text-[15px] font-semibold !px-2 -mx-2" onSave={v => saveCriterion(c.id, { statement: v })} />
               </div>
               <div>
                 <span className="text-label font-semibold uppercase" style={{ color: 'var(--color-text-muted)' }}>Ce qu'on observe</span>
-                <AutoField value={c.indicator} disabled={ro} multiline rows={2} placeholder="30 cartes d'engagement signées."
-                  onSave={v => saveCriterion(c.id, { indicator: v })} />
+                <AutoField value={c.indicator} disabled={ro} multiline rows={1} autoGrow placeholder="30 cartes d'engagement signées."
+                  className="input-seamless !px-2 -mx-2" onSave={v => saveCriterion(c.id, { indicator: v })} />
               </div>
               <div className="grid gap-2 content-start">
                 <div>
@@ -221,7 +221,7 @@ export default function SuccessPage() {
                 </div>
                 <div>
                   <span className="text-label font-semibold uppercase" style={{ color: 'var(--color-text-muted)' }}>Cible</span>
-                  <AutoField value={c.target} disabled={ro} placeholder="100 %" onSave={v => saveCriterion(c.id, { target: v })} />
+                  <AutoField value={c.target} disabled={ro} placeholder="100 %" className="input-seamless !px-2 -mx-2" onSave={v => saveCriterion(c.id, { target: v })} />
                 </div>
               </div>
               <div className="flex md:flex-col items-start gap-2">
@@ -230,7 +230,7 @@ export default function SuccessPage() {
               </div>
               {c.status !== 'a_mesurer' && (
                 <div className="md:col-span-4">
-                  <AutoField value={c.result_note} disabled={ro} placeholder="Le constat : ce qu'on a vu, avec un fait." onSave={v => saveCriterion(c.id, { result_note: v })} />
+                  <AutoField value={c.result_note} disabled={ro} placeholder="Le constat : ce qu'on a vu, avec un fait." className="!bg-[var(--color-surface-alt)] !border-transparent" onSave={v => saveCriterion(c.id, { result_note: v })} />
                 </div>
               )}
             </div>
@@ -239,7 +239,7 @@ export default function SuccessPage() {
       </section>
 
       {/* ===== Avant / Après + ROTI ===== */}
-      <section className="rounded-card p-5 elevation-1" style={{ backgroundColor: 'var(--color-surface)' }}>
+      <section className="rounded-[20px] p-5 md:p-6" style={{ backgroundColor: 'var(--color-surface)', boxShadow: 'var(--shadow-1)' }}>
         <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
           <div>
             <h2 className="font-display font-bold text-body">Avant 1, après 10</h2>
@@ -292,7 +292,7 @@ export default function SuccessPage() {
       </section>
 
       {/* ===== La suite ===== */}
-      <section className="rounded-card p-5 elevation-1" style={{ backgroundColor: 'var(--color-surface)' }}>
+      <section className="rounded-[20px] p-5 md:p-6" style={{ backgroundColor: 'var(--color-surface)', boxShadow: 'var(--shadow-1)' }}>
         <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
           <div>
             <h2 className="font-display font-bold text-body">La suite : qui fait quoi, pour quand</h2>
@@ -305,9 +305,9 @@ export default function SuccessPage() {
           {S.actions.map(a => {
             const late = a.due_date && a.due_date < today && !['fait', 'abandonne'].includes(a.status);
             return (
-              <div key={a.id} className="rounded-card p-3 grid gap-2 md:grid-cols-[1.6fr_1fr_140px_150px_auto] items-start" style={{ border: `1px solid ${late ? 'var(--color-error)' : 'var(--color-border)'}` }}>
-                <AutoField value={a.what} disabled={ro} placeholder="Envoyer la synthèse à toute l'entreprise" onSave={v => saveAction(a.id, { what: v })} ariaLabel="Action" />
-                <AutoField value={a.who} disabled={ro} placeholder="Qui (un nom)" onSave={v => saveAction(a.id, { who: v })} ariaLabel="Qui" />
+              <div key={a.id} className="rounded-2xl p-2.5 grid gap-2 md:grid-cols-[1.6fr_1fr_140px_150px_auto] items-center" style={{ boxShadow: late ? '0 0 0 1.5px var(--color-error)' : 'var(--shadow-1)' }}>
+                <AutoField value={a.what} disabled={ro} placeholder="Envoyer la synthèse à toute l'entreprise" className="input-seamless font-medium" onSave={v => saveAction(a.id, { what: v })} ariaLabel="Action" />
+                <AutoField value={a.who} disabled={ro} placeholder="Qui (un nom)" className="input-seamless" onSave={v => saveAction(a.id, { who: v })} ariaLabel="Qui" />
                 <select className="input-field" value={a.horizon} disabled={ro} aria-label="Horizon"
                   onChange={e => saveAction(a.id, { horizon: e.target.value, due_date: endDate ? addDays(endDate, HORIZON_DAYS[e.target.value]) : a.due_date })}>
                   {HORIZONS.map(h => <option key={h.key} value={h.key}>{h.label}</option>)}
@@ -325,7 +325,7 @@ export default function SuccessPage() {
       </section>
 
       {/* ===== Échéancier ===== */}
-      <section className="rounded-card p-5 elevation-1" style={{ backgroundColor: 'var(--color-surface)' }}>
+      <section className="rounded-[20px] p-5 md:p-6" style={{ backgroundColor: 'var(--color-surface)', boxShadow: 'var(--shadow-1)' }}>
         <h2 className="font-display font-bold text-body flex items-center gap-2"><CalendarClock size={18} /> Les rendez-vous de suivi</h2>
         <p className="text-caption mt-0.5 mb-4" style={{ color: 'var(--color-text-muted)' }}>
           {endDate ? `Calculés à partir du ${formatDate(endDate, { day: 'numeric', month: 'long', year: 'numeric' })}, fin du temps collectif.` : 'Datez le temps collectif (fiche ou jours) pour calculer les rendez-vous.'}
@@ -352,7 +352,7 @@ export default function SuccessPage() {
 
       {/* ===== Regard du facilitateur ===== */}
       {admin && (
-        <section className="rounded-card p-5 elevation-1" style={{ backgroundColor: 'var(--color-surface)' }}>
+        <section className="rounded-[20px] p-5 md:p-6" style={{ backgroundColor: 'var(--color-surface)', boxShadow: 'var(--shadow-1)' }}>
           <h2 className="font-display font-bold text-body">Le regard du facilitateur</h2>
           <p className="text-caption mt-0.5 mb-4" style={{ color: 'var(--color-text-muted)' }}>La grille d'observation d'Insuffle Académie, pour soi. Réservée aux facilitateurs du cadrage.</p>
           <div className="grid gap-2">

@@ -13,7 +13,7 @@ Fonctionnalité: Gestion des espaces de cadrage
   Scénario: Créer un nouvel espace de cadrage
     Quand je crée un nouvel espace via l'API POST /api/spaces
     Alors un espace est créé avec un identifiant unique
-    Et l'espace contient 4 phases prédéfinies (AVANT, PENDANT Facilitation, PENDANT Risques, CONCLUSION)
+    Et l'espace contient 4 phases prédéfinies (Avant, Pendant · facilitation, Pendant · risques, Conclusion)
     Et l'espace contient les 8 polarités
     Et l'espace n'est pas archivé
 

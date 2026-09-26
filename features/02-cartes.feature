@@ -13,7 +13,7 @@ Fonctionnalité: Gestion des cartes
   # --- Création ---
 
   Scénario: Créer une carte dans une colonne
-    Soit la phase "AVANT" n'est pas verrouillée
+    Soit la phase "Avant" n'est pas verrouillée
     Quand j'émets "create-card" avec le contenu "Définir les objectifs" dans la colonne "clarifier_cadre"
     Alors la carte est créée avec mon pseudo comme auteur
     Et une couleur d'auteur m'est attribuée
@@ -29,8 +29,8 @@ Fonctionnalité: Gestion des cartes
     Alors je reçois une erreur de contenu trop long
 
   Scénario: Créer une carte dans une phase verrouillée
-    Soit la phase "AVANT" est verrouillée par le facilitateur
-    Quand j'émets "create-card" dans la phase "AVANT"
+    Soit la phase "Avant" est verrouillée par le facilitateur
+    Quand j'émets "create-card" dans la phase "Avant"
     Alors je reçois une erreur "Phase verrouillée"
 
   Scénario: Créer une carte dans un espace archivé

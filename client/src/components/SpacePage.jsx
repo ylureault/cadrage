@@ -27,6 +27,7 @@ import SuccessPage, { VoteCard } from './success/SuccessPage.jsx';
 import ReperesDrawer from './ReperesDrawer.jsx';
 import { InsuffleDrawer } from './promo/Insuffle.jsx';
 import SallePage, { StageFollower } from './salle/SallePage.jsx';
+import FirstSteps from './FirstSteps.jsx';
 import Logo from './brand/Logo.jsx';
 
 export default function SpacePage() {
@@ -49,6 +50,11 @@ export default function SpacePage() {
   }, []);
   const [hideVote, setHideVote] = useState({});
   useEffect(() => { updatePresence({ view, target: null, field: null }); }, [view]);
+  useEffect(() => {
+    const onView = (e) => VIEWS.includes(e.detail) && setView(e.detail);
+    window.addEventListener('insuffle:view', onView);
+    return () => window.removeEventListener('insuffle:view', onView);
+  }, [setView]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Session persistence: restore pseudo from sessionStorage on mount
   const sessionKey = `insuffle-session-${spaceId}`;
@@ -214,7 +220,6 @@ export default function SpacePage() {
     dispatch({ type: 'SET_PSEUDO', pseudo, color: null });
     try { sessionStorage.setItem(sessionKey, pseudo); } catch (_) { /* sessionStorage unavailable */ }
     setShowPseudo(false);
-    dispatch({ type: 'ADD_NOTIFICATION', notification: { message: `Bienvenue ${pseudo} !`, type: 'success' } });
   }
 
   /* US-393: Loading screen avec animation Insuffle */
@@ -320,6 +325,7 @@ export default function SpacePage() {
           <SuccessPage />
         ) : (
           <>
+            <FirstSteps />
             {state.phases.map(phase => (
               state.activePhase === phase.key && <PhaseView key={phase.key} phase={phase} />
             ))}
