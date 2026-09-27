@@ -8,7 +8,7 @@ const clients = [];
 
 beforeAll(async () => {
   db = createDatabase(':memory:');
-  ({ server } = createApp(db));
+  ({ server } = createApp(db, { adminToken: 'secret-test' }));
   await new Promise(r => server.listen(0, r));
   url = `http://localhost:${server.address().port}`;
 });
@@ -192,5 +192,23 @@ describe('démo', () => {
     // la référence, elle, reste en lecture seule
     const ref = await (await fetch(`${url}/api/spaces/6AG_demo`)).json();
     expect(ref.space.archived).toBe(true);
+  });
+
+  it('qui utilise l\'outil : réservé à l\'exploitant, la liste des cadrages aussi', async () => {
+    const id = await newSpace({ client_name: 'Acme', facilitator: 'Yoan', templateId: 'tpl2-retro-equipe' });
+    const c = await connect(id, 'Claire');
+    await new Promise(r => setTimeout(r, 50));
+    expect((await fetch(`${url}/api/spaces`)).status).toBe(401);
+    expect((await fetch(`${url}/api/admin/usage`, { headers: { Authorization: 'Bearer faux' } })).status).toBe(401);
+    const res = await fetch(`${url}/api/admin/usage`, { headers: { Authorization: 'Bearer secret-test' } });
+    expect(res.status).toBe(200);
+    const u = await res.json();
+    const row = u.spaces.find(s => s.id === id);
+    expect(row.client).toBe('Acme');
+    expect(row.members.map(m => m.pseudo)).toContain('Claire');
+    expect(row.sequences).toBeGreaterThan(0);
+    expect(u.totals.cadrages).toBeGreaterThan(0);
+    expect(u.spaces.some(s => s.id === '6AG_demo')).toBe(false);
+    c.close();
   });
 });

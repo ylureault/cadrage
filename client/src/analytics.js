@@ -29,6 +29,7 @@ export function openConsent() {
 // Une adresse sans l'identifiant du cadrage
 export function safePath(pathname = window.location.pathname, hash = window.location.hash) {
   if (pathname === '/' || pathname === '') return '/';
+  if (pathname === '/admin') return '/admin';
   const view = (hash || '').replace(/^#/, '').split(/[?&]/)[0];
   return `/espace${view ? `/${view}` : ''}`;
 }

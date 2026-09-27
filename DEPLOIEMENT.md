@@ -27,6 +27,21 @@ pm2 restart cadrage            # si le serveur tourne sous pm2 (voir « pm2 list
 # sinon : arrêter le processus « node src/index.js » et relancer « npm start »
 ```
 
+## Voir qui utilise l'outil
+
+La page `/admin` liste les cadrages, les facilitateurs, les pseudos qui les ont rejoints et l'activité. Elle n'existe que si le serveur connaît un jeton :
+
+```bash
+# Un jeton long et aléatoire, à garder pour vous
+openssl rand -hex 24
+# Le donner au serveur, puis redémarrer (étape 5)
+ADMIN_TOKEN=le-jeton npm start
+# pm2 : pm2 restart cadrage --update-env après « export ADMIN_TOKEN=le-jeton »
+# systemd : Environment=ADMIN_TOKEN=le-jeton dans le service
+```
+
+Ouvrez ensuite https://cadrage.insuffle.com/admin et saisissez le jeton. Sans jeton, la page et la liste des cadrages (`/api/spaces`) restent fermées.
+
 ## Vérifier
 
 ```bash

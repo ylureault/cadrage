@@ -13,6 +13,7 @@ import { createLinkedBoard, getEmbedUrl, checkBoardExists } from './darkboard-se
 import { createPlanningStore, templateToV2, PlanningLimitError } from './planning.js';
 import { createSuccessStore } from './success.js';
 import { buildDemo } from './demo.js';
+import { requireAdmin, usage } from './admin.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -21,7 +22,7 @@ const serializePhaseState = (p) => ({ ...p, locked: !!p.locked, hidden: !!p.hidd
 const serializeCard = (c) => ({ ...c, tags: JSON.parse(c.tags || '[]'), reactions: JSON.parse(c.reactions || '{}'), marked_discuss: !!c.marked_discuss });
 const serializeSpace = (s) => ({ ...s, facilitator_ids: JSON.parse(s.facilitator_ids || '[]'), archived: !!s.archived, hidden_columns: JSON.parse(s.hidden_columns || '[]') });
 
-export function createApp(db) {
+export function createApp(db, { adminToken = process.env.ADMIN_TOKEN } = {}) {
   const app = express();
   const server = createServer(app);
   const io = new Server(server, {
@@ -345,8 +346,15 @@ export function createApp(db) {
 
   // --- SPACES ---
 
-  // List all spaces (non-deleted), with optional filters
-  app.get('/api/spaces', (req, res) => {
+  // Qui utilise l'outil (réservé à l'exploitant)
+  const admin = requireAdmin(adminToken);
+  app.get('/api/admin/usage', admin, (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    res.json(usage(db));
+  });
+
+  // La liste de tous les cadrages : l'identifiant vaut clé d'accès, donc réservée à l'exploitant
+  app.get('/api/spaces', admin, (req, res) => {
     const { archived, plan, search, limit: lim, offset: off } = req.query;
     let where = 'deleted = 0';
     const params = [];
