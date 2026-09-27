@@ -75,3 +75,12 @@ describe('moteur de recommandation Insuffle', () => {
     expect(PROMOS.every(p => p.placements.length)).toBe(true);
   });
 });
+
+import { safePath } from '../analytics.js';
+describe('mesure d\'audience', () => {
+  it('n\'envoie jamais l\'identifiant du cadrage', () => {
+    expect(safePath('/', '')).toBe('/');
+    expect(safePath('/HYcjEPF3Sx', '#agenda')).toBe('/espace/agenda');
+    expect(safePath('/HYcjEPF3Sx', '')).toBe('/espace');
+  });
+});

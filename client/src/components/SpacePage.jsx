@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, lazy, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { openConsent, trackPage } from '../analytics.js';
 import { useStore } from '../store.jsx';
 import { api } from '../api.js';
 import socket from '../socket.js';
@@ -56,6 +57,7 @@ export default function SpacePage() {
     setViewState(v);
     try { window.history.replaceState(null, '', v === 'phase' ? window.location.pathname : `#${v}`); } catch (_) { /* navigation indisponible */ }
     window.scrollTo({ top: 0 });
+    trackPage();
   }, []);
   const [hideVote, setHideVote] = useState({});
   const [serverOutdated, setServerOutdated] = useState(false);
@@ -426,6 +428,8 @@ export default function SpacePage() {
           <a href="https://insuffle.com" target="_blank" rel="noopener" className="hover:underline">insuffle.com</a>
           <span>·</span>
           <a href="https://insuffle-academie.com" target="_blank" rel="noopener" className="hover:underline" style={{ color: 'var(--color-academie)' }}>Insuffle Académie</a>
+          <span>·</span>
+          <button onClick={openConsent} className="hover:underline">Cookies</button>
           <span>·</span>
           <span>v2.0</span>
         </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { openConsent, trackEvent } from '../analytics.js';
 import { api } from '../api.js';
 import {
   ArrowRight, ArrowUpRight, CalendarRange, Check, ChevronDown, Compass, FileDown, GraduationCap, Loader2, Mail, MousePointer2,
@@ -119,6 +120,7 @@ export default function LandingPage() {
     try {
       const { id } = await api.createSpace(templateId ? { templateId } : {});
       rememberSpace(id);
+      trackEvent('create_space', { template: templateId || 'blank' });
       navigate(templateId ? `/${id}#conception` : `/${id}`);
     } catch (e) {
       alert(`Création impossible : ${e.message}`);
@@ -132,6 +134,7 @@ export default function LandingPage() {
     setCreating('demo');
     try {
       const { id } = await api.createDemo();
+      trackEvent('open_demo');
       rememberSpace(id, 'NovaPulse (démo)');
       navigate(`/${id}#conception`);
     } catch {
@@ -384,6 +387,7 @@ export default function LandingPage() {
           <div className="grid gap-2 text-[14px] content-start">
             <p className="text-[12px] font-semibold uppercase tracking-widest text-white/40 mb-1">Outils gratuits</p>
             {OUTILS.map(o => <a key={o.url} href={o.url} target="_blank" rel="noopener" className="hover:text-white">{o.titre}</a>)}
+            <button type="button" onClick={openConsent} className="text-left hover:text-white mt-2">Cookies et mesure d'audience</button>
           </div>
         </div>
       </footer>

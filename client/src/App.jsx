@@ -1,5 +1,7 @@
-import { lazy, Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import { initAnalytics, trackPage } from './analytics.js';
+import ConsentBanner from './components/ConsentBanner.jsx';
 import { StoreProvider } from './store.jsx';
 import NotFound from './components/NotFound.jsx';
 
@@ -12,6 +14,9 @@ function Loading() {
 }
 
 export default function App() {
+  const { pathname } = useLocation();
+  useEffect(() => { initAnalytics(); }, []);
+  useEffect(() => { trackPage(); }, [pathname]);
   return (
     <StoreProvider>
       <Suspense fallback={<Loading />}>
@@ -21,6 +26,7 @@ export default function App() {
         <Route path="*" element={<NotFound />} />
       </Routes>
       </Suspense>
+      <ConsentBanner />
     </StoreProvider>
   );
 }

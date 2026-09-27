@@ -136,6 +136,10 @@ PORT=3001 npm start
 
 Le serveur Express sert l'API, le temps réel (Socket.IO) et le client construit. **Après chaque mise à jour : reconstruire l'interface ET redémarrer le serveur** (voir [DEPLOIEMENT.md](DEPLOIEMENT.md)). Les données vivent dans `server/data/cadrage.db` (SQLite). Les migrations se font seules au démarrage : pensez à sauvegarder ce fichier avant une mise à jour.
 
+### Mesure d'audience
+
+L'instance d'Insuffle mesure l'audience avec Google Analytics 4, **seulement après accord** du visiteur (bandeau Accepter / Refuser, modifiable via « Cookies » en pied de page). L'identifiant des cadrages n'est jamais transmis : toutes les pages remontent comme `/espace`. Vous hébergez votre propre instance ? Construisez avec `VITE_GA_ID= npm run build` pour n'avoir aucune mesure (et aucun bandeau), ou `VITE_GA_ID=G-VOTREID` pour la vôtre.
+
 ## Architecture
 
 ```mermaid

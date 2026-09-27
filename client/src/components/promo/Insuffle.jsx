@@ -4,6 +4,7 @@ import { useStore } from '../../store.jsx';
 import Logo from '../brand/Logo.jsx';
 import { Drawer } from '../ui/Overlay.jsx';
 import { CLIENTS, CONTACT, FORMATIONS, FORMATION_FAITS, OFFRES_INSUFFLE, OUTILS, POSITIONNEMENT, PREMIER_ECHANGE } from '../../planning/insuffle.js';
+import { trackEvent } from '../../analytics.js';
 import { pickPromo, rememberDismiss, rememberView, withUtm } from '../../planning/promo.js';
 
 export function mailtoInsuffle(state, sujet = 'Échange sur un temps collectif') {
@@ -104,7 +105,7 @@ export function SmartPromo({ placement, exclude, className = '' }) {
     [placement, state.spaceId, state.isFacilitator, state.planning?.event_type, state.planning?.situation, state.planning?.charte, state.planning?.participants,
       state.agendaDays?.length, state.blocks?.length, state.space?.session_date, state.success?.review, state.success?.votes?.length, state.success?.actions?.length, closed]);
   const seen = useRef(null);
-  useEffect(() => { if (promo && seen.current !== promo.id) { seen.current = promo.id; rememberView(promo.id, placement); } }, [promo]);
+  useEffect(() => { if (promo && seen.current !== promo.id) { seen.current = promo.id; rememberView(promo.id, placement); trackEvent('promo_view', { promo_id: promo.id, placement, brand: promo.brand }); } }, [promo]);
   useEffect(() => {
     if (!promo) return undefined;
     ON_SCREEN.add(promo.id);
@@ -118,14 +119,14 @@ export function SmartPromo({ placement, exclude, className = '' }) {
     <aside key={promo.id} className={`relative rounded-card p-4 overflow-hidden no-print animate-fade-in ${className}`} data-promo={promo.id}
       style={{ backgroundColor: academie ? 'var(--color-academie-bg)' : 'var(--color-accent-soft)', boxShadow: 'inset 0 0 0 1px var(--color-border)' }}>
       <button type="button" className="absolute top-2 right-2 p-1 rounded-md opacity-40 hover:opacity-100" aria-label="Masquer ce message"
-        onClick={() => { rememberDismiss(promo.id); setClosed(promo.id); }}><X size={14} /></button>
+        onClick={() => { rememberDismiss(promo.id); setClosed(promo.id); trackEvent('promo_dismiss', { promo_id: promo.id, placement }); }}><X size={14} /></button>
       <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider mb-1.5" style={{ color: accent }}>
         {academie ? <GraduationCap size={13} /> : <Sparkles size={13} />} {academie ? 'Insuffle Académie' : 'Insuffle'}
       </p>
       <p className="font-display font-semibold text-body-sm mb-1 pr-4">{promo.title}</p>
       <p className="text-caption mb-3" style={{ color: 'var(--color-text-muted)' }}>{promo.text}</p>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <a href={href(promo.cta)} target={promo.cta.external ? '_blank' : undefined} rel="noopener"
+        <a href={href(promo.cta)} target={promo.cta.external ? '_blank' : undefined} rel="noopener" onClick={() => trackEvent('promo_click', { promo_id: promo.id, placement, brand: promo.brand })}
           className="inline-flex items-center gap-1.5 text-caption font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: academie ? 'var(--color-academie)' : '#141E37', color: '#fff' }}>
           {promo.cta.label} <ArrowUpRight size={13} />
         </a>
@@ -162,6 +163,7 @@ export function PromoMoment() {
       if (!p) return;
       try { localStorage.setItem(key, String(Date.now())); } catch { /* stockage indisponible */ }
       rememberView(p.id, 'moment');
+      trackEvent('promo_view', { promo_id: p.id, placement: 'moment', brand: p.brand });
       setTimeout(() => setPromo({ ...p, moment: e.detail || '' }), 1200);
     };
     window.addEventListener('insuffle:moment', onMoment);
@@ -182,7 +184,7 @@ export function PromoMoment() {
       </p>
       <p className="font-display font-semibold text-body-sm mb-1 pr-4">{promo.title}</p>
       <p className="text-caption mb-3 text-white/70">{promo.text}</p>
-      <a href={href} target={promo.cta.external ? '_blank' : undefined} rel="noopener" onClick={() => setPromo(null)}
+      <a href={href} target={promo.cta.external ? '_blank' : undefined} rel="noopener" onClick={() => { trackEvent('promo_click', { promo_id: promo.id, placement: 'moment', brand: promo.brand }); setPromo(null); }}
         className="inline-flex items-center gap-1.5 text-caption font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: '#F2C245', color: '#141E37' }}>
         {promo.cta.label} <ArrowUpRight size={13} />
       </a>
@@ -191,5 +193,6 @@ export function PromoMoment() {
 }
 
 export function promoMoment(kind) {
+  trackEvent('export', { type: kind });
   try { window.dispatchEvent(new CustomEvent('insuffle:moment', { detail: kind })); } catch { /* navigateur ancien */ }
 }
